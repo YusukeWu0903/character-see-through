@@ -1,0 +1,33 @@
+"""Local static server for the see-through result viewer.
+
+Inference is intentionally run by ``run_seethrough_local.py``.  This server
+only exposes the generated layers and the comparison viewer; it has no ComfyUI
+or upload-pipeline dependency.
+"""
+from pathlib import Path
+
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+
+BASE_DIR = Path(__file__).resolve().parent
+OUTPUTS_DIR = BASE_DIR / "outputs"
+
+app = FastAPI(title="Auto-Layering Pipeline Viewer", version="1.0")
+app.mount("/layers", StaticFiles(directory=str(OUTPUTS_DIR)), name="layers")
+
+
+@app.get("/health")
+async def health() -> dict[str, str]:
+    return {"status": "ok", "service": "see-through-viewer"}
+
+
+@app.get("/preview", response_class=HTMLResponse)
+async def preview() -> str:
+    return (BASE_DIR / "preview_viewer.html").read_text(encoding="utf-8")
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="127.0.0.1", port=8010)

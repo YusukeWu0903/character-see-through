@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# 執行期產物（本機保留，不上傳）
+inputs/
+outputs/
+*.png
+
+# Downloaded helper used only for a temporary public viewer tunnel.
+tools/cloudflared.exe
+*.psd
+
+# Retired ComfyUI/SAM pipeline.  The supported entry point is
+# run_seethrough_local.py and main.py only serves the result viewer.
+comfy_client.py
+config.json
+dev_e2e_test.py
+layer_manager.py
+mask_cleanup.py
+matting.py
+pipeline.py
+verify_layer_manager.py
+workflow_api.json
+
+# ComfyUI 匯出的真實 workflow（因人而異，避免版本衝突）
+# 想上傳可拿掉下面兩行註解
+# workflow_api.json
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

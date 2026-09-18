@@ -1,0 +1,40 @@
+diff --git a/common/utils/inference_utils.py b/common/utils/inference_utils.py
+--- a/common/utils/inference_utils.py
++++ b/common/utils/inference_utils.py
+@@
++def clear_edge_connected_neutral_background(img):
++    """Clear an opaque neutral plate without deleting isolated grey details."""
++    if img.ndim != 3 or img.shape[-1] != 4:
++        return img
++    result = img.copy()
++    rgb = result[..., :3].astype(np.int16)
++    alpha = result[..., 3]
++    h, w = alpha.shape
++    border = np.zeros((h, w), dtype=bool)
++    border[0, :] = border[-1, :] = True
++    border[:, 0] = border[:, -1] = True
++    spread = rgb.max(axis=2) - rgb.min(axis=2)
++    value = rgb.mean(axis=2)
++    samples = rgb[border & (alpha > 8) & (spread <= 32) & (value >= 100) & (value <= 250)]
++    if len(samples) < 8:
++        return result
++    reference = np.median(samples, axis=0)
++    tolerance = max(20, min(48, int(np.percentile(np.max(np.abs(samples - reference), axis=1), 90)) + 12))
++    candidate = (alpha > 0) & (spread <= 42) & (np.max(np.abs(rgb - reference), axis=2) <= tolerance)
++    _, labels = cv2.connectedComponents(candidate.astype(np.uint8), connectivity=8)
++    edge_labels = np.unique(labels[border])
++    edge_labels = edge_labels[edge_labels > 0]
++    if len(edge_labels):
++        result[..., 3][np.isin(labels, edge_labels)] = 0
++    return result
++
+ def save_part(tag, saved, part_dict, crop=True, save_part_info=False, save_to_disk=True):
+@@
+     depth = part_dict.pop('depth')
++    img = clear_edge_connected_neutral_background(img)
+     mask = img[..., -1] > 10
+-    depth_median = np.median(depth[mask])
++    depth_median = np.median(depth[mask]) if np.any(mask) else 1
+ 
+-    if crop:
++    if crop and np.any(mask):

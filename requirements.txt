@@ -1,0 +1,11 @@
+# Auto-Layering Pipeline 依賴
+fastapi
+uvicorn[standard]
+websockets
+requests
+python-multipart
+# mask_cleanup 後處理所需（alpha 清洗）
+pillow
+numpy
+scipy
+psd-tools

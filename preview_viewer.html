@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>2.5D 語義分層 - 雙畫面對照</title>
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:#15181d;color:#fff;
+    font-family:system-ui,sans-serif;}
+  #stage{position:fixed;inset:0;}
+  #labels{position:fixed;top:12px;left:0;right:0;display:flex;justify-content:space-around;
+    font-size:13px;letter-spacing:.5px;z-index:3;pointer-events:none;}
+  #labels span{background:rgba(0,0,0,.55);padding:5px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.18)}
+  .L{color:#7ee8ff}.R{color:#ffb86b}
+  #panel{position:fixed;right:12px;bottom:12px;background:rgba(0,0,0,.62);
+    border-radius:12px;padding:12px 16px;font-size:12px;line-height:1.7;max-width:230px;
+    backdrop-filter:blur(5px);border:1px solid rgba(255,255,255,.15);z-index:5;}
+  #panel b{display:block;margin-bottom:6px;font-size:13px;color:#7ee8ff}
+  .row{display:flex;align-items:center;gap:8px;margin:6px 0}
+  .row span{width:60px;opacity:.8}
+  input[type=range]{flex:1;accent-color:#7ee8ff}
+  .sub{opacity:.55;font-size:11px;border-top:1px solid rgba(255,255,255,.12);margin-top:8px;padding-top:6px}
+  #err{position:fixed;left:10px;top:10px;color:#ff7b7b;font-size:11px;max-width:50%;white-space:pre-wrap;z-index:6}
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<div id="labels"><span class="L">雲端參照組 · 15層</span><span id="local-label" class="R">本機版 · 17層</span></div>
+<div id="err"></div>
+<div id="panel">
+  <b>2.5D 語義分層 · 雙畫面對照</b>
+  <div class="row"><span>呼吸</span><input id="amp" type="range" min="0" max="60" value="18"></div>
+  <div class="row"><span>視差</span><input id="par" type="range" min="0" max="60" value="6"></div>
+  <div class="row"><span>層距</span><input id="gap" type="range" min="0" max="60" value="6"></div>
+  <div class="row"><span>髮擺</span><input id="sway" type="range" min="0" max="60" value="6"></div>
+  <div class="sub">左=雲端 DEMO(參照) 右=本機 see-through。滑鼠=視差，靜止=呼吸。</div>
+</div>
+
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+
+const errEl=document.getElementById('err');
+function url(f){ 
+  const origin = (location.origin && location.origin.startsWith('http')) ? location.origin : 'http://127.0.0.1:8010';
+  return `${origin}/layers/seethrough/${f}`;
+}
+function urlL(f){
+  const origin = (location.origin && location.origin.startsWith('http')) ? location.origin : 'http://127.0.0.1:8010';
+  const task = new URLSearchParams(location.search).get('local');
+  const prefix = task ? `${encodeURIComponent(task)}/` : '';
+  return `${origin}/layers/seethrough_local/${prefix}${f}`;
+}
+const localTask = new URLSearchParams(location.search).get('local');
+if (localTask) document.getElementById('local-label').textContent = `本機任務 · ${localTask}`;
+const textureVersion = String(Date.now()); // avoid showing stale layer PNGs after a repair pass
+
+// ---- 兩套層 (file, 深度z, 視差par, 呼吸br, 髮擺sway) ----
+// 左: 雲端參照 15層 (bottom→top)
+const REF=[
+  {file:'backhair',  z:.25, par:.40, br:.6, sway:.6},
+  {file:'handwear',  z:.20, par:.70, br:.8, sway:.1},
+  {file:'legwear',   z:.12, par:.55, br:.7, sway:0},
+  {file:'topwear',   z:.10, par:.55, br:.7, sway:0},
+  {file:'neck',      z:.50, par:.78, br:.8, sway:0},
+  {file:'bottomwear',z:.48, par:.70, br:.8, sway:0},
+  {file:'earwear',   z:.45, par:.80, br:.8, sway:.3},
+  {file:'ears',      z:.55, par:.85, br:.8, sway:.2},
+  {file:'face',      z:.65, par:.90, br:1.0, sway:0},
+  {file:'mouth',     z:.90, par:1.10, br:.9, sway:0},
+  {file:'eyelash',   z:.86, par:1.06, br:1.0, sway:.1},
+  {file:'nose',      z:.88, par:1.08, br:1.0, sway:0},
+  {file:'eyebrow',   z:.85, par:1.05, br:.9, sway:.1},
+  {file:'irides',    z:.95, par:1.15, br:1.0, sway:.05},
+  {file:'fronthair', z:1.0, par:1.18, br:1.0, sway:1.0},
+];
+// 右: 本機 17層 — PSD 原始畫序, 僅互換 handwear ↔ topwear (手層移到胸層之下)
+const LOC=[
+  {file:'handwear',  z:.20, par:.70, br:.8, sway:.1},   // 手臂(移到胸層之下)
+  {file:'legwear',   z:.12, par:.55, br:.7, sway:0},
+  {file:'topwear',   z:.10, par:.55, br:.7, sway:0},    // 上身衣/胸(蓋在手之上)
+  {file:'backhair',  z:.25, par:.40, br:.6, sway:.6},
+  {file:'footwear',  z:.30, par:.55, br:.6, sway:0},
+  {file:'earwear',   z:.45, par:.80, br:.8, sway:.3},
+  {file:'neck',      z:.50, par:.78, br:.8, sway:0},
+  {file:'bottomwear',z:.48, par:.70, br:.8, sway:0},
+  {file:'eyebrow',   z:.85, par:1.05, br:.9, sway:.1},
+  {file:'ears',      z:.55, par:.85, br:.8, sway:.2},
+  {file:'face',      z:.65, par:.90, br:1.0, sway:0},
+  {file:'nose',      z:.88, par:1.08, br:1.0, sway:0},
+  {file:'mouth',     z:.90, par:1.10, br:.9, sway:0},
+  {file:'eyelash',   z:.86, par:1.06, br:1.0, sway:.1},
+  {file:'eyewhite',  z:.92, par:1.12, br:1.0, sway:.05},
+  {file:'irides',    z:.95, par:1.15, br:1.0, sway:.05},
+  {file:'fronthair', z:1.0, par:1.18, br:1.0, sway:1.0},
+];
+
+const loader=new THREE.TextureLoader(); loader.setCrossOrigin('anonymous');
+
+function buildStack(cfgs, baseUrl, tag){
+  const scene=new THREE.Scene();
+  const cam=new THREE.OrthographicCamera(-1.06,1.06,1.06,-1.06,0.01,100); cam.position.z=10;
+  const meshes=[];
+  cfgs.forEach((c,idx)=>{
+    const m=new THREE.Mesh(new THREE.PlaneGeometry(1,1),
+        new THREE.MeshBasicMaterial({transparent:true, depthTest:false}));
+    m.visible=false; m.scale.set(2.0,2.0,1); m.renderOrder=idx;
+    m.userData={idx, ...c}; scene.add(m); meshes.push(m);
+    loader.load(baseUrl(c.file)+`.png?v=${textureVersion}`, tex=>{
+      tex.colorSpace=THREE.SRGBColorSpace; m.material.map=tex; m.material.needsUpdate=true;
+      m.visible=true;
+    }, undefined, e=>{ errEl.textContent+=`${tag}: 載入失敗 ${c.file}\n`; });
+  });
+  return {scene, cam, meshes};
+}
+const A=buildStack(REF, url, '雲端');
+const B=buildStack(LOC, urlL, '本機');
+
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+document.getElementById('stage').appendChild(renderer.domElement);
+
+// 控制
+const U={uTime:{value:0},uMouse:{value:new THREE.Vector2(0,0)},
+  uAmp:0,uPar:0,uGap:0,uSway:0};
+// Keep the renderer in sync with the actual slider defaults.  With max=60,
+// every effect's strongest setting is half of the original 120-point range.
+const bind=(id,k)=>{
+  const input=document.getElementById(id);
+  const update=()=>U[k]=Number(input.value)/100;
+  input.addEventListener('input',update);
+  update();
+};
+bind('amp','uAmp');bind('par','uPar');bind('gap','uGap');bind('sway','uSway');
+
+let tx=0,ty=0;
+addEventListener('pointermove',e=>{tx=(e.clientX/innerWidth)*2-1;ty=1-(e.clientY/innerHeight)*2;});
+
+const PHa=[0,.4,.8,1.2,1.6,2,2.4,2.8,3.2,3.6,4,4.4,4.8,5.2,5.6];
+const PHb=[0,.25,.5,.75,1,1.25,1.5,1.75,2,2.25,2.5,2.75,3,3.25,3.5,3.75,4];
+
+function apply(stack, PH, t){
+  const breath=Math.sin(t*1.4);
+  for(const m of stack.meshes){
+    const c=m.userData, ph=PH[c.idx];
+    const par=U.uPar*0.5;
+    m.position.x = U.uMouse.value.x*par*c.par
+                 + c.sway*Math.sin(t*0.8+ph*2)*U.uSway*0.035;
+    const myBreath = 0.6 + 0.4*c.br*Math.sin(t*1.4+ph);
+    m.position.y = U.uMouse.value.y*par*0.5*c.par + myBreath*U.uAmp*0.02;
+    m.position.z = c.z*U.uGap*3.0;
+  }
+}
+
+function resize(){
+  const w=innerWidth, h=innerHeight;
+  renderer.setSize(w,h);
+  // 兩半各切成正方形 viewport, 置中 + 留邊
+  const half=w/2;
+  const side=Math.min(half, h)*0.96;
+  A.vw = {x:(0 + half - side)/2, y:(h-side)/2, side};
+  B.vw = {x:(half + (half - side)/2), y:(h-side)/2, side};
+}
+addEventListener('resize', resize); resize();
+
+const clock=new THREE.Clock();
+function animate(){
+  requestAnimationFrame(animate);
+  const t=clock.getElapsedTime();
+  U.uMouse.value.x+=(tx-U.uMouse.value.x)*0.08;
+  U.uMouse.value.y+=(ty-U.uMouse.value.y)*0.08;
+  apply(A, PHa, t); apply(B, PHb, t);
+  renderer.setScissorTest(true);
+  renderer.setViewport(A.vw.x,A.vw.y,A.vw.side,A.vw.side); renderer.setScissor(A.vw.x,A.vw.y,A.vw.side,A.vw.side);
+  renderer.render(A.scene,A.cam);
+  renderer.setViewport(B.vw.x,B.vw.y,B.vw.side,B.vw.side); renderer.setScissor(B.vw.x,B.vw.y,B.vw.side,B.vw.side);
+  renderer.render(B.scene,B.cam);
+  renderer.setScissorTest(false);
+}
+animate();
+</script>
+</body>
+</html>
