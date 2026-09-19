@@ -75,3 +75,4 @@ def test_derives_approved_closed_eyelids_from_only_the_eye_difference(tmp_path: 
     assert report["source"] == "approved_artwork"
     assert all(report["layers"][side]["alphaPixels"] > 0 for side in ("left", "right"))
     assert all(report["layers"][side]["eyebrowOverlapPixels"] == 0 for side in ("left", "right"))
+    assert all(report["layers"][side]["targetBbox"][2] - report["layers"][side]["targetBbox"][0] > 30 for side in ("left", "right"))

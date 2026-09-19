@@ -61,6 +61,10 @@ def derive(task_dir: Path, source_path: Path, reference_path: Path | None = None
         patch = after.copy()
         patch.putalpha(mask)
         x0, y0, x1, y1 = target["bbox"]
+        # LayerDiff's face base has dark inpaint remnants just outside the
+        # original lash bounds.  Extend only sideways; front hair is rendered
+        # after this layer and eyebrow pixels are explicitly guarded below.
+        x0, x1 = max(0, x0 - 7), min(eyelash.width, x1 + 7)
         patch = patch.resize((x1 - x0, y1 - y0), Image.Resampling.LANCZOS)
         layer = Image.new("RGBA", eyelash.size)
         layer.alpha_composite(patch, (x0, y0))
@@ -81,7 +85,7 @@ def derive(task_dir: Path, source_path: Path, reference_path: Path | None = None
         overlap = sum(a > 8 and b > 8 for a, b in zip(alpha.getdata(), eyebrow.getchannel("A").getdata()))
         if overlap:
             raise ValueError(f"approved eyelid overlaps eyebrow for {side}")
-        layers[side] = {"file": filename, "sourceRegion": list(region), "targetBbox": target["bbox"], "alphaPixels": sum(value > 8 for value in alpha.getdata()), "eyebrowOverlapPixels": overlap}
+        layers[side] = {"file": filename, "sourceRegion": list(region), "targetBbox": [x0, y0, x1, y1], "alphaPixels": sum(value > 8 for value in alpha.getdata()), "eyebrowOverlapPixels": overlap}
     report["closedEyelids"] = {"schemaVersion": 1, "source": "approved_artwork", "reference": Path(reference_path).name, "layers": layers}
     (output / "eye_assets.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
     return report["closedEyelids"]

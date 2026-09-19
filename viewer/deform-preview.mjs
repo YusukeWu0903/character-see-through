@@ -67,12 +67,23 @@ try{
   canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();$('status').textContent='繪圖環境中斷，請重新整理頁面。';});
   const localPrefix='/layers/seethrough_local/'+encodeURIComponent(task)+'/';
   const [cloud,baseLocal,eyeAssets]=await Promise.all([load(REF,'/layers/seethrough/'),load(LOC,localPrefix),loadEyeAssets(localPrefix)]);
-  const local=eyeAssets?baseLocal.flatMap(layer=>{
+  let local=eyeAssets?baseLocal.flatMap(layer=>{
     if(layer.name==='eyewhite')return eyeAssets.layers.filter(x=>x.name.startsWith('eyewhite_'));
     if(layer.name==='irides')return eyeAssets.layers.filter(x=>x.name.startsWith('irides_'));
     if(layer.name==='eyelash'&&eyeAssets.closedEyelids)return [layer,...eyeAssets.layers.filter(x=>x.name.startsWith('eyelid_closed_'))];
     return [layer];
   }):baseLocal;
+  // Brows must remain above a closed-eye paint patch.  Keep front hair after
+  // them so bangs retain their natural foreground overlap.
+  if(eyeAssets?.closedEyelids){
+    const browIndex=local.findIndex(layer=>layer.name==='eyebrow');
+    const eyelidIndex=local.map(layer=>layer.name).lastIndexOf('eyelid_closed_right');
+    if(browIndex>=0&&eyelidIndex>=0){
+      const [brow]=local.splice(browIndex,1);
+      const insertAt=local.map(layer=>layer.name).lastIndexOf('eyelid_closed_right')+1;
+      local.splice(insertAt,0,brow);
+    }
+  }
   for(const {name} of [...cloud,...local])if(!evaluate()[name.replace(/_(left|right)$/,'')])throw new Error('圖層尚未配對：'+name);
   $('status').textContent=`已載入：雲端 ${cloud.length} 層／本機 ${local.length} 層\n${eyeAssets?.closedEyelids?'左右閉眼眼瞼層、虹膜與眼白素材已啟用':eyeAssets?'左右虹膜與眼白素材已啟用':'未找到左右眼素材，使用合併眼部圖層'}\n第五階段 · 待人工驗收`;
   $('head-limit').oninput=()=>{
