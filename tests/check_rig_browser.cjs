@@ -17,7 +17,14 @@ async function main() {
     const task=process.env.RIG_TEST_TASK || 'Eris_full_body_casual_20260918_113905';
     await page.goto(base+'/preview-rig?local='+encodeURIComponent(task));
     await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('已載入'),{},{timeout:30000});
+    const canvasFrame=()=>page.locator('canvas').evaluate(c=>c.toDataURL());
+    const firstFrame=await canvasFrame();
+    await page.waitForFunction(before=>document.querySelector('canvas').toDataURL()!==before,firstFrame,{timeout:5000});
     await page.locator('#paused').check();
+    await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    const pausedFrame=await canvasFrame();
+    await page.waitForTimeout(200);
+    assert.equal(await canvasFrame(),pausedFrame,'pause must freeze the actual rendered frame');
     await page.screenshot({path:path.join(out,'default.png')});
     await page.locator('#neutral').click();
     await page.screenshot({path:path.join(out,'neutral.png')});
@@ -35,6 +42,19 @@ async function main() {
     assert.equal(await page.locator('#breath').inputValue(),'30');
     assert.equal(await page.locator('#hair').inputValue(),'10');
     assert.equal(await page.locator('#paused').isChecked(),false);
+    assert.equal(await page.locator('#idle').isChecked(),true);
+    assert.equal(await page.locator('#follow').isChecked(),true);
+    await page.locator('#compare').selectOption('cloud');
+    await page.locator('#neutral').click();
+    assert.equal(await page.locator('#idle').isChecked(),false);
+    assert.equal(await page.locator('#follow').isChecked(),false);
+    await page.locator('#follow').check();
+    await page.mouse.move(100,100);
+    await page.waitForTimeout(400);
+    const pointerFrame=await canvasFrame();
+    await page.mouse.move(1000,100);
+    await page.waitForFunction(before=>document.querySelector('canvas').toDataURL()!==before,pointerFrame,{timeout:5000});
+    await page.locator('#defaults').click();
     const nonempty=await page.locator('canvas').evaluate(canvas=>{
       const {data}=canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height);
       let count=0;for(let i=3;i<data.length;i+=4) if(data[i]) count++;return count;
@@ -42,8 +62,8 @@ async function main() {
     assert.ok(nonempty>10000,'canvas must actually render the characters');
     const old=await page.request.get(base+'/preview?local='+encodeURIComponent(task));
     assert.equal(old.status(),200);assert.ok((await old.text()).includes('uPar'));
-    fs.writeFileSync(path.join(out,'browser-report.json'),JSON.stringify({task,images:images.length,errors,nonemptyPixels:nonempty,checks:'load, controls, reset, old route, render',visualAcceptance:'pending user review'},null,2));
-    console.log('Browser checks passed: 32 images, no JS errors, controls/reset, rendered canvas, legacy route.');
+    fs.writeFileSync(path.join(out,'browser-report.json'),JSON.stringify({task,images:images.length,errors,nonemptyPixels:nonempty,checks:'load, controls, reset, old route, render, default animation changes pixels, pause freezes pixels, pointer changes new pose',visualAcceptance:'pending user review'},null,2));
+    console.log('Browser checks passed: 32 images, no JS errors, default motion, pause, pointer follow, controls/reset, rendered canvas, legacy route.');
   } finally {await browser.close();}
 }
 main().catch(e=>{console.error(e);process.exitCode=1;});

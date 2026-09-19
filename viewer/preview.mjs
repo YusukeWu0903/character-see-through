@@ -1,4 +1,5 @@
 import {createRig} from './rig.mjs';
+import {drivePose} from './motion.mjs';
 const $ = id => document.getElementById(id);
 const task = new URLSearchParams(location.search).get('local');
 $('legacy').href = '/preview' + (task ? '?local='+encodeURIComponent(task) : '');
@@ -15,8 +16,14 @@ for (const name of ['body','head','breath','hair']) {
 function setControls(values) {
   for (const [key,value] of Object.entries(values)) { $(key).value = value; $(key).dispatchEvent(new Event('input')); }
 }
-$('neutral').onclick = () => setControls({body:0,head:0,breath:0,hair:0});
-$('defaults').onclick = () => {setControls({body:0,head:0,breath:30,hair:10}); $('paused').checked=false;};
+$('neutral').onclick = () => {
+  setControls({body:0,head:0,breath:0,hair:0});
+  $('idle').checked=false; $('follow').checked=false;
+};
+$('defaults').onclick = () => {
+  setControls({body:0,head:0,breath:30,hair:10});
+  $('idle').checked=true; $('follow').checked=true; $('paused').checked=false;
+};
 $('compare').onchange = () => {$('left-title').textContent = $('compare').value === 'cloud' ? '雲端素材 · 協調動作' : '本機素材 · 舊動作';};
 async function load(names, prefix) {
   return Promise.all(names.map(async name => {
@@ -29,6 +36,7 @@ async function load(names, prefix) {
 const canvas = $('stage'), ctx = canvas.getContext('2d');
 let mx=0,my=0,tx=0,ty=0;
 canvas.addEventListener('pointermove', e=>{tx=e.clientX/innerWidth*2-1;ty=1-e.clientY/innerHeight*2;});
+canvas.addEventListener('pointerleave',()=>{tx=0;ty=0;});
 function resize(){const d=Math.min(devicePixelRatio,2);canvas.width=Math.round(innerWidth*d);canvas.height=Math.round(innerHeight*d);}
 addEventListener('resize',resize);resize();
 try {
@@ -50,7 +58,8 @@ try {
   function animate(now){
     const dt=Math.min(Math.max((now-last)/1000,0),.05);last=now;
     if(!$('paused').checked){t+=dt;const k=1-Math.exp(-5*dt);mx+=(tx-mx)*k;my+=(ty-my)*k;}
-    const matrices=evaluate(controls,t), old={};
+    const pose=drivePose(controls,t,mx,{idle:$('idle').checked,follow:$('follow').checked});
+    const matrices=evaluate(pose,t), old={};
     LOC.forEach((name,i)=>{const [par,br,sway]=OLD[i],ph=i*.25;old[name]=[1,0,0,1,mx*.03*par+sway*Math.sin(t*.8+ph*2)*.06*.035,my*.03*.5*par+(.6+.4*br*Math.sin(t*1.4+ph))*.18*.02];});
     ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,canvas.width,canvas.height);
     const dpr=canvas.width/innerWidth, panel=document.querySelector('aside').getBoundingClientRect();

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createRig,identity,validateRig} from '../viewer/rig.mjs';
+import {drivePose} from '../viewer/motion.mjs';
 const profile=JSON.parse(readFileSync(new URL('../viewer/eris-rig.json',import.meta.url)));
 const evaluate=createRig(profile);
 const near=(a,b)=>a.forEach((v,i)=>assert.ok(Math.abs(v-b[i])<1e-10,`${v} != ${b[i]}`));
@@ -39,4 +40,18 @@ test('invalid hierarchy and schema are rejected',()=>{
 test('node declaration order does not affect hierarchy evaluation',()=>{
   const r=structuredClone(profile);r.nodes.reverse();
   assert.deepEqual(createRig(r)({head:1,body:.5,hair:.6},3),evaluate({head:1,body:.5,hair:.6},3));
+});
+test('default idle moves the head by visible pixels while preserving face attachments',()=>{
+  const c={body:0,head:0,breath:.3,hair:.1};
+  const a=evaluate(drivePose(c,0,0),0), b=evaluate(drivePose(c,2,0),2);
+  const p=point(a.face,[0,.7]), q=point(b.face,[0,.7]);
+  assert.ok(Math.hypot(p[0]-q[0],p[1]-q[1])*250>2,'default motion must move more than two pixels at normal viewing size');
+  near(b.mouth,b.face);
+});
+test('pointer drives new pose, toggles disable automatic motion, final angles stay limited',()=>{
+  const c={body:0,head:0,breath:0,hair:0};
+  assert.notDeepEqual(drivePose(c,0,-1),drivePose(c,0,1));
+  assert.deepEqual(drivePose(c,2,1,{idle:false,follow:false}),c);
+  const pose=evaluate(drivePose({...c,head:1,body:1},2,-1),2);
+  assert.ok(Math.abs(Math.atan2(pose.face[1],pose.face[0])*180/Math.PI)<=3.500001);
 });
