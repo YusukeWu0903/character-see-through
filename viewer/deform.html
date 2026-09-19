@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-Hant">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>角色協調動作 · 實驗版</title>
+<style>
+body{margin:0;background:#15181d;color:#eee;font:14px system-ui}canvas{position:fixed;inset:0;width:100%;height:100%}
+header{position:fixed;top:12px;left:12px;right:12px;display:flex;justify-content:space-around;pointer-events:none}header span{background:#000a;padding:7px;border-radius:8px}
+aside{position:fixed;bottom:12px;right:12px;background:#101319ed;padding:16px;border:1px solid #53606b;border-radius:12px;width:270px;max-height:70vh;overflow:auto}
+label{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:10px 0}input[type=range]{width:145px;accent-color:#7ee8ff}button,select{padding:6px;background:#26323e;color:white;border:1px solid #77818c;border-radius:5px}a{color:#7ee8ff}small{display:block;color:#adb9c5;margin:8px 0}#status{font-size:12px;white-space:pre-wrap}output{width:27px;text-align:right}h1{font-size:16px;margin:0}
+@media(max-width:900px){aside{left:12px;width:auto;max-height:30vh}header{font-size:11px}}
+</style>
+<canvas id="stage"></canvas><canvas id="guides" style="pointer-events:none"></canvas>
+<header><span id="left-title">本機素材 · 剛性</span><span>本機素材 · 柔性</span></header>
+<aside>
+<h1>協調動作 · 第二階段</h1>
+<small>共享網格 · 頸肩與腰部柔性過渡。仍為側傾，尚非立體轉頭。</small>
+<label>對照<select id="compare"><option value="cloud">雲端／本機，同步姿勢</option><option value="rigid" selected>同一本機素材，剛性／柔性</option></select></label>
+<label>身體側傾<input id="body" type="range" min="-100" max="100" value="0"><output></output></label>
+<label>上身側彎<input id="torso" type="range" min="-100" max="100" value="0"><output></output></label>
+<label>頭部側傾<input id="head" type="range" min="-100" max="100" value="0"><output></output></label>
+<label>呼吸起伏<input id="breath" type="range" min="0" max="100" value="30"><output></output></label>
+<label>髮絲擺動<input id="hair" type="range" min="0" max="100" value="10"><output></output></label>
+<label><span>待機擺動</span><input id="idle" type="checkbox" checked></label>
+<label><span>滑鼠跟隨</span><input id="follow" type="checkbox" checked></label>
+<label>檢查視角<select id="view"><option value="full">全身</option><option value="upper">上半身放大</option></select></label>
+<label><span>暫停時間</span><input id="paused" type="checkbox"></label>
+<button id="neutral">回到原位</button> <button id="defaults">恢復預設</button>
+<small>五官與相鄰衣物共用變形。比較左右的頸、肩、腰，檢查是否裂開。關閉待機及滑鼠跟隨後可單獨調整姿勢。</small>
+<details><summary>角色校正與保存</summary>
+<label><span>顯示錨點／過渡區</span><input id="show-guides" type="checkbox"></label>
+<label><span>點選校正</span><input id="calibrate" type="checkbox"></label>
+<small>啟用校正會回原位並暫停。在右側角色上點選新錨點。</small>
+<label>錨點<select id="anchor"><option value="head">頭／頸</option><option value="torso">上身／腰</option><option value="body">全身支點</option><option value="frontHair">前髮根</option><option value="backHair">後髮根</option></select></label>
+<label>頭部上限<input id="head-limit" type="range" min="2" max="8" step="0.5" value="6"><output>6°</output></label>
+<button id="save">保存設定</button> <button id="export">匯出 JSON</button>
+<label>匯入 JSON<input id="import" type="file" accept=".json" style="width:155px"></label>
+<button id="reset-rig">恢復角色設定</button>
+<small id="settings-status">設定依任務保存在此瀏覽器；跨瀏覽器請匯出。建議將 JSON 存入本專案 outputs 的任務資料夾。</small>
+</details>
+<a id="legacy">開啟第一階段</a>
+<p id="status">載入中…</p>
+</aside>
+<script type="module" src="/viewer-assets/deform-preview.mjs?v=1"></script>
+</html>
