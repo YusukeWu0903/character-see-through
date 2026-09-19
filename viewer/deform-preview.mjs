@@ -32,9 +32,13 @@ async function loadEyeAssets(prefix){
   const manifest=await response.json();
   if(manifest.schemaVersion!==1||!Number.isFinite(manifest.limits?.gazeX)||!Number.isFinite(manifest.limits?.gazeY)||!Array.isArray(manifest.eyeCenter)||manifest.eyeCenter.length!==2||!manifest.eyeCenter.every(Number.isFinite))throw new Error('眼部素材描述格式無效');
   const names=['eyewhite_left','eyewhite_right','irides_left','irides_right'];
-  if(manifest.closedEyelids?.schemaVersion===1)names.push('eyelid_closed_left','eyelid_closed_right');
+  // Generated fallbacks are not accepted as art.  They must be explicitly
+  // marked after visual approval; otherwise preserve the safe lash-line
+  // fallback and never cover the eye socket with an inpainted face patch.
+  const approvedEyelids=manifest.closedEyelids?.schemaVersion===1&&manifest.closedEyelids.source==='approved_artwork';
+  if(approvedEyelids)names.push('eyelid_closed_left','eyelid_closed_right');
   const layers=await load(names,prefix+'_rig_assets/');
-  return {layers,limits:[manifest.limits.gazeX,manifest.limits.gazeY],eyeCenter:manifest.eyeCenter,closedEyelids:manifest.closedEyelids?.schemaVersion===1};
+  return {layers,limits:[manifest.limits.gazeX,manifest.limits.gazeY],eyeCenter:manifest.eyeCenter,closedEyelids:approvedEyelids};
 }
 try{
   if(!task)throw new Error('請提供 local 任務名稱');
