@@ -60,16 +60,17 @@ export function createMeshRenderer(canvas){
       gl.uniformMatrix3fv(uniforms.body,false,mat3(matrices.legwear));gl.uniformMatrix3fv(uniforms.torso,false,mat3(matrices.neck));gl.uniformMatrix3fv(uniforms.head,false,mat3(matrices.face));
       gl.uniform4fv(uniforms.bands,[...bands.waist,...bands.neck]);gl.uniform2f(uniforms.scale,scale*2/canvas.width,scale*2/canvas.height);gl.uniform2f(uniforms.center,cx*2/canvas.width-1,1-cy*2/canvas.height);gl.uniform1f(uniforms.deform,deform?1:0);
       const eyeMask=layers.find(x=>x.name==='eyewhite')?.image;
+      const hasClosedEyelids=layers.some(({name})=>name.replace(/_(left|right)$/,'')==='eyelid_closed');
       gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,eyeMask?texture(eyeMask):null);gl.uniform1i(uniforms.eyeMask,1);
-      const faceSet=new Set(['face','mouth','nose','eyelash','eyewhite','eyebrow','irides','ears','earwear','eyewear','headwear','fronthair','backhair']);
+      const faceSet=new Set(['face','mouth','nose','eyelash','eyelid_closed','eyewhite','eyebrow','irides','ears','earwear','eyewear','headwear','fronthair','backhair']);
       for(const {name,image} of layers){
         const baseName=name.replace(/_(left|right)$/,'');
-        const iris=baseName==='irides',white=baseName==='eyewhite',eyePart=iris||white,blink=Math.max(0,Math.min(1,expression.blink||0));
+        const iris=baseName==='irides',white=baseName==='eyewhite',closedEye=baseName==='eyelid_closed',eyePart=iris||white,blink=Math.max(0,Math.min(1,expression.blink||0));
         gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,texture(image));gl.uniform1i(uniforms.image,0);
         gl.uniformMatrix3fv(uniforms.layer,false,mat3(matrices[baseName]));gl.uniform1f(uniforms.hair,baseName==='fronthair'||baseName==='backhair'?1:0);
         gl.uniform1f(uniforms.facial,faceSet.has(baseName)?1:0);gl.uniform1f(uniforms.yaw,expression.yaw||0);gl.uniform2fv(uniforms.headPivot,expression.headPivot||[0,.48]);
-        gl.uniform1f(uniforms.eye,iris&&eyeMask?1:0);gl.uniform1f(uniforms.eyeWhite,eyePart?blink:0);gl.uniform2fv(uniforms.eyeCenter,expression.eyeCenter||[0,.52]);gl.uniform2fv(uniforms.eyeOffset,iris?(expression.gaze||[0,0]):[0,0]);gl.uniform1f(uniforms.opacity,eyePart?1-blink:1);
-        gl.uniform1f(uniforms.chest,expression.chest||0);gl.uniform1f(uniforms.chestLayer,baseName==='topwear'||baseName==='neck'?1:0);gl.uniform1f(uniforms.eyelashLine,baseName==='eyelash'?blink:0);gl.uniform2fv(uniforms.chestBand,expression.chestBand||[.2,.5]);
+        gl.uniform1f(uniforms.eye,iris&&eyeMask?1:0);gl.uniform1f(uniforms.eyeWhite,eyePart?blink:0);gl.uniform2fv(uniforms.eyeCenter,expression.eyeCenter||[0,.52]);gl.uniform2fv(uniforms.eyeOffset,iris?(expression.gaze||[0,0]):[0,0]);gl.uniform1f(uniforms.opacity,eyePart?1-blink:closedEye?blink:1);
+        gl.uniform1f(uniforms.chest,expression.chest||0);gl.uniform1f(uniforms.chestLayer,baseName==='topwear'||baseName==='neck'?1:0);gl.uniform1f(uniforms.eyelashLine,baseName==='eyelash'&&!hasClosedEyelids?blink:0);gl.uniform2fv(uniforms.chestBand,expression.chestBand||[.2,.5]);
         gl.drawElements(gl.TRIANGLES,indices.length,gl.UNSIGNED_SHORT,0);
       }
     }

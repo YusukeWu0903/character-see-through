@@ -3,6 +3,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw
 
 from derive_eye_assets import derive
+from derive_closed_eyelid_assets import derive as derive_closed
 
 
 def layer(size=(80, 60), boxes=((10, 20, 20, 30), (50, 20, 60, 30))):
@@ -37,3 +38,17 @@ def test_rejects_missing_eye_component(tmp_path: Path):
         assert "exactly two" in str(error)
     else:
         raise AssertionError("missing component must reject derivation")
+
+
+def test_derives_full_canvas_closed_eyelid_layers(tmp_path: Path):
+    layer().save(tmp_path / "irides.png")
+    layer(boxes=((8, 18, 23, 32), (48, 18, 63, 32))).save(tmp_path / "eyewhite.png")
+    layer(boxes=((6, 18, 25, 34), (46, 18, 65, 34))).save(tmp_path / "eyelash.png")
+    derive(tmp_path)
+    report = derive_closed(tmp_path)
+    assert report["source"] == "compressed_existing_eyelash"
+    for side in ("left", "right"):
+        image = Image.open(tmp_path / "_rig_assets" / f"eyelid_closed_{side}.png")
+        assert image.mode == "RGBA"
+        assert image.size == (80, 60)
+        assert report["layers"][side]["closedHeight"] < 16

@@ -31,8 +31,10 @@ async function loadEyeAssets(prefix){
   if(!response.ok)return null;
   const manifest=await response.json();
   if(manifest.schemaVersion!==1||!Number.isFinite(manifest.limits?.gazeX)||!Number.isFinite(manifest.limits?.gazeY)||!Array.isArray(manifest.eyeCenter)||manifest.eyeCenter.length!==2||!manifest.eyeCenter.every(Number.isFinite))throw new Error('眼部素材描述格式無效');
-  const layers=await load(['eyewhite_left','eyewhite_right','irides_left','irides_right'],prefix+'_rig_assets/');
-  return {layers,limits:[manifest.limits.gazeX,manifest.limits.gazeY],eyeCenter:manifest.eyeCenter};
+  const names=['eyewhite_left','eyewhite_right','irides_left','irides_right'];
+  if(manifest.closedEyelids?.schemaVersion===1)names.push('eyelid_closed_left','eyelid_closed_right');
+  const layers=await load(names,prefix+'_rig_assets/');
+  return {layers,limits:[manifest.limits.gazeX,manifest.limits.gazeY],eyeCenter:manifest.eyeCenter,closedEyelids:manifest.closedEyelids?.schemaVersion===1};
 }
 try{
   if(!task)throw new Error('請提供 local 任務名稱');
@@ -56,10 +58,11 @@ try{
   const local=eyeAssets?baseLocal.flatMap(layer=>{
     if(layer.name==='eyewhite')return eyeAssets.layers.filter(x=>x.name.startsWith('eyewhite_'));
     if(layer.name==='irides')return eyeAssets.layers.filter(x=>x.name.startsWith('irides_'));
+    if(layer.name==='eyelash'&&eyeAssets.closedEyelids)return [layer,...eyeAssets.layers.filter(x=>x.name.startsWith('eyelid_closed_'))];
     return [layer];
   }):baseLocal;
   for(const {name} of [...cloud,...local])if(!evaluate()[name.replace(/_(left|right)$/,'')])throw new Error('圖層尚未配對：'+name);
-  $('status').textContent=`已載入：雲端 ${cloud.length} 層／本機 ${local.length} 層\n${eyeAssets?'左右虹膜與眼白素材已啟用':'未找到左右眼素材，使用合併眼部圖層'}\n第三階段 · 待人工驗收`;
+  $('status').textContent=`已載入：雲端 ${cloud.length} 層／本機 ${local.length} 層\n${eyeAssets?.closedEyelids?'左右閉眼眼瞼層、虹膜與眼白素材已啟用':eyeAssets?'左右虹膜與眼白素材已啟用':'未找到左右眼素材，使用合併眼部圖層'}\n第五階段 · 待人工驗收`;
   $('head-limit').oninput=()=>{
     try{const candidate=structuredClone(rig);candidate.nodes.find(n=>n.id==='head').maxDegrees=Number($('head-limit').value);apply(candidate);$('settings-status').textContent='設定已調整，尚未保存。';}
     catch(e){$('settings-status').textContent=e.message;apply(rig);}
@@ -95,17 +98,22 @@ try{
     const dt=Math.min(Math.max((now-last)/1000,0),.05);last=now;
     if(!$('paused').checked){
       t+=dt;mx+=(tx-mx)*(1-Math.exp(-5*dt));
-      const breath=Math.sin(t*1.42),weight=Math.sin(t*.62+.18);
-      chestSpring=advanceSpring(chestSpring,controls.bust*(breath*.62+weight*.38),dt,{frequency:7,damping:.7});
     }
     let pose=drivePose(controls,t,mx,{idle:$('idle').checked,follow:$('follow').checked});
     pose.torso=controls.torso+($('idle').checked?.2*Math.sin(t*.65-.25):0)+($('follow').checked?-.2*mx:0);
     pose=applyExpressivePose(pose,controls.energy,t);
+    if(!$('paused').checked){
+      // The delayed spring follows the current torso / weight shift.  This
+      // produces restrained elastic follow-through rather than a metronomic
+      // independent bounce.
+      chestSpring=advanceSpring(chestSpring,controls.bust*(Math.sin(t*1.42)*.48+Math.sin(t*.62+.18)*.22-pose.torso*.3-pose.body*.14),dt,{frequency:7,damping:.68});
+    }
     const matrices=evaluate(pose,t);
     const expression=buildExpression({blink:controls.blink,gazeX:controls['gaze-x'],gazeY:controls['gaze-y'],yaw:controls.yaw,autoBlink:$('auto-blink').checked},t,rig.nodes.find(n=>n.id==='head').pivot,eyeAssets?.limits);
     expression.eyeCenter=eyeAssets?.eyeCenter||rig.expression?.eyeCenter||[0,.755];
     expression.chest=chestSpring.position;
     expression.chestBand=rig.expression?.chestBand||[.2,.5];
+    expression.hasClosedEyelids=Boolean(eyeAssets?.closedEyelids);
     const dpr=canvas.width/innerWidth,panel=document.querySelector('aside').getBoundingClientRect();
     const w=canvas.width-(innerWidth>900?(panel.width+24)*dpr:0),h=canvas.height-(innerWidth<=900?(panel.height+24)*dpr:0);
     const zoom=$('view').value==='upper'?1.9:1,s=Math.min(w/2,h)*.96/2.12*zoom;

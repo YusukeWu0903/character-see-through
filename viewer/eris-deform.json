@@ -91,6 +91,7 @@
     "mouth": "head",
     "nose": "head",
     "eyelash": "head",
+    "eyelid_closed": "head",
     "eyewhite": "head",
     "eyebrow": "head",
     "irides": "head",

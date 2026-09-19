@@ -66,6 +66,12 @@ PSD **不**使用上游 `--save_to_psd`，而是由 `dev_psd_write.py` 直接寫
 隱藏眼白／虹膜顯示 face 基底的方式驗證節奏，真正眼瞼素材仍是下一個必要項目。
 微左／右轉僅為正視素材的保守視差提示，不能代替完整的 3/4 頭部。
 
+`/preview-secondary?local=<task-name>` 是目前的眼瞼／次級動作實驗頁。任務若具有
+`_rig_assets/eyelid_closed_left.png` 和 `eyelid_closed_right.png`，眨眼會將它們淡入；
+胸口帶則只會保守跟隨呼吸、重心與上身變形。這些都是可替換的任務內素材，不會修改原始 PNG 或 PSD。
+可用 `derive_closed_eyelid_assets.py <task-dir>` 生成既有睫毛的 fallback，或以同名、全畫布 RGBA 的
+人工／局部補繪眼瞼檔案覆蓋它。
+
 - 左邊：`outputs/seethrough/` 的雲端參照組。
 - 右邊：`?local=<task-name>` 選取的本機任務。
 - 四個控制條只影響 viewer 動畫，不會修改 PNG 或 PSD；最大可動範圍為初版的一半，初始值為低幅度設定。
