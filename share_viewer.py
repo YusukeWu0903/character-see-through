@@ -5,6 +5,7 @@ code and image/JSON files required to render the named task; no upload,
 inference, arbitrary-output, PSD, or filesystem endpoints exist here.
 """
 from pathlib import Path
+import mimetypes
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 
@@ -17,6 +18,9 @@ VIEWER_FILES = {"deform-preview.mjs", "mesh-renderer.mjs", "rig.mjs", "motion.mj
 CLOUD_FILES = {"backhair.png", "handwear.png", "legwear.png", "topwear.png", "neck.png", "bottomwear.png", "earwear.png", "ears.png", "face.png", "mouth.png", "eyelash.png", "nose.png", "eyebrow.png", "irides.png", "fronthair.png"}
 
 app = FastAPI(title="Character Preview Share", docs_url=None, redoc_url=None, openapi_url=None)
+# Windows may otherwise classify ES modules as text/plain, which browsers
+# refuse to execute when loaded through a public tunnel.
+mimetypes.add_type("text/javascript", ".mjs")
 
 
 def resolved_child(root: Path, name: str) -> Path:
