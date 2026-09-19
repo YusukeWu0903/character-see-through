@@ -35,7 +35,7 @@ function resize(){const d=Math.min(devicePixelRatio,2);canvas.width=guides.width
 addEventListener('resize',resize);resize();
 async function load(names,prefix){return Promise.all(names.map(async name=>{const image=new Image();image.src=prefix+name+'.png';try{await image.decode();}catch{throw new Error('圖層載入失敗：'+name);}return {name,image};}));}
 async function loadEyeAssets(prefix){
-  const response=await fetch(prefix+'_rig_assets/eye_assets.json');
+  const response=await fetch(prefix+'_rig_assets/eye_assets.json',{cache:'no-store'});
   if(!response.ok)return null;
   const manifest=await response.json();
   if(manifest.schemaVersion!==1||!Number.isFinite(manifest.limits?.gazeX)||!Number.isFinite(manifest.limits?.gazeY)||!Array.isArray(manifest.eyeCenter)||manifest.eyeCenter.length!==2||!manifest.eyeCenter.every(Number.isFinite))throw new Error('眼部素材描述格式無效');
@@ -43,9 +43,21 @@ async function loadEyeAssets(prefix){
   // Generated fallbacks are not accepted as art.  They must be explicitly
   // marked after visual approval; otherwise preserve the safe lash-line
   // fallback and never cover the eye socket with an inpainted face patch.
-  const approvedEyelids=manifest.closedEyelids?.schemaVersion>=2&&manifest.closedEyelids.source==='approved_artwork'&&manifest.closedEyelids.boundarySource==='semantic_eyewhite_with_eyebrow_and_fronthair_exclusion';
-  if(approvedEyelids)names.push('eyelid_closed_left','eyelid_closed_right');
+  const accepted=manifest.closedEyelids;
+  const approvedEyelids=accepted?.schemaVersion===3&&accepted.source==='hairless_head_artwork'&&accepted.visualReview?.status==='passed'&&/^[a-zA-Z0-9_-]+$/.test(accepted.assetDirectory||'');
   const layers=await load(names,prefix+'_rig_assets/');
+  if(approvedEyelids)layers.push(...await load(['eyelid_closed_left','eyelid_closed_right'],prefix+'_rig_assets/'+accepted.assetDirectory+'/'));
+  const candidate=new URLSearchParams(location.search).get('eyelid-candidate');
+  if(candidate){
+    if(!/^[a-zA-Z0-9_-]+$/.test(candidate))throw new Error('Invalid eyelid candidate name');
+    const candidatePrefix=prefix+'_rig_candidates/'+candidate+'/';
+    const candidateResponse=await fetch(candidatePrefix+'report.json');
+    if(!candidateResponse.ok)throw new Error('Eyelid candidate report unavailable');
+    const report=await candidateResponse.json();
+    if(report.schemaVersion!==3||report.source!=='hairless_head_artwork')throw new Error('Unsupported eyelid candidate');
+    const candidateLayers=await load(['eyelid_closed_left','eyelid_closed_right'],candidatePrefix);
+    return {layers:[...layers.filter(x=>!x.name.startsWith('eyelid_closed_')),...candidateLayers],limits:[manifest.limits.gazeX,manifest.limits.gazeY],eyeCenter:manifest.eyeCenter,closedEyelids:true,candidate};
+  }
   return {layers,limits:[manifest.limits.gazeX,manifest.limits.gazeY],eyeCenter:manifest.eyeCenter,closedEyelids:approvedEyelids};
 }
 try{
@@ -86,6 +98,8 @@ try{
   }
   for(const {name} of [...cloud,...local])if(!evaluate()[name.replace(/_(left|right)$/,'')])throw new Error('圖層尚未配對：'+name);
   $('status').textContent=`已載入：雲端 ${cloud.length} 層／本機 ${local.length} 層\n${eyeAssets?.closedEyelids?'左右閉眼眼瞼層、虹膜與眼白素材已啟用':eyeAssets?'左右虹膜與眼白素材已啟用':'未找到左右眼素材，使用合併眼部圖層'}\n第五階段 · 待人工驗收`;
+  if(eyeAssets?.candidate)$('status').textContent+='\n候選預覽：'+eyeAssets.candidate+'（半閉眼重影待修正，尚未核准）';
+  else if(eyeAssets?.closedEyelids)$('status').textContent='新版眼瞼已啟用 · 已經使用者核准\n自動眨眼與其他動作可正常使用';
   $('head-limit').oninput=()=>{
     try{const candidate=structuredClone(rig);candidate.nodes.find(n=>n.id==='head').maxDegrees=Number($('head-limit').value);apply(candidate);$('settings-status').textContent='設定已調整，尚未保存。';}
     catch(e){$('settings-status').textContent=e.message;apply(rig);}
@@ -137,6 +151,9 @@ try{
     expression.chest=chestSpring.position;
     expression.chestBand=rig.expression?.chestBand||[.2,.5];
     expression.hasClosedEyelids=Boolean(eyeAssets?.closedEyelids);
+    // Keep the original open eyes until a rendered blink has passed review.
+    // Alpha-overlap tests alone cannot certify the artwork or its alignment.
+    if(!expression.hasClosedEyelids)expression.blink=0;
     const dpr=canvas.width/innerWidth,panel=document.querySelector('aside').getBoundingClientRect();
     const w=canvas.width-(innerWidth>900?(panel.width+24)*dpr:0),h=canvas.height-(innerWidth<=900?(panel.height+24)*dpr:0);
     const zoom=$('view').value==='upper'?1.9:1,s=Math.min(w/2,h)*.96/2.12*zoom;

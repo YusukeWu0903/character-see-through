@@ -90,13 +90,12 @@ def derive(task_dir: Path, source_path: Path, reference_path: Path | None = None
         filename = f"eyelid_closed_{side}.png"
         layer.save(output / filename)
         alpha = layer.getchannel("A")
-        alpha = layer.getchannel("A")
         eyebrow_overlap = sum(a > 8 and b > 8 for a, b in zip(alpha.getdata(), eyebrow.getchannel("A").getdata()))
         hair_overlap = sum(a > 8 and b > 8 for a, b in zip(alpha.getdata(), fronthair.getchannel("A").getdata()))
         if eyebrow_overlap or hair_overlap:
             raise ValueError(f"approved eyelid overlaps protected semantic layer for {side}")
         layers[side] = {"file": filename, "sourceRegion": list(region), "targetBbox": [x0, y0, x1, y1], "alphaPixels": sum(value > 8 for value in alpha.getdata()), "eyebrowOverlapPixels": eyebrow_overlap, "fronthairOverlapPixels": hair_overlap}
-    report["closedEyelids"] = {"schemaVersion": 2, "source": "approved_artwork", "reference": Path(reference_path).name, "boundarySource": "semantic_eyewhite_with_eyebrow_and_fronthair_exclusion", "layers": layers}
+    report["closedEyelids"] = {"schemaVersion": 2, "source": "candidate_artwork", "visualReview": {"status": "pending"}, "reference": Path(reference_path).name, "boundarySource": "semantic_eyewhite_with_eyebrow_and_fronthair_exclusion", "layers": layers}
     (output / "eye_assets.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
     return report["closedEyelids"]
 

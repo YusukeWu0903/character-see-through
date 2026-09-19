@@ -74,7 +74,8 @@ def test_derives_approved_closed_eyelids_from_only_the_eye_difference(tmp_path: 
     layer(size=(160, 240), boxes=((60, 34, 78, 45), (90, 34, 108, 45))).save(tmp_path / "eyewhite.png")
     derive(tmp_path)
     report = derive_approved(tmp_path, tmp_path / "source.png", tmp_path / "closed.png")
-    assert report["source"] == "approved_artwork"
+    assert report["source"] == "candidate_artwork"
+    assert report["visualReview"]["status"] == "pending"
     assert all(report["layers"][side]["alphaPixels"] > 0 for side in ("left", "right"))
     assert report["boundarySource"] == "semantic_eyewhite_with_eyebrow_and_fronthair_exclusion"
     assert all(report["layers"][side]["eyebrowOverlapPixels"] == 0 for side in ("left", "right"))
