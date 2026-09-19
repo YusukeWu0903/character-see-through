@@ -11,7 +11,7 @@ import argparse
 import json
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFilter
 
 from derive_eye_assets import components
 
@@ -21,18 +21,38 @@ def derive(task_dir: Path) -> dict:
     output = task_dir / "_rig_assets"
     eye_report = json.loads((output / "eye_assets.json").read_text(encoding="utf-8"))
     eyelash = Image.open(task_dir / "eyelash.png").convert("RGBA")
+    face = Image.open(task_dir / "face.png").convert("RGBA")
+    if face.size != eyelash.size:
+        raise ValueError("face and eyelash canvas sizes differ")
     parts = sorted(components(eyelash.getchannel("A"))[:2], key=lambda part: part["bbox"][0])
     if len(parts) != 2:
         raise ValueError(f"eyelash needs exactly two significant regions; found {len(parts)}")
-    result = {"schemaVersion": 1, "source": "compressed_existing_eyelash", "layers": {}}
+    result = {"schemaVersion": 1, "source": "face_skin_and_existing_eyelash", "layers": {}}
     for side, part in zip(("left", "right"), parts):
         x0, y0, x1, y1 = part["bbox"]
         crop = eyelash.crop((x0, y0, x1, y1))
-        target_height = max(3, round((y1 - y0) * 0.24))
-        closed = crop.resize((x1 - x0, target_height), Image.Resampling.LANCZOS)
+        target_height = max(5, round((y1 - y0) * 0.34))
+        # Preserve actual dark lash marks only. Pale pixels in the upstream
+        # layer created the observed white-card artifact when compressed.
+        dark = Image.new("RGBA", crop.size)
+        for py in range(crop.height):
+            for px in range(crop.width):
+                red, green, blue, alpha = crop.getpixel((px, py))
+                if alpha > 8 and max(red, green, blue) < 150:
+                    dark.putpixel((px, py), (red, green, blue, alpha))
+        closed = dark.resize((x1 - x0, target_height), Image.Resampling.LANCZOS)
         eye = eye_report["layers"]["irides"][side]["bbox"]
         center_y = round((eye[1] + eye[3]) / 2)
         layer = Image.new("RGBA", eyelash.size)
+        # A feathered local face patch covers the separate white eye at a full
+        # blink without making a rectangular card or changing face.png.
+        mask = Image.new("L", (x1 - x0, y1 - y0))
+        painter = ImageDraw.Draw(mask)
+        painter.rounded_rectangle((1, 1, mask.width - 2, mask.height - 2), radius=max(3, mask.height // 2), fill=255)
+        mask = mask.filter(ImageFilter.GaussianBlur(0.7))
+        skin = face.crop((x0, y0, x1, y1))
+        skin.putalpha(mask)
+        layer.alpha_composite(skin, (x0, y0))
         layer.alpha_composite(closed, (x0, center_y - target_height // 2))
         filename = f"eyelid_closed_{side}.png"
         layer.save(output / filename)

@@ -44,9 +44,10 @@ def test_derives_full_canvas_closed_eyelid_layers(tmp_path: Path):
     layer().save(tmp_path / "irides.png")
     layer(boxes=((8, 18, 23, 32), (48, 18, 63, 32))).save(tmp_path / "eyewhite.png")
     layer(boxes=((6, 18, 25, 34), (46, 18, 65, 34))).save(tmp_path / "eyelash.png")
+    Image.new("RGBA", (80, 60), (248, 224, 213, 255)).save(tmp_path / "face.png")
     derive(tmp_path)
     report = derive_closed(tmp_path)
-    assert report["source"] == "compressed_existing_eyelash"
+    assert report["source"] == "face_skin_and_existing_eyelash"
     for side in ("left", "right"):
         image = Image.open(tmp_path / "_rig_assets" / f"eyelid_closed_{side}.png")
         assert image.mode == "RGBA"
