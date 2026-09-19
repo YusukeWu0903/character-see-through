@@ -154,16 +154,13 @@ try{
       // The delayed spring follows the current torso / weight shift.  This
       // produces restrained elastic follow-through rather than a metronomic
       // independent bounce.
-      chestSpring=advanceSpring(chestSpring,controls.bust*(Math.sin(t*1.42)*.66+Math.sin(t*.62+.18)*.28-pose.torso*.3-pose.body*.14),dt,{frequency:7,damping:.68});
+      chestSpring=advanceSpring(chestSpring,controls.bust*(Math.sin(t*1.42)*.48+Math.sin(t*.62+.18)*.22-pose.torso*.3-pose.body*.14),dt,{frequency:7,damping:.68});
     }
     const matrices=evaluate(pose,t);
     const expression=buildExpression({blink:controls.blink,gazeX:controls['gaze-x'],gazeY:controls['gaze-y'],yaw:controls.yaw,autoBlink:$('auto-blink').checked},t,rig.nodes.find(n=>n.id==='head').pivot,eyeAssets?.limits);
     expression.eyeCenter=eyeAssets?.eyeCenter||rig.expression?.eyeCenter||[0,.755];
     expression.chest=chestSpring.position;
-    expression.chestBand=rig.expression?.chestBand||[.3,.66];
-    expression.chestLobes=rig.expression?.chestLobes||[-.12,.46,.12,.46];
-    expression.chestRadius=rig.expression?.chestRadius||[.22,.18];
-    expression.chestAmplitude=rig.expression?.chestAmplitude||[.06,.055];
+    expression.chestBand=rig.expression?.chestBand||[.2,.5];
     expression.hasClosedEyelids=Boolean(eyeAssets?.closedEyelids);
     // Keep the original open eyes until a rendered blink has passed review.
     // Alpha-overlap tests alone cannot certify the artwork or its alignment.
