@@ -5,6 +5,7 @@ only exposes the generated layers and the comparison viewer; it has no ComfyUI
 or upload-pipeline dependency.
 """
 from pathlib import Path
+import mimetypes
 
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
@@ -13,8 +14,11 @@ from fastapi.staticfiles import StaticFiles
 BASE_DIR = Path(__file__).resolve().parent
 OUTPUTS_DIR = BASE_DIR / "outputs"
 
+# Windows registry MIME mappings may classify .mjs as text/plain.
+mimetypes.add_type("text/javascript", ".mjs")
 app = FastAPI(title="Auto-Layering Pipeline Viewer", version="1.0")
 app.mount("/layers", StaticFiles(directory=str(OUTPUTS_DIR)), name="layers")
+app.mount("/viewer-assets", StaticFiles(directory=str(BASE_DIR / "viewer")), name="viewer-assets")
 
 
 @app.get("/health")
@@ -25,6 +29,11 @@ async def health() -> dict[str, str]:
 @app.get("/preview", response_class=HTMLResponse)
 async def preview() -> str:
     return (BASE_DIR / "preview_viewer.html").read_text(encoding="utf-8")
+
+
+@app.get("/preview-rig", response_class=HTMLResponse)
+async def preview_rig() -> str:
+    return (BASE_DIR / "preview_rig.html").read_text(encoding="utf-8")
 
 
 if __name__ == "__main__":

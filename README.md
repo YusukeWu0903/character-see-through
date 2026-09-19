@@ -46,6 +46,17 @@ PSD **不**使用上游 `--save_to_psd`，而是由 `dev_psd_write.py` 直接寫
 
 ## Viewer
 
+### 協調動作實驗版
+
+已將原品質版標記為 `milestone/clean-layers-v1`（`deab315`）。
+`codex/hierarchical-rig-v1` 分支開發父子階層動畫，完整規格、官方資料來源與
+分階段驗收見 [角色動態規格](docs/rig-roadmap.md)。
+
+新入口 `/preview-rig?local=<task-name>` 提供頭部／身體側傾、同相位起伏、
+附著於頭部的髮擺，及雲端／本機或舊／新動作比較。Eris 專用原型尚待人工驗收。
+原 `/preview` 保持不變。Git 只保護程式；忽略的 PNG／PSD 必須另行保存。
+核心測試：`node --test tests/test_rig.mjs`。
+
 - 左邊：`outputs/seethrough/` 的雲端參照組。
 - 右邊：`?local=<task-name>` 選取的本機任務。
 - 四個控制條只影響 viewer 動畫，不會修改 PNG 或 PSD；最大可動範圍為初版的一半，初始值為低幅度設定。
