@@ -41,6 +41,12 @@ def derive(task_dir: Path, source_path: Path, reference_path: Path | None = None
     output = task_dir / "_rig_assets"
     report = json.loads((output / "eye_assets.json").read_text(encoding="utf-8"))
     eyelash = Image.open(task_dir / "eyelash.png").convert("RGBA")
+    eyebrow = Image.open(task_dir / "eyebrow.png").convert("RGBA")
+    if eyebrow.size != eyelash.size:
+        raise ValueError("eyebrow and eyelash canvas sizes differ")
+    # Eyebrows always render independently.  Keep a one-pixel guard band so
+    # approved eyelid paint cannot dim their lower edge in a closed state.
+    brow_guard = eyebrow.getchannel("A").filter(ImageFilter.MaxFilter(3))
     targets = sorted(components(eyelash.getchannel("A"))[:2], key=lambda part: part["bbox"][0])
     sources = _eye_boxes(source)
     if len(targets) != 2:
@@ -58,9 +64,24 @@ def derive(task_dir: Path, source_path: Path, reference_path: Path | None = None
         patch = patch.resize((x1 - x0, y1 - y0), Image.Resampling.LANCZOS)
         layer = Image.new("RGBA", eyelash.size)
         layer.alpha_composite(patch, (x0, y0))
+        alpha = layer.getchannel("A")
+        # Subtraction is insufficient for anti-aliased brow pixels: a 20-alpha
+        # brow would only reduce a 255-alpha eyelid to 235.  Hard-exclude the
+        # complete guarded brow footprint instead.
+        guarded = alpha.copy()
+        guarded_pixels, brow_pixels = guarded.load(), brow_guard.load()
+        for py in range(guarded.height):
+            for px in range(guarded.width):
+                if brow_pixels[px, py] > 8:
+                    guarded_pixels[px, py] = 0
+        layer.putalpha(guarded)
         filename = f"eyelid_closed_{side}.png"
         layer.save(output / filename)
-        layers[side] = {"file": filename, "sourceRegion": list(region), "targetBbox": target["bbox"], "alphaPixels": sum(alpha > 8 for alpha in layer.getchannel("A").getdata())}
+        alpha = layer.getchannel("A")
+        overlap = sum(a > 8 and b > 8 for a, b in zip(alpha.getdata(), eyebrow.getchannel("A").getdata()))
+        if overlap:
+            raise ValueError(f"approved eyelid overlaps eyebrow for {side}")
+        layers[side] = {"file": filename, "sourceRegion": list(region), "targetBbox": target["bbox"], "alphaPixels": sum(value > 8 for value in alpha.getdata()), "eyebrowOverlapPixels": overlap}
     report["closedEyelids"] = {"schemaVersion": 1, "source": "approved_artwork", "reference": Path(reference_path).name, "layers": layers}
     (output / "eye_assets.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
     return report["closedEyelids"]

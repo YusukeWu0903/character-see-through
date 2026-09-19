@@ -67,9 +67,11 @@ def test_derives_approved_closed_eyelids_from_only_the_eye_difference(tmp_path: 
     closed_draw.line((92, 42, 99, 45, 106, 42), fill=(45, 20, 20, 255), width=2)
     closed.save(tmp_path / "closed.png")
     layer(size=(160, 240), boxes=((58, 34, 80, 47), (88, 34, 110, 47))).save(tmp_path / "eyelash.png")
+    layer(size=(160, 240), boxes=((60, 31, 78, 39), (90, 31, 108, 39))).save(tmp_path / "eyebrow.png")
     layer(size=(160, 240), boxes=((62, 36, 76, 43), (92, 36, 106, 43))).save(tmp_path / "irides.png")
     layer(size=(160, 240), boxes=((60, 34, 78, 45), (90, 34, 108, 45))).save(tmp_path / "eyewhite.png")
     derive(tmp_path)
     report = derive_approved(tmp_path, tmp_path / "source.png", tmp_path / "closed.png")
     assert report["source"] == "approved_artwork"
     assert all(report["layers"][side]["alphaPixels"] > 0 for side in ("left", "right"))
+    assert all(report["layers"][side]["eyebrowOverlapPixels"] == 0 for side in ("left", "right"))
