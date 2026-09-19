@@ -10,4 +10,5 @@ test('premultiplied texture fades scale RGB together with alpha', async () => {
   assert.match(source, /eyePart\|\|openEyelash\?1-blink/);
   assert.match(source, /separate oscillation/);
   assert.match(source, /'handwear','seam_repair_torso'/);
+  assert.match(source, /rigidNeckBridge/);
 });
