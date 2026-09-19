@@ -22,8 +22,11 @@ void main(){
     result.y=eyeCenter.y+(result.y-eyeCenter.y)*(1.0-eyeWhite);
   }
   float cw=smoothstep(chestBand.x,chestBand.x+.08,p.y)*(1.0-smoothstep(chestBand.y-.08,chestBand.y,p.y));
-  result.y+=chestLayer*cw*chest*.008;
-  result.x*=1.0+chestLayer*cw*chest*.012;
+  // This is deliberately a small, coherent follow-through rather than a
+  // separate oscillation.  Larger independent local deformation tears the
+  // existing body and clothing layers, which have no matching hidden fill.
+  result.y+=chestLayer*cw*chest*.018;
+  result.x*=1.0+chestLayer*cw*chest*.020;
   result.y=mix(result.y,eyeCenter.y+(result.y-eyeCenter.y)*.15,eyelashLine);
   gl_Position=vec4(result.xy*scale+center,0.0,1.0);
   uv=(position+1.0)*0.5;

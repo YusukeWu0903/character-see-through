@@ -151,10 +151,11 @@ try{
     pose.torso=controls.torso+($('idle').checked?.2*Math.sin(t*.65-.25):0)+($('follow').checked?-.2*mx:0);
     pose=applyExpressivePose(pose,controls.energy,t);
     if(!$('paused').checked){
-      // The delayed spring follows the current torso / weight shift.  This
-      // produces restrained elastic follow-through rather than a metronomic
-      // independent bounce.
-      chestSpring=advanceSpring(chestSpring,controls.bust*(Math.sin(t*1.42)*.48+Math.sin(t*.62+.18)*.22-pose.torso*.3-pose.body*.14),dt,{frequency:7,damping:.68});
+      // The chest only follows a real body-weight shift or the enabled
+      // pointer-follow pose.  The slider changes the amount of follow-through
+      // instead of creating an unrelated periodic bounce.
+      const chestTarget=controls.bust*(-pose.torso*.62-pose.body*.28-($('follow').checked?mx*.32:0));
+      chestSpring=advanceSpring(chestSpring,chestTarget,dt,{frequency:7,damping:.72});
     }
     const matrices=evaluate(pose,t);
     const expression=buildExpression({blink:controls.blink,gazeX:controls['gaze-x'],gazeY:controls['gaze-y'],yaw:controls.yaw,autoBlink:$('auto-blink').checked},t,rig.nodes.find(n=>n.id==='head').pivot,eyeAssets?.limits);
