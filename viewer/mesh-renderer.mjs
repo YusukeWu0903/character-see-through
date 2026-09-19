@@ -3,8 +3,8 @@ attribute vec2 position;
 uniform mat3 body, torso, head, layer;
 uniform vec4 bands;
 uniform vec2 scale, center;
-uniform float deform, hair, facial, eye, eyeWhite, yaw;
-uniform vec2 eyeCenter, eyeOffset, headPivot;
+uniform float deform, hair, facial, eye, eyeWhite, yaw, chest, chestLayer, eyelashLine;
+uniform vec2 eyeCenter, eyeOffset, headPivot, chestBand;
 varying vec2 uv;
 void main(){
   vec3 p=vec3(position,1.0);
@@ -21,6 +21,10 @@ void main(){
     result.xy+=(eyeOffset*eye);
     result.y=eyeCenter.y+(result.y-eyeCenter.y)*(1.0-eyeWhite);
   }
+  float cw=smoothstep(chestBand.x,chestBand.x+.08,p.y)*(1.0-smoothstep(chestBand.y-.08,chestBand.y,p.y));
+  result.y+=chestLayer*cw*chest*.008;
+  result.x*=1.0+chestLayer*cw*chest*.012;
+  result.y=mix(result.y,eyeCenter.y+(result.y-eyeCenter.y)*.15,eyelashLine);
   gl_Position=vec4(result.xy*scale+center,0.0,1.0);
   uv=(position+1.0)*0.5;
 }`;
@@ -33,7 +37,7 @@ export function createMeshRenderer(canvas){
   const program=gl.createProgram();gl.attachShader(program,shader(gl.VERTEX_SHADER,vertex));gl.attachShader(program,shader(gl.FRAGMENT_SHADER,fragment));gl.linkProgram(program);
   if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(program));
   gl.useProgram(program);
-  const uniforms=Object.fromEntries(['body','torso','head','layer','bands','scale','center','deform','hair','image','eyeMask','eyeCenter','eyeOffset','headPivot','facial','eye','eyeWhite','yaw','opacity'].map(k=>[k,gl.getUniformLocation(program,k)]));
+  const uniforms=Object.fromEntries(['body','torso','head','layer','bands','scale','center','deform','hair','image','eyeMask','eyeCenter','eyeOffset','headPivot','facial','eye','eyeWhite','yaw','opacity','chest','chestLayer','eyelashLine','chestBand'].map(k=>[k,gl.getUniformLocation(program,k)]));
   const vertices=[],indices=[],cols=24,rows=80;
   for(let y=0;y<=rows;y++)for(let x=0;x<=cols;x++)vertices.push(x/cols*2-1,y/rows*2-1);
   for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){const a=y*(cols+1)+x,b=a+cols+1;indices.push(a,a+1,b,a+1,b+1,b);}
@@ -65,6 +69,7 @@ export function createMeshRenderer(canvas){
         gl.uniformMatrix3fv(uniforms.layer,false,mat3(matrices[baseName]));gl.uniform1f(uniforms.hair,baseName==='fronthair'||baseName==='backhair'?1:0);
         gl.uniform1f(uniforms.facial,faceSet.has(baseName)?1:0);gl.uniform1f(uniforms.yaw,expression.yaw||0);gl.uniform2fv(uniforms.headPivot,expression.headPivot||[0,.48]);
         gl.uniform1f(uniforms.eye,iris&&eyeMask?1:0);gl.uniform1f(uniforms.eyeWhite,eyePart?blink:0);gl.uniform2fv(uniforms.eyeCenter,expression.eyeCenter||[0,.52]);gl.uniform2fv(uniforms.eyeOffset,iris?(expression.gaze||[0,0]):[0,0]);gl.uniform1f(uniforms.opacity,eyePart?1-blink:1);
+        gl.uniform1f(uniforms.chest,expression.chest||0);gl.uniform1f(uniforms.chestLayer,baseName==='topwear'||baseName==='neck'?1:0);gl.uniform1f(uniforms.eyelashLine,baseName==='eyelash'?blink:0);gl.uniform2fv(uniforms.chestBand,expression.chestBand||[.2,.5]);
         gl.drawElements(gl.TRIANGLES,indices.length,gl.UNSIGNED_SHORT,0);
       }
     }

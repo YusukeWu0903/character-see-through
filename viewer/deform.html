@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>角色姿勢與表情 · 第三階段</title>
+<title>角色姿勢、表情與次級動作 · 第四階段</title>
 <style>
 body{margin:0;background:#15181d;color:#eee;font:14px system-ui}canvas{position:fixed;inset:0;width:100%;height:100%}
 header{position:fixed;top:12px;left:12px;right:12px;display:flex;justify-content:space-around;pointer-events:none}header span{background:#000a;padding:7px;border-radius:8px}
@@ -13,8 +13,8 @@ label{display:flex;align-items:center;justify-content:space-between;gap:8px;marg
 <canvas id="stage"></canvas><canvas id="guides" style="pointer-events:none"></canvas>
 <header><span id="left-title">本機素材 · 剛性</span><span>本機素材 · 柔性</span></header>
 <aside>
-<h1>姿勢與表情 · 第三階段</h1>
-<small>共享網格、視線與微轉頭。正視素材不會生成真正的 3/4 頭部。</small>
+<h1>姿勢、表情與次級動作 · 第四階段</h1>
+<small>共享網格、視線、眨眼閉合線與保守的呼吸次級動作。正視素材不會生成真正的 3/4 頭部。</small>
 <label>對照<select id="compare"><option value="cloud">雲端／本機，同步姿勢</option><option value="rigid" selected>同一本機素材，剛性／柔性</option></select></label>
 <label>身體側傾<input id="body" type="range" min="-100" max="100" value="0"><output></output></label>
 <label>上身側彎<input id="torso" type="range" min="-100" max="100" value="0"><output></output></label>
@@ -22,6 +22,7 @@ label{display:flex;align-items:center;justify-content:space-between;gap:8px;marg
 <label>呼吸起伏<input id="breath" type="range" min="0" max="100" value="30"><output></output></label>
 <label>髮絲擺動<input id="hair" type="range" min="0" max="100" value="10"><output></output></label>
 <label>動態強度<input id="energy" type="range" min="0" max="100" value="55"><output></output></label>
+<label>胸部起伏<input id="bust" type="range" min="0" max="100" value="28"><output></output></label>
 <label>頭部微轉<input id="yaw" type="range" min="-100" max="100" value="0"><output></output></label>
 <label>視線左右<input id="gaze-x" type="range" min="-100" max="100" value="0"><output></output></label>
 <label>視線上下<input id="gaze-y" type="range" min="-100" max="100" value="0"><output></output></label>
@@ -33,7 +34,7 @@ label{display:flex;align-items:center;justify-content:space-between;gap:8px;marg
 <label>檢查視角<select id="view"><option value="full">全身</option><option value="upper">上半身放大</option></select></label>
 <label><span>暫停時間</span><input id="paused" type="checkbox"></label>
 <button id="neutral">回到原位</button> <button id="defaults">恢復預設</button>
-<small>動態強度讓重心、上身、頭部與髮絲以反向節奏連動。虹膜使用既有 <code>irides</code> 層以保守幅度移動。眨眼目前隱藏眼白與虹膜以顯示 face 基底；這是節奏驗證，若基底沒有可用眼瞼線，必須另建眼瞼素材。</small>
+<small>動態強度讓重心、上身、頭部與髮絲以反向節奏連動。胸部起伏只隨呼吸與重心延遲變形，並限制於上衣的胸口帶，不是獨立擺動。虹膜使用既有 <code>irides</code> 層以保守幅度移動。眨眼時眼白／虹膜會退場，睫毛層會收束成閉眼線；若原始睫毛素材不足，仍需另建眼瞼素材。</small>
 <details><summary>角色校正與保存</summary>
 <label><span>顯示錨點／過渡區</span><input id="show-guides" type="checkbox"></label>
 <label><span>點選校正</span><input id="calibrate" type="checkbox"></label>
@@ -48,5 +49,5 @@ label{display:flex;align-items:center;justify-content:space-between;gap:8px;marg
 <a id="legacy">開啟第一階段</a>
 <p id="status">載入中…</p>
 </aside>
-<script type="module" src="/viewer-assets/deform-preview.mjs?v=3"></script>
+<script type="module" src="/viewer-assets/deform-preview.mjs?v=4"></script>
 </html>

@@ -76,6 +76,18 @@ def derive(task_dir: Path) -> dict:
         margins.extend([iris["bbox"][0] - white["bbox"][0], white["bbox"][2] - iris["bbox"][2]])
     safe_px = max(0, min(margins) - 1)
     report["limits"] = {"gazeX": round(safe_px * 2 / width, 6), "gazeY": 0.002}
+    # The renderer works in a [-1, 1] canvas with +Y upward.  Persisting the
+    # measured eye centre prevents a generic facial pivot from making a blink
+    # collapse at the wrong vertical location on a differently framed image.
+    height = sources["irides"].height
+    centers = [
+        ((part["bbox"][0] + part["bbox"][2]) / 2, (part["bbox"][1] + part["bbox"][3]) / 2)
+        for part in all_parts["irides"]
+    ]
+    report["eyeCenter"] = [
+        round(sum(x for x, _ in centers) / len(centers) * 2 / width - 1, 6),
+        round(1 - sum(y for _, y in centers) / len(centers) * 2 / height, 6),
+    ]
     (output / "eye_assets.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
     return report
 

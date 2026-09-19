@@ -2,21 +2,21 @@ import {createRig} from './rig.mjs';
 import {drivePose} from './motion.mjs';
 import {createMeshRenderer} from './mesh-renderer.mjs';
 import {validateDeformation,serializeSettings,parseSettings,deformPoint} from './deformation.mjs';
-import {buildExpression,applyExpressivePose} from './expression.mjs';
+import {buildExpression,applyExpressivePose,advanceSpring} from './expression.mjs';
 const $=id=>document.getElementById(id);
 const task=new URLSearchParams(location.search).get('local');
 $('legacy').href='/preview-rig?local='+encodeURIComponent(task||'');
 const REF=['backhair','handwear','legwear','topwear','neck','bottomwear','earwear','ears','face','mouth','eyelash','nose','eyebrow','irides','fronthair'];
 const LOC=['handwear','legwear','topwear','backhair','footwear','earwear','neck','bottomwear','eyebrow','ears','face','nose','mouth','eyelash','eyewhite','irides','fronthair'];
 const controls={};
-for(const name of ['body','torso','head','breath','hair','energy','yaw','gaze-x','gaze-y','blink']){
+for(const name of ['body','torso','head','breath','hair','energy','bust','yaw','gaze-x','gaze-y','blink']){
   const el=$(name),update=()=>{controls[name]=Number(el.value)/100;el.nextElementSibling.value=el.value;};
   el.addEventListener('input',update);update();
 }
 function values(v){for(const [key,value] of Object.entries(v)){$(key).value=value;$(key).dispatchEvent(new Event('input'));}}
-function neutral(){values({body:0,torso:0,head:0,breath:0,hair:0,energy:0,yaw:0,'gaze-x':0,'gaze-y':0,blink:0});$('idle').checked=false;$('follow').checked=false;$('auto-blink').checked=false;}
+function neutral(){values({body:0,torso:0,head:0,breath:0,hair:0,energy:0,bust:0,yaw:0,'gaze-x':0,'gaze-y':0,blink:0});$('idle').checked=false;$('follow').checked=false;$('auto-blink').checked=false;}
 $('neutral').onclick=neutral;
-$('defaults').onclick=()=>{values({body:0,torso:0,head:0,breath:30,hair:10,energy:55,yaw:0,'gaze-x':0,'gaze-y':0,blink:0});$('idle').checked=true;$('follow').checked=true;$('auto-blink').checked=true;$('paused').checked=false;$('calibrate').checked=false;};
+$('defaults').onclick=()=>{values({body:0,torso:0,head:0,breath:30,hair:10,energy:55,bust:28,yaw:0,'gaze-x':0,'gaze-y':0,blink:0});$('idle').checked=true;$('follow').checked=true;$('auto-blink').checked=true;$('paused').checked=false;$('calibrate').checked=false;};
 $('blink-now').onclick=()=>{values({blink:100});setTimeout(()=>values({blink:0}),180);};
 $('compare').onchange=()=>{$('left-title').textContent=$('compare').value==='cloud'?'雲端素材 · 柔性':'本機素材 · 剛性';};
 const canvas=$('stage'),guides=$('guides'),g=guides.getContext('2d');
@@ -30,9 +30,9 @@ async function loadEyeAssets(prefix){
   const response=await fetch(prefix+'_rig_assets/eye_assets.json');
   if(!response.ok)return null;
   const manifest=await response.json();
-  if(manifest.schemaVersion!==1||!Number.isFinite(manifest.limits?.gazeX)||!Number.isFinite(manifest.limits?.gazeY))throw new Error('眼部素材描述格式無效');
+  if(manifest.schemaVersion!==1||!Number.isFinite(manifest.limits?.gazeX)||!Number.isFinite(manifest.limits?.gazeY)||!Array.isArray(manifest.eyeCenter)||manifest.eyeCenter.length!==2||!manifest.eyeCenter.every(Number.isFinite))throw new Error('眼部素材描述格式無效');
   const layers=await load(['eyewhite_left','eyewhite_right','irides_left','irides_right'],prefix+'_rig_assets/');
-  return {layers,limits:[manifest.limits.gazeX,manifest.limits.gazeY]};
+  return {layers,limits:[manifest.limits.gazeX,manifest.limits.gazeY],eyeCenter:manifest.eyeCenter};
 }
 try{
   if(!task)throw new Error('請提供 local 任務名稱');
@@ -90,15 +90,22 @@ try{
     catch(e){$('settings-status').textContent='匯入失敗：'+e.message;}finally{$('import').value='';}
   };
   $('reset-rig').onclick=()=>{try{localStorage.removeItem(storageKey);apply(preset);$('settings-status').textContent='已恢復角色預設並清除瀏覽器保存設定。';}catch(e){$('settings-status').textContent=e.message;}};
-  let t=0,last=performance.now();
+  let t=0,last=performance.now(),chestSpring={position:0,velocity:0};
   function animate(now){
     const dt=Math.min(Math.max((now-last)/1000,0),.05);last=now;
-    if(!$('paused').checked){t+=dt;mx+=(tx-mx)*(1-Math.exp(-5*dt));}
+    if(!$('paused').checked){
+      t+=dt;mx+=(tx-mx)*(1-Math.exp(-5*dt));
+      const breath=Math.sin(t*1.42),weight=Math.sin(t*.62+.18);
+      chestSpring=advanceSpring(chestSpring,controls.bust*(breath*.62+weight*.38),dt,{frequency:7,damping:.7});
+    }
     let pose=drivePose(controls,t,mx,{idle:$('idle').checked,follow:$('follow').checked});
     pose.torso=controls.torso+($('idle').checked?.2*Math.sin(t*.65-.25):0)+($('follow').checked?-.2*mx:0);
     pose=applyExpressivePose(pose,controls.energy,t);
     const matrices=evaluate(pose,t);
     const expression=buildExpression({blink:controls.blink,gazeX:controls['gaze-x'],gazeY:controls['gaze-y'],yaw:controls.yaw,autoBlink:$('auto-blink').checked},t,rig.nodes.find(n=>n.id==='head').pivot,eyeAssets?.limits);
+    expression.eyeCenter=eyeAssets?.eyeCenter||rig.expression?.eyeCenter||[0,.755];
+    expression.chest=chestSpring.position;
+    expression.chestBand=rig.expression?.chestBand||[.2,.5];
     const dpr=canvas.width/innerWidth,panel=document.querySelector('aside').getBoundingClientRect();
     const w=canvas.width-(innerWidth>900?(panel.width+24)*dpr:0),h=canvas.height-(innerWidth<=900?(panel.height+24)*dpr:0);
     const zoom=$('view').value==='upper'?1.9:1,s=Math.min(w/2,h)*.96/2.12*zoom;

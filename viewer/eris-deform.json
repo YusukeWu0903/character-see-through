@@ -110,5 +110,9 @@
       0.3,
       0.56
     ]
+  },
+  "expression": {
+    "eyeCenter": [0, 0.755],
+    "chestBand": [0.2, 0.5]
   }
 }

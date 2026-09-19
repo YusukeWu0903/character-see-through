@@ -19,6 +19,9 @@ def test_derives_full_canvas_left_right_assets_and_safe_gaze_limit(tmp_path: Pat
     report = derive(tmp_path)
     assert report["layers"]["irides"]["left"]["bbox"] == [10, 20, 21, 31]
     assert report["limits"]["gazeX"] > 0
+    # The eye pair may be off-centre in a character frame; preserve its
+    # measured position instead of assuming a centre-aligned portrait.
+    assert report["eyeCenter"] == [-0.1125, 0.15]
     for name in ("irides_left", "irides_right", "eyewhite_left", "eyewhite_right"):
         image = Image.open(tmp_path / "_rig_assets" / f"{name}.png")
         assert image.size == (80, 60)
