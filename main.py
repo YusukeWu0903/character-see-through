@@ -41,6 +41,11 @@ async def preview_deform() -> str:
     return (BASE_DIR / "viewer" / "deform.html").read_text(encoding="utf-8")
 
 
+@app.get("/preview-expression", response_class=HTMLResponse)
+async def preview_expression() -> str:
+    return (BASE_DIR / "viewer" / "deform.html").read_text(encoding="utf-8")
+
+
 if __name__ == "__main__":
     import uvicorn
 

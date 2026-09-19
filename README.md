@@ -61,6 +61,11 @@ PSD **不**使用上游 `--save_to_psd`，而是由 `dev_psd_write.py` 直接寫
 頭部側傾和上半身放大比較剛性圖層與頸／腰連續過渡。它是 Eris 專用試驗，
 尚未取代 `/preview-rig`。
 
+`/preview-expression?local=<task-name>` 是第三階段姿勢與表情試驗：重心、上身、
+頭部與髮絲同步連動；既有 `irides` 圖層可在 `eyewhite` 範圍內移動。眨眼先以
+隱藏眼白／虹膜顯示 face 基底的方式驗證節奏，真正眼瞼素材仍是下一個必要項目。
+微左／右轉僅為正視素材的保守視差提示，不能代替完整的 3/4 頭部。
+
 - 左邊：`outputs/seethrough/` 的雲端參照組。
 - 右邊：`?local=<task-name>` 選取的本機任務。
 - 四個控制條只影響 viewer 動畫，不會修改 PNG 或 PSD；最大可動範圍為初版的一半，初始值為低幅度設定。

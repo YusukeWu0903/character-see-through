@@ -1,9 +1,10 @@
-const vertex=`
+const vertex=`precision mediump float;
 attribute vec2 position;
 uniform mat3 body, torso, head, layer;
 uniform vec4 bands;
 uniform vec2 scale, center;
-uniform float deform, hair;
+uniform float deform, hair, facial, eye, eyeWhite, yaw;
+uniform vec2 eyeCenter, eyeOffset, headPivot;
 varying vec2 uv;
 void main(){
   vec3 p=vec3(position,1.0);
@@ -12,10 +13,18 @@ void main(){
   float n=smoothstep(bands.z,bands.w,position.y);
   vec3 shared=body*p+w*(torso*p-body*p)+n*(head*p-torso*p);
   shared+=hair*n*(layer*p-head*p);
-  gl_Position=vec4(mix(rigid,shared,deform).xy*scale+center,0.0,1.0);
+  vec3 result=mix(rigid,shared,deform);
+  // A front illustration cannot become a true three-quarter head. This small
+  // screen-space compression is only a controlled micro-turn cue.
+  result.x=mix(result.x,headPivot.x+(result.x-headPivot.x)*(1.0-abs(yaw)*0.07)+yaw*0.015,facial);
+  if(eye>0.5){
+    result.xy+=(eyeOffset*eye);
+    result.y=eyeCenter.y+(result.y-eyeCenter.y)*(1.0-eyeWhite);
+  }
+  gl_Position=vec4(result.xy*scale+center,0.0,1.0);
   uv=(position+1.0)*0.5;
 }`;
-const fragment=`precision mediump float; varying vec2 uv; uniform sampler2D image; void main(){gl_FragColor=texture2D(image,uv);}`;
+const fragment=`precision mediump float; varying vec2 uv; uniform sampler2D image, eyeMask; uniform float eye, eyeWhite, opacity; void main(){vec4 c=texture2D(image,uv);c.a*=opacity;gl_FragColor=c;}`;
 const mat3=m=>new Float32Array([m[0],m[1],0,m[2],m[3],0,m[4],m[5],1]);
 export function createMeshRenderer(canvas){
   const gl=canvas.getContext('webgl',{alpha:true,premultipliedAlpha:true,antialias:true,preserveDrawingBuffer:true});
@@ -24,7 +33,7 @@ export function createMeshRenderer(canvas){
   const program=gl.createProgram();gl.attachShader(program,shader(gl.VERTEX_SHADER,vertex));gl.attachShader(program,shader(gl.FRAGMENT_SHADER,fragment));gl.linkProgram(program);
   if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(program));
   gl.useProgram(program);
-  const uniforms=Object.fromEntries(['body','torso','head','layer','bands','scale','center','deform','hair','image'].map(k=>[k,gl.getUniformLocation(program,k)]));
+  const uniforms=Object.fromEntries(['body','torso','head','layer','bands','scale','center','deform','hair','image','eyeMask','eyeCenter','eyeOffset','headPivot','facial','eye','eyeWhite','yaw','opacity'].map(k=>[k,gl.getUniformLocation(program,k)]));
   const vertices=[],indices=[],cols=24,rows=80;
   for(let y=0;y<=rows;y++)for(let x=0;x<=cols;x++)vertices.push(x/cols*2-1,y/rows*2-1);
   for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){const a=y*(cols+1)+x,b=a+cols+1;indices.push(a,a+1,b,a+1,b+1,b);}
@@ -43,10 +52,21 @@ export function createMeshRenderer(canvas){
   }
   return {
     clear(){gl.viewport(0,0,canvas.width,canvas.height);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);},
-    draw(layers,matrices,bands,cx,cy,scale,deform=true){
+    draw(layers,matrices,bands,cx,cy,scale,deform=true,expression={}){
       gl.uniformMatrix3fv(uniforms.body,false,mat3(matrices.legwear));gl.uniformMatrix3fv(uniforms.torso,false,mat3(matrices.neck));gl.uniformMatrix3fv(uniforms.head,false,mat3(matrices.face));
       gl.uniform4fv(uniforms.bands,[...bands.waist,...bands.neck]);gl.uniform2f(uniforms.scale,scale*2/canvas.width,scale*2/canvas.height);gl.uniform2f(uniforms.center,cx*2/canvas.width-1,1-cy*2/canvas.height);gl.uniform1f(uniforms.deform,deform?1:0);
-      for(const {name,image} of layers){gl.bindTexture(gl.TEXTURE_2D,texture(image));gl.uniformMatrix3fv(uniforms.layer,false,mat3(matrices[name]));gl.uniform1f(uniforms.hair,name==='fronthair'||name==='backhair'?1:0);gl.drawElements(gl.TRIANGLES,indices.length,gl.UNSIGNED_SHORT,0);}
+      const eyeMask=layers.find(x=>x.name==='eyewhite')?.image;
+      gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,eyeMask?texture(eyeMask):null);gl.uniform1i(uniforms.eyeMask,1);
+      const faceSet=new Set(['face','mouth','nose','eyelash','eyewhite','eyebrow','irides','ears','earwear','eyewear','headwear','fronthair','backhair']);
+      for(const {name,image} of layers){
+        const baseName=name.replace(/_(left|right)$/,'');
+        const iris=baseName==='irides',white=baseName==='eyewhite',eyePart=iris||white,blink=Math.max(0,Math.min(1,expression.blink||0));
+        gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,texture(image));gl.uniform1i(uniforms.image,0);
+        gl.uniformMatrix3fv(uniforms.layer,false,mat3(matrices[baseName]));gl.uniform1f(uniforms.hair,baseName==='fronthair'||baseName==='backhair'?1:0);
+        gl.uniform1f(uniforms.facial,faceSet.has(baseName)?1:0);gl.uniform1f(uniforms.yaw,expression.yaw||0);gl.uniform2fv(uniforms.headPivot,expression.headPivot||[0,.48]);
+        gl.uniform1f(uniforms.eye,iris&&eyeMask?1:0);gl.uniform1f(uniforms.eyeWhite,eyePart?blink:0);gl.uniform2fv(uniforms.eyeCenter,expression.eyeCenter||[0,.52]);gl.uniform2fv(uniforms.eyeOffset,iris?(expression.gaze||[0,0]):[0,0]);gl.uniform1f(uniforms.opacity,eyePart?1-blink:1);
+        gl.drawElements(gl.TRIANGLES,indices.length,gl.UNSIGNED_SHORT,0);
+      }
     }
   };
 }

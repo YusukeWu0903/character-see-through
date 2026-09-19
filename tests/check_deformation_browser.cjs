@@ -54,8 +54,8 @@ async function main(){
     await page.waitForFunction(()=>document.querySelector('#settings-status').textContent.includes('匯入失敗'));assert.equal(await page.locator('#head-limit').inputValue(),'7');
     await page.locator('#reset-rig').click();await page.locator('#defaults').click();
     const timing=await page.evaluate(()=>new Promise(resolve=>{const start=performance.now();let frames=0;function tick(){if(++frames===30)resolve({frames,elapsedMs:performance.now()-start});else requestAnimationFrame(tick);}requestAnimationFrame(tick);}));
-    assert.deepEqual(errors,[]);assert.ok(images.every(s=>s===200));
-    fs.writeFileSync(path.join(out,'report.json'),JSON.stringify({neutral,errors,loadedImagesFirstPass:images.slice(0,32).length,timing,checks:'live motion, rendered alpha, neutral rigid/mesh match, torso, calibration, save/reload, export/import, invalid import, reset',visualAcceptance:'pending user review'},null,2));
+    assert.deepEqual(errors,[]);assert.ok(images.length>=36 && images.every(s=>s===200));
+    fs.writeFileSync(path.join(out,'report.json'),JSON.stringify({neutral,errors,loadedImagesFirstPass:images.slice(0,36).length,timing,checks:'live motion, rendered alpha, neutral rigid/mesh match, torso, calibration, save/reload, export/import, invalid import, reset',visualAcceptance:'pending user review'},null,2));
     console.log(JSON.stringify({result:'PASS',neutral,timing,errors}));
   }finally{await browser.close();}
 }

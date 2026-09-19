@@ -2,20 +2,22 @@ import {createRig} from './rig.mjs';
 import {drivePose} from './motion.mjs';
 import {createMeshRenderer} from './mesh-renderer.mjs';
 import {validateDeformation,serializeSettings,parseSettings,deformPoint} from './deformation.mjs';
+import {buildExpression,applyExpressivePose} from './expression.mjs';
 const $=id=>document.getElementById(id);
 const task=new URLSearchParams(location.search).get('local');
 $('legacy').href='/preview-rig?local='+encodeURIComponent(task||'');
 const REF=['backhair','handwear','legwear','topwear','neck','bottomwear','earwear','ears','face','mouth','eyelash','nose','eyebrow','irides','fronthair'];
 const LOC=['handwear','legwear','topwear','backhair','footwear','earwear','neck','bottomwear','eyebrow','ears','face','nose','mouth','eyelash','eyewhite','irides','fronthair'];
 const controls={};
-for(const name of ['body','torso','head','breath','hair']){
+for(const name of ['body','torso','head','breath','hair','energy','yaw','gaze-x','gaze-y','blink']){
   const el=$(name),update=()=>{controls[name]=Number(el.value)/100;el.nextElementSibling.value=el.value;};
   el.addEventListener('input',update);update();
 }
 function values(v){for(const [key,value] of Object.entries(v)){$(key).value=value;$(key).dispatchEvent(new Event('input'));}}
-function neutral(){values({body:0,torso:0,head:0,breath:0,hair:0});$('idle').checked=false;$('follow').checked=false;}
+function neutral(){values({body:0,torso:0,head:0,breath:0,hair:0,energy:0,yaw:0,'gaze-x':0,'gaze-y':0,blink:0});$('idle').checked=false;$('follow').checked=false;$('auto-blink').checked=false;}
 $('neutral').onclick=neutral;
-$('defaults').onclick=()=>{values({body:0,torso:0,head:0,breath:30,hair:10});$('idle').checked=true;$('follow').checked=true;$('paused').checked=false;$('calibrate').checked=false;};
+$('defaults').onclick=()=>{values({body:0,torso:0,head:0,breath:30,hair:10,energy:55,yaw:0,'gaze-x':0,'gaze-y':0,blink:0});$('idle').checked=true;$('follow').checked=true;$('auto-blink').checked=true;$('paused').checked=false;$('calibrate').checked=false;};
+$('blink-now').onclick=()=>{values({blink:100});setTimeout(()=>values({blink:0}),180);};
 $('compare').onchange=()=>{$('left-title').textContent=$('compare').value==='cloud'?'雲端素材 · 柔性':'本機素材 · 剛性';};
 const canvas=$('stage'),guides=$('guides'),g=guides.getContext('2d');
 let mx=0,tx=0,layout=null;
@@ -24,6 +26,14 @@ canvas.addEventListener('pointerleave',()=>{tx=0;});
 function resize(){const d=Math.min(devicePixelRatio,2);canvas.width=guides.width=Math.round(innerWidth*d);canvas.height=guides.height=Math.round(innerHeight*d);}
 addEventListener('resize',resize);resize();
 async function load(names,prefix){return Promise.all(names.map(async name=>{const image=new Image();image.src=prefix+name+'.png';try{await image.decode();}catch{throw new Error('圖層載入失敗：'+name);}return {name,image};}));}
+async function loadEyeAssets(prefix){
+  const response=await fetch(prefix+'_rig_assets/eye_assets.json');
+  if(!response.ok)return null;
+  const manifest=await response.json();
+  if(manifest.schemaVersion!==1||!Number.isFinite(manifest.limits?.gazeX)||!Number.isFinite(manifest.limits?.gazeY))throw new Error('眼部素材描述格式無效');
+  const layers=await load(['eyewhite_left','eyewhite_right','irides_left','irides_right'],prefix+'_rig_assets/');
+  return {layers,limits:[manifest.limits.gazeX,manifest.limits.gazeY]};
+}
 try{
   if(!task)throw new Error('請提供 local 任務名稱');
   const response=await fetch('/viewer-assets/eris-deform.json');
@@ -41,9 +51,15 @@ try{
   catch(e){$('settings-status').textContent='保存設定無法載入，改用預設：'+e.message;}
   const renderer=createMeshRenderer(canvas);
   canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();$('status').textContent='繪圖環境中斷，請重新整理頁面。';});
-  const [cloud,local]=await Promise.all([load(REF,'/layers/seethrough/'),load(LOC,'/layers/seethrough_local/'+encodeURIComponent(task)+'/')]);
-  for(const {name} of [...cloud,...local])if(!evaluate()[name])throw new Error('圖層尚未配對：'+name);
-  $('status').textContent=`已載入：雲端 ${cloud.length} 層／本機 ${local.length} 層\n第二階段 · 待人工驗收`;
+  const localPrefix='/layers/seethrough_local/'+encodeURIComponent(task)+'/';
+  const [cloud,baseLocal,eyeAssets]=await Promise.all([load(REF,'/layers/seethrough/'),load(LOC,localPrefix),loadEyeAssets(localPrefix)]);
+  const local=eyeAssets?baseLocal.flatMap(layer=>{
+    if(layer.name==='eyewhite')return eyeAssets.layers.filter(x=>x.name.startsWith('eyewhite_'));
+    if(layer.name==='irides')return eyeAssets.layers.filter(x=>x.name.startsWith('irides_'));
+    return [layer];
+  }):baseLocal;
+  for(const {name} of [...cloud,...local])if(!evaluate()[name.replace(/_(left|right)$/,'')])throw new Error('圖層尚未配對：'+name);
+  $('status').textContent=`已載入：雲端 ${cloud.length} 層／本機 ${local.length} 層\n${eyeAssets?'左右虹膜與眼白素材已啟用':'未找到左右眼素材，使用合併眼部圖層'}\n第三階段 · 待人工驗收`;
   $('head-limit').oninput=()=>{
     try{const candidate=structuredClone(rig);candidate.nodes.find(n=>n.id==='head').maxDegrees=Number($('head-limit').value);apply(candidate);$('settings-status').textContent='設定已調整，尚未保存。';}
     catch(e){$('settings-status').textContent=e.message;apply(rig);}
@@ -78,9 +94,11 @@ try{
   function animate(now){
     const dt=Math.min(Math.max((now-last)/1000,0),.05);last=now;
     if(!$('paused').checked){t+=dt;mx+=(tx-mx)*(1-Math.exp(-5*dt));}
-    const pose=drivePose(controls,t,mx,{idle:$('idle').checked,follow:$('follow').checked});
+    let pose=drivePose(controls,t,mx,{idle:$('idle').checked,follow:$('follow').checked});
     pose.torso=controls.torso+($('idle').checked?.2*Math.sin(t*.65-.25):0)+($('follow').checked?-.2*mx:0);
+    pose=applyExpressivePose(pose,controls.energy,t);
     const matrices=evaluate(pose,t);
+    const expression=buildExpression({blink:controls.blink,gazeX:controls['gaze-x'],gazeY:controls['gaze-y'],yaw:controls.yaw,autoBlink:$('auto-blink').checked},t,rig.nodes.find(n=>n.id==='head').pivot,eyeAssets?.limits);
     const dpr=canvas.width/innerWidth,panel=document.querySelector('aside').getBoundingClientRect();
     const w=canvas.width-(innerWidth>900?(panel.width+24)*dpr:0),h=canvas.height-(innerWidth<=900?(panel.height+24)*dpr:0);
     const zoom=$('view').value==='upper'?1.9:1,s=Math.min(w/2,h)*.96/2.12*zoom;
@@ -88,8 +106,8 @@ try{
     layout={cx:w*.75,cy,s,dpr,w};
     document.querySelector('header').style.right=innerWidth>900?(panel.width+24)+'px':'12px';
     renderer.clear();
-    renderer.draw($('compare').value==='cloud'?cloud:local,matrices,rig.deformation,w/4,cy,s,$('compare').value==='cloud');
-    renderer.draw(local,matrices,rig.deformation,w*.75,cy,s,true);
+    renderer.draw($('compare').value==='cloud'?cloud:local,matrices,rig.deformation,w/4,cy,s,$('compare').value==='cloud',expression);
+    renderer.draw(local,matrices,rig.deformation,w*.75,cy,s,true,expression);
     g.clearRect(0,0,guides.width,guides.height);
     if($('show-guides').checked){
       g.font=`${12*dpr}px system-ui`;g.lineWidth=dpr;
