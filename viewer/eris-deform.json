@@ -84,6 +84,7 @@
     "topwear": "torso",
     "neck": "torso",
     "handwear": "torso",
+    "seam_repair": "torso",
     "bottomwear": "legs",
     "legwear": "legs",
     "footwear": "legs",

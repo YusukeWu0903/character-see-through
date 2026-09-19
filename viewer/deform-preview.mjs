@@ -85,6 +85,16 @@ try{
     if(layer.name==='eyelash'&&eyeAssets.closedEyelids)return [layer,...eyeAssets.layers.filter(x=>x.name.startsWith('eyelid_closed_'))];
     return [layer];
   }):baseLocal;
+  const seamCandidate=new URLSearchParams(location.search).get('seam-candidate');
+  if(seamCandidate){
+    if(!/^[a-zA-Z0-9_-]+$/.test(seamCandidate))throw new Error('Invalid seam candidate name');
+    const seamPrefix=localPrefix+'_rig_candidates/'+seamCandidate+'/';
+    const response=await fetch(seamPrefix+'report.json',{cache:'no-store'});
+    if(!response.ok)throw new Error('Seam candidate report unavailable');
+    const report=await response.json();
+    if(report.schemaVersion!==1||report.source!=='registered_original'||report.status!=='candidate')throw new Error('Unsupported seam candidate');
+    local.push(...await load(['seam_repair'],seamPrefix));
+  }
   // Brows must remain above a closed-eye paint patch.  Keep front hair after
   // them so bangs retain their natural foreground overlap.
   if(eyeAssets?.closedEyelids){
@@ -99,6 +109,7 @@ try{
   for(const {name} of [...cloud,...local])if(!evaluate()[name.replace(/_(left|right)$/,'')])throw new Error('圖層尚未配對：'+name);
   $('status').textContent=`已載入：雲端 ${cloud.length} 層／本機 ${local.length} 層\n${eyeAssets?.closedEyelids?'左右閉眼眼瞼層、虹膜與眼白素材已啟用':eyeAssets?'左右虹膜與眼白素材已啟用':'未找到左右眼素材，使用合併眼部圖層'}\n第五階段 · 待人工驗收`;
   if(eyeAssets?.candidate)$('status').textContent+='\n候選預覽：'+eyeAssets.candidate+'（半閉眼重影待修正，尚未核准）';
+  if(seamCandidate)$('status').textContent+='\n肩頸接縫候選：'+seamCandidate+'（待人工驗收）';
   else if(eyeAssets?.closedEyelids)$('status').textContent='新版眼瞼已啟用 · 已經使用者核准\n自動眨眼與其他動作可正常使用';
   $('head-limit').oninput=()=>{
     try{const candidate=structuredClone(rig);candidate.nodes.find(n=>n.id==='head').maxDegrees=Number($('head-limit').value);apply(candidate);$('settings-status').textContent='設定已調整，尚未保存。';}
