@@ -13,6 +13,14 @@ for(const name of ['body','torso','head','breath','hair','energy','bust','yaw','
   const el=$(name),update=()=>{controls[name]=Number(el.value)/100;el.nextElementSibling.value=el.value;};
   el.addEventListener('input',update);update();
 }
+const inspection=new URLSearchParams(location.search);
+for(const name of ['blink','bust']){
+  if(!inspection.has(name))continue;
+  const value=Math.max(0,Math.min(100,Number(inspection.get(name))));
+  if(Number.isFinite(value)){ $(name).value=String(value);$(name).dispatchEvent(new Event('input')); }
+}
+if(inspection.get('paused')==='1')$('paused').checked=true;
+if(inspection.get('view')==='upper')$('view').value='upper';
 function values(v){for(const [key,value] of Object.entries(v)){$(key).value=value;$(key).dispatchEvent(new Event('input'));}}
 function neutral(){values({body:0,torso:0,head:0,breath:0,hair:0,energy:0,bust:0,yaw:0,'gaze-x':0,'gaze-y':0,blink:0});$('idle').checked=false;$('follow').checked=false;$('auto-blink').checked=false;}
 $('neutral').onclick=neutral;
