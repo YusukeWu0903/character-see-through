@@ -1,11 +1,18 @@
 # Auto-Layering Pipeline
 
-本專案將一張動漫角色立繪拆成對位的語義 RGBA 圖層與 PSD，並提供雲端參照／本機結果的 2.5D 對照 viewer。
-主要入口是 `run_seethrough_local.py`；上游推論引擎是獨立安裝的 [see-through](https://github.com/shitagaki-lab/see-through)。
+本專案是本機整合與品質驗證工作流：把一張動漫角色立繪拆成對位的語義 RGBA 圖層與 PSD，並提供雲端參照／本機結果的 2.5D 對照 viewer。
+核心分解模型採用 [Shitagaki Lab 的 see-through](https://github.com/shitagaki-lab/see-through)；本 repo **不是**該模型的重製或再發布，而是用它驗證、清理、匯出與檢查我們自己的自動化流程。
+
+## 致謝與外部依賴
+
+- 上游研究與模型：Jian Lin 等人的 [see-through](https://github.com/shitagaki-lab/see-through)（SIGGRAPH 2026，Apache-2.0）。
+- 請依上游專案的授權、模型條款與引用要求使用其程式與權重。
+- 本 repo 不包含上游程式碼、模型權重或任何角色素材；它只呼叫使用者自行安裝的 upstream checkout。
 
 ## 快速開始
 
 ```powershell
+set SEE_THROUGH_HOME=C:\path\to\see-through
 python run_seethrough_local.py "inputs\character.png"
 python main.py
 ```
@@ -79,4 +86,4 @@ python -m pytest tests/test_seethrough_alpha.py -q
 
 ## 上游界線
 
-上游在 `D:\ProgramsAI\see-through`。除非使用者明確授權，請不要改動其原始碼。任何已授權修改都必須以 patch 記錄在 `patches/`，並在本專案結果上驗收。
+「上游界線」指的是：see-through 是獨立的外部依賴，不屬於本 repo 的原始碼或交付物。請以 `SEE_THROUGH_HOME` 指向你自行安裝的 checkout。除非使用者明確授權，請不要改動其原始碼；任何已授權修改都必須以 patch 記錄在 `patches/`，並在本專案結果上驗收。

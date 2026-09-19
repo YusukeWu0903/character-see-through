@@ -22,8 +22,9 @@ shareable viewer links.
 - Treat `_alpha_validation.json`, `_alpha_checkerboard.png`, and the visual
   cloud-vs-local comparison as separate checks. An alpha pass alone is not an
   appearance-quality pass.
-- Upstream code is at `D:\ProgramsAI\see-through`. Do not modify it without
-  explicit user permission. Keep an approved patch record in `patches/`.
+- see-through is an external upstream dependency, located through the
+  `SEE_THROUGH_HOME` environment variable. Do not modify it without explicit
+  user permission. Keep an approved patch record in `patches/`.
 
 ## Normal run
 

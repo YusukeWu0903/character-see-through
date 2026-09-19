@@ -17,14 +17,15 @@ import numpy as np
 from PIL import Image, ImageDraw
 from scipy import ndimage
 
-ST_HOME = Path(r"D:/ProgramsAI/see-through")
-ST_PY = ST_HOME / ".venv" / "Scripts" / "python.exe"
-ST_SCRIPT = ST_HOME / "inference" / "scripts" / "inference_psd.py"
-HF_HOME = ST_HOME / "models_hf"
+ST_HOME_RAW = os.environ.get("SEE_THROUGH_HOME")
+ST_HOME = Path(ST_HOME_RAW).expanduser() if ST_HOME_RAW else None
+ST_PY = ST_HOME / ".venv" / "Scripts" / "python.exe" if ST_HOME else None
+ST_SCRIPT = ST_HOME / "inference" / "scripts" / "inference_psd.py" if ST_HOME else None
+HF_HOME = ST_HOME / "models_hf" if ST_HOME else None
 PROJECT = Path(__file__).resolve().parent
 OUT_ROOT = PROJECT / "outputs" / "seethrough_local"
 STAGING_ROOT = OUT_ROOT / "_staging"
-HERMES_PY = Path(r"C:/Users/Z840/AppData/Local/hermes/hermes-agent/venv/Scripts/python.exe")
+PSD_PYTHON = os.environ.get("PSD_PYTHON")
 PSD_WRITER = PROJECT / "dev_psd_write.py"
 CANON = ["topwear", "legwear", "handwear", "back hair", "footwear", "earwear",
          "neck", "bottomwear", "eyebrow", "ears", "face", "nose", "mouth",
@@ -209,7 +210,7 @@ def copy_clean_layers(workdir, out):
 
 
 def write_clean_psd(out, psd_out, h, w):
-    python = HERMES_PY if HERMES_PY.exists() else Path(sys.executable)
+    python = Path(PSD_PYTHON) if PSD_PYTHON else Path(sys.executable)
     result = subprocess.run([str(python), str(PSD_WRITER), "--dir", str(out),
                              "--order", str(out / "_order.json"), "--out", str(psd_out),
                              "--h", str(h), "--w", str(w)], capture_output=True, text=True, timeout=300)
@@ -240,6 +241,8 @@ def main():
     src = Path(args.src)
     if not src.exists():
         print(f"!! 找不到圖: {src}"); sys.exit(1)
+    if ST_HOME is None:
+        print("!! 請設定 SEE_THROUGH_HOME 指向 see-through checkout"); sys.exit(1)
     if not ST_PY.exists():
         print("!! see-through venv 不存在, 先完成安裝"); sys.exit(1)
     # The upstream program names its workspace solely from the input filename.
