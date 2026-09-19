@@ -25,8 +25,8 @@ void main(){
   // This is deliberately a small, coherent follow-through rather than a
   // separate oscillation.  Larger independent local deformation tears the
   // existing body and clothing layers, which have no matching hidden fill.
-  result.y+=chestLayer*cw*chest*.018;
-  result.x*=1.0+chestLayer*cw*chest*.020;
+  result.y+=chestLayer*cw*chest*.045;
+  result.x*=1.0+chestLayer*cw*chest*.050;
   result.y=mix(result.y,eyeCenter.y+(result.y-eyeCenter.y)*.15,eyelashLine);
   gl_Position=vec4(result.xy*scale+center,0.0,1.0);
   uv=(position+1.0)*0.5;
@@ -76,7 +76,7 @@ export function createMeshRenderer(canvas){
         gl.uniformMatrix3fv(uniforms.layer,false,mat3(matrices[baseName]));gl.uniform1f(uniforms.hair,baseName==='fronthair'||baseName==='backhair'?1:0);
         gl.uniform1f(uniforms.facial,faceSet.has(baseName)?1:0);gl.uniform1f(uniforms.yaw,expression.yaw||0);gl.uniform2fv(uniforms.headPivot,expression.headPivot||[0,.48]);
         gl.uniform1f(uniforms.eye,iris&&eyeMask?1:0);gl.uniform1f(uniforms.eyeWhite,eyePart?blink:0);gl.uniform2fv(uniforms.eyeCenter,expression.eyeCenter||[0,.52]);gl.uniform2fv(uniforms.eyeOffset,iris?(expression.gaze||[0,0]):[0,0]);gl.uniform1f(uniforms.opacity,eyePart||openEyelash?1-blink:closedEye?blink:1);
-        gl.uniform1f(uniforms.chest,expression.chest||0);gl.uniform1f(uniforms.chestLayer,baseName==='topwear'||baseName==='neck'?1:0);gl.uniform1f(uniforms.eyelashLine,baseName==='eyelash'&&!hasClosedEyelids?blink:0);gl.uniform2fv(uniforms.chestBand,expression.chestBand||[.2,.5]);
+        gl.uniform1f(uniforms.chest,expression.chest||0);gl.uniform1f(uniforms.chestLayer,['topwear','neck','handwear','seam_repair_torso'].includes(baseName)?1:0);gl.uniform1f(uniforms.eyelashLine,baseName==='eyelash'&&!hasClosedEyelids?blink:0);gl.uniform2fv(uniforms.chestBand,expression.chestBand||[.2,.5]);
         gl.drawElements(gl.TRIANGLES,indices.length,gl.UNSIGNED_SHORT,0);
       }
     }

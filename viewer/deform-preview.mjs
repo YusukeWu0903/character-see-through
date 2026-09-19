@@ -154,7 +154,7 @@ try{
       // The chest only follows a real body-weight shift or the enabled
       // pointer-follow pose.  The slider changes the amount of follow-through
       // instead of creating an unrelated periodic bounce.
-      const chestTarget=controls.bust*(-pose.torso*.62-pose.body*.28-($('follow').checked?mx*.32:0));
+      const chestTarget=Math.max(-.85,Math.min(.85,controls.bust*(-pose.torso*1.45-pose.body*.70-($('follow').checked?mx*.75:0))));
       chestSpring=advanceSpring(chestSpring,chestTarget,dt,{frequency:7,damping:.72});
     }
     const matrices=evaluate(pose,t);
