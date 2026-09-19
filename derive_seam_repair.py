@@ -46,7 +46,7 @@ def _register(source: np.ndarray, target: np.ndarray) -> tuple[np.ndarray, dict]
     return warped, {"matrix": matrix.tolist(), "matches": len(good), "inliers": count, "scale": scale}
 
 
-def _mask(task: Path, size: tuple[int, int]) -> tuple[Image.Image, dict]:
+def _masks(task: Path, size: tuple[int, int]) -> tuple[dict[str, Image.Image], dict]:
     arm = Image.open(task / "handwear.png").convert("RGBA").getchannel("A")
     neck = Image.open(task / "neck.png").convert("RGBA").getchannel("A")
     body_alpha = np.maximum.reduce([np.asarray(Image.open(task / f"{name}.png").convert("RGBA").getchannel("A")) for name in ("handwear", "neck", "topwear", "face")])
@@ -54,25 +54,35 @@ def _mask(task: Path, size: tuple[int, int]) -> tuple[Image.Image, dict]:
     neck_parts = components(neck, min_pixels=100)
     if len(parts) != 2 or not neck_parts:
         raise ValueError("expected two arms and one neck")
-    draw_mask = Image.new("L", size)
-    draw = ImageDraw.Draw(draw_mask)
+    torso_mask = Image.new("L", size)
+    torso_draw = ImageDraw.Draw(torso_mask)
+    head_mask = Image.new("L", size)
+    head_draw = ImageDraw.Draw(head_mask)
     regions = []
     for side, part in zip(("screen_left_shoulder", "screen_right_shoulder"), parts):
         x0, y0, x1, y1 = part["bbox"]
         if x0 < size[0] / 2:
-            box = [x1 - 22, y0 - 8, x1 + 10, min(y0 + 92, y1)]
+            box = [x1 - 46, y0 - 10, x1 + 16, min(y0 + 120, y1)]
         else:
-            box = [x0 - 10, y0 - 8, x0 + 22, min(y0 + 92, y1)]
+            box = [x0 - 16, y0 - 10, x0 + 46, min(y0 + 120, y1)]
         box = [max(0, box[0]), max(0, box[1]), min(size[0], box[2]), min(size[1], box[3])]
-        draw.rounded_rectangle(box, radius=8, fill=255)
+        torso_draw.rounded_rectangle(box, radius=10, fill=255)
         regions.append({"name": side, "bbox": box})
     x0, y0, x1, y1 = neck_parts[0]["bbox"]
+    face_bottom = components(Image.open(task / "face.png").convert("RGBA").getchannel("A"), min_pixels=100)[0]["bbox"][3]
     neck_box = [max(0, x0 - 8), max(0, y0 - 8), min(size[0], x1 + 8), min(size[1], y1 + 14)]
-    draw.rounded_rectangle(neck_box, radius=7, fill=255)
-    regions.append({"name": "neck", "bbox": neck_box})
-    # Feather protects texture continuity, but never paints into transparency.
-    alpha = np.minimum(np.asarray(draw_mask.filter(ImageFilter.GaussianBlur(2))), body_alpha)
-    return Image.fromarray(alpha.astype(np.uint8)), {"regions": regions, "pixels": int((alpha > 8).sum())}
+    # Do not let an image patch cross the head/torso bone boundary.  That was
+    # the cause of the rigid-preview face tear in seams_v1.
+    head_box = [neck_box[0], neck_box[1], neck_box[2], min(neck_box[3], face_bottom)]
+    torso_box = [neck_box[0], max(neck_box[1], face_bottom), neck_box[2], neck_box[3]]
+    head_draw.rounded_rectangle(head_box, radius=7, fill=255)
+    torso_draw.rounded_rectangle(torso_box, radius=7, fill=255)
+    regions.extend([{"name": "neck_head", "bbox": head_box}, {"name": "neck_torso", "bbox": torso_box}])
+    masks = {}
+    for name, raw in (("seam_repair_head", head_mask), ("seam_repair_torso", torso_mask)):
+        alpha = np.minimum(np.asarray(raw.filter(ImageFilter.GaussianBlur(2))), body_alpha)
+        masks[name] = Image.fromarray(alpha.astype(np.uint8))
+    return masks, {"regions": regions, "pixels": {name: int((np.asarray(mask) > 8).sum()) for name, mask in masks.items()}}
 
 
 def derive(task_dir: Path, source_path: Path, version: str) -> Path:
@@ -84,19 +94,24 @@ def derive(task_dir: Path, source_path: Path, version: str) -> Path:
     local = np.asarray(_composite(task, VIEW_ORDER).convert("RGB"))
     source = np.asarray(Image.open(source_path).convert("RGB"))
     aligned, registration = _register(source, local)
-    mask, coverage = _mask(task, (local.shape[1], local.shape[0]))
-    rgba = np.dstack([aligned, np.asarray(mask)])
-    rgba[rgba[:, :, 3] == 0, :3] = 0
-    repair = Image.fromarray(rgba)
-    repair.save(destination / "seam_repair.png")
+    masks, coverage = _masks(task, (local.shape[1], local.shape[0]))
+    repairs = []
+    for name, mask in masks.items():
+        rgba = np.dstack([aligned, np.asarray(mask)])
+        rgba[rgba[:, :, 3] == 0, :3] = 0
+        repair = Image.fromarray(rgba)
+        repair.save(destination / f"{name}.png")
+        repairs.append(repair)
     before = Image.fromarray(local)
-    after = Image.alpha_composite(before.convert("RGBA"), repair).convert("RGB")
+    after = before.convert("RGBA")
+    for repair in repairs: after.alpha_composite(repair)
+    after = after.convert("RGB")
     crop = (450, 150, 830, 390)
     strip = Image.new("RGB", (760, 240))
     strip.paste(before.crop(crop), (0, 0)); strip.paste(after.crop(crop), (380, 0))
     draw = ImageDraw.Draw(strip); draw.text((8, 8), "before", fill="white"); draw.text((388, 8), "seam repair candidate", fill="white")
     strip.save(destination / "review_before_after.png")
-    report = {"schemaVersion": 1, "source": "registered_original", "registration": registration, "coverage": coverage, "status": "candidate", "files": ["seam_repair.png", "review_before_after.png"]}
+    report = {"schemaVersion": 2, "source": "registered_original", "registration": registration, "coverage": coverage, "status": "candidate", "files": ["seam_repair_head.png", "seam_repair_torso.png", "review_before_after.png"]}
     (destination / "report.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
     return destination
 

@@ -92,8 +92,8 @@ try{
     const response=await fetch(seamPrefix+'report.json',{cache:'no-store'});
     if(!response.ok)throw new Error('Seam candidate report unavailable');
     const report=await response.json();
-    if(report.schemaVersion!==1||report.source!=='registered_original'||report.status!=='candidate')throw new Error('Unsupported seam candidate');
-    local.push(...await load(['seam_repair'],seamPrefix));
+    if(report.schemaVersion!==2||report.source!=='registered_original'||report.status!=='candidate')throw new Error('Unsupported seam candidate');
+    local.push(...await load(['seam_repair_head','seam_repair_torso'],seamPrefix));
   }
   // Brows must remain above a closed-eye paint patch.  Keep front hair after
   // them so bangs retain their natural foreground overlap.

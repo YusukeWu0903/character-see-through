@@ -65,7 +65,7 @@ export function createMeshRenderer(canvas){
       const eyeMask=layers.find(x=>x.name==='eyewhite')?.image;
       const hasClosedEyelids=layers.some(({name})=>name.replace(/_(left|right)$/,'')==='eyelid_closed');
       gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,eyeMask?texture(eyeMask):null);gl.uniform1i(uniforms.eyeMask,1);
-      const faceSet=new Set(['face','mouth','nose','eyelash','eyelid_closed','eyewhite','eyebrow','irides','ears','earwear','eyewear','headwear','fronthair','backhair']);
+      const faceSet=new Set(['face','mouth','nose','eyelash','eyelid_closed','eyewhite','eyebrow','irides','ears','earwear','eyewear','headwear','seam_repair_head','fronthair','backhair']);
       for(const {name,image} of layers){
         const baseName=name.replace(/_(left|right)$/,'');
         const iris=baseName==='irides',white=baseName==='eyewhite',closedEye=baseName==='eyelid_closed',openEyelash=baseName==='eyelash'&&hasClosedEyelids,eyePart=iris||white,blink=Math.max(0,Math.min(1,expression.blink||0));
