@@ -5,6 +5,7 @@ from PIL import Image, ImageDraw
 from derive_eye_assets import derive
 from derive_closed_eyelid_assets import derive as derive_closed
 from derive_approved_eyelid_assets import derive as derive_approved
+from derive_face_head_reference import derive as derive_head_base
 
 
 def layer(size=(80, 60), boxes=((10, 20, 20, 30), (50, 20, 60, 30))):
@@ -68,11 +69,27 @@ def test_derives_approved_closed_eyelids_from_only_the_eye_difference(tmp_path: 
     closed.save(tmp_path / "closed.png")
     layer(size=(160, 240), boxes=((58, 34, 80, 47), (88, 34, 110, 47))).save(tmp_path / "eyelash.png")
     layer(size=(160, 240), boxes=((60, 31, 78, 39), (90, 31, 108, 39))).save(tmp_path / "eyebrow.png")
+    layer(size=(160, 240), boxes=((56, 34, 60, 48),)).save(tmp_path / "fronthair.png")
     layer(size=(160, 240), boxes=((62, 36, 76, 43), (92, 36, 106, 43))).save(tmp_path / "irides.png")
     layer(size=(160, 240), boxes=((60, 34, 78, 45), (90, 34, 108, 45))).save(tmp_path / "eyewhite.png")
     derive(tmp_path)
     report = derive_approved(tmp_path, tmp_path / "source.png", tmp_path / "closed.png")
     assert report["source"] == "approved_artwork"
     assert all(report["layers"][side]["alphaPixels"] > 0 for side in ("left", "right"))
+    assert report["boundarySource"] == "semantic_eyewhite_with_eyebrow_and_fronthair_exclusion"
     assert all(report["layers"][side]["eyebrowOverlapPixels"] == 0 for side in ("left", "right"))
-    assert all(report["layers"][side]["targetBbox"][2] - report["layers"][side]["targetBbox"][0] > 30 for side in ("left", "right"))
+    assert all(report["layers"][side]["fronthairOverlapPixels"] == 0 for side in ("left", "right"))
+    assert all(report["layers"][side]["targetBbox"][2] - report["layers"][side]["targetBbox"][0] < 30 for side in ("left", "right"))
+
+
+def test_builds_face_only_expression_base_without_hair(tmp_path: Path):
+    names = ("ears", "earwear", "face", "nose", "mouth", "eyewhite", "irides", "eyelash", "eyebrow")
+    colours = {name: (index * 20, 0, 0, 255) for index, name in enumerate(names, 1)}
+    for name, colour in colours.items():
+        Image.new("RGBA", (32, 24), colour).save(tmp_path / f"{name}.png")
+    Image.new("RGBA", (32, 24), (0, 255, 0, 255)).save(tmp_path / "fronthair.png")
+    Image.new("RGBA", (32, 24), (0, 0, 255, 255)).save(tmp_path / "backhair.png")
+    report = derive_head_base(tmp_path)
+    image = Image.open(tmp_path / "_rig_candidates" / "head_base_open.png")
+    assert report["excluded"] == ["backhair", "fronthair"]
+    assert image.getpixel((0, 0)) == colours["eyebrow"]

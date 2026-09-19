@@ -43,7 +43,7 @@ async function loadEyeAssets(prefix){
   // Generated fallbacks are not accepted as art.  They must be explicitly
   // marked after visual approval; otherwise preserve the safe lash-line
   // fallback and never cover the eye socket with an inpainted face patch.
-  const approvedEyelids=manifest.closedEyelids?.schemaVersion===1&&manifest.closedEyelids.source==='approved_artwork';
+  const approvedEyelids=manifest.closedEyelids?.schemaVersion>=2&&manifest.closedEyelids.source==='approved_artwork'&&manifest.closedEyelids.boundarySource==='semantic_eyewhite_with_eyebrow_and_fronthair_exclusion';
   if(approvedEyelids)names.push('eyelid_closed_left','eyelid_closed_right');
   const layers=await load(names,prefix+'_rig_assets/');
   return {layers,limits:[manifest.limits.gazeX,manifest.limits.gazeY],eyeCenter:manifest.eyeCenter,closedEyelids:approvedEyelids};
