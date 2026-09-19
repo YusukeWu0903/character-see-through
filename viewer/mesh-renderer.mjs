@@ -3,7 +3,7 @@ attribute vec2 position;
 uniform mat3 body, torso, head, layer;
 uniform vec4 bands;
 uniform vec2 scale, center;
-uniform float deform, hair, facial, eye, eyeWhite, yaw, chest, chestLayer, eyelashLine, rigidNeckBridge;
+uniform float deform, hair, facial, eye, eyeWhite, yaw, chest, chestLayer, eyelashLine;
 uniform vec2 eyeCenter, eyeOffset, headPivot, chestBand;
 varying vec2 uv;
 void main(){
@@ -13,11 +13,7 @@ void main(){
   float n=smoothstep(bands.z,bands.w,position.y);
   vec3 shared=body*p+w*(torso*p-body*p)+n*(head*p-torso*p);
   shared+=hair*n*(layer*p-head*p);
-  // The source face layer includes a small painted neck extension.  In an
-  // otherwise rigid pose it must transition back to the torso at the neck
-  // root, or that extension visibly detaches from the separate neck layer.
-  float neckBridge=rigidNeckBridge*(1.0-smoothstep(bands.z,bands.w,p.y));
-  vec3 result=mix(rigid,shared,max(deform,neckBridge));
+  vec3 result=mix(rigid,shared,deform);
   // A front illustration cannot become a true three-quarter head. This small
   // screen-space compression is only a controlled micro-turn cue.
   result.x=mix(result.x,headPivot.x+(result.x-headPivot.x)*(1.0-abs(yaw)*0.07)+yaw*0.015,facial);
@@ -47,7 +43,7 @@ export function createMeshRenderer(canvas){
   const program=gl.createProgram();gl.attachShader(program,shader(gl.VERTEX_SHADER,vertex));gl.attachShader(program,shader(gl.FRAGMENT_SHADER,fragment));gl.linkProgram(program);
   if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(program));
   gl.useProgram(program);
-  const uniforms=Object.fromEntries(['body','torso','head','layer','bands','scale','center','deform','hair','image','eyeMask','eyeCenter','eyeOffset','headPivot','facial','eye','eyeWhite','yaw','opacity','chest','chestLayer','eyelashLine','rigidNeckBridge','chestBand'].map(k=>[k,gl.getUniformLocation(program,k)]));
+  const uniforms=Object.fromEntries(['body','torso','head','layer','bands','scale','center','deform','hair','image','eyeMask','eyeCenter','eyeOffset','headPivot','facial','eye','eyeWhite','yaw','opacity','chest','chestLayer','eyelashLine','chestBand'].map(k=>[k,gl.getUniformLocation(program,k)]));
   const vertices=[],indices=[],cols=24,rows=80;
   for(let y=0;y<=rows;y++)for(let x=0;x<=cols;x++)vertices.push(x/cols*2-1,y/rows*2-1);
   for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){const a=y*(cols+1)+x,b=a+cols+1;indices.push(a,a+1,b,a+1,b+1,b);}
@@ -77,9 +73,14 @@ export function createMeshRenderer(canvas){
         const baseName=name.replace(/_(left|right)$/,'');
         const iris=baseName==='irides',white=baseName==='eyewhite',closedEye=baseName==='eyelid_closed',openEyelash=baseName==='eyelash'&&hasClosedEyelids,eyePart=iris||white,blink=Math.max(0,Math.min(1,expression.blink||0));
         gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,texture(image));gl.uniform1i(uniforms.image,0);
-        gl.uniformMatrix3fv(uniforms.layer,false,mat3(matrices[baseName]));gl.uniform1f(uniforms.hair,baseName==='fronthair'||baseName==='backhair'?1:0);
+        // Rigid mode is a layer-integrity baseline, not a fake head-turn.
+        // The current decomposition has no hidden neck fill, so lock the
+        // complete head group to the torso rather than displaying a false
+        // broken-neck failure that flexible skinning correctly avoids.
+        const layerMatrix=!deform&&faceSet.has(baseName)?matrices.neck:matrices[baseName];
+        gl.uniformMatrix3fv(uniforms.layer,false,mat3(layerMatrix));gl.uniform1f(uniforms.hair,baseName==='fronthair'||baseName==='backhair'?1:0);
         gl.uniform1f(uniforms.facial,faceSet.has(baseName)?1:0);gl.uniform1f(uniforms.yaw,expression.yaw||0);gl.uniform2fv(uniforms.headPivot,expression.headPivot||[0,.48]);
-        gl.uniform1f(uniforms.eye,iris&&eyeMask?1:0);gl.uniform1f(uniforms.eyeWhite,eyePart?blink:0);gl.uniform2fv(uniforms.eyeCenter,expression.eyeCenter||[0,.52]);gl.uniform2fv(uniforms.eyeOffset,iris?(expression.gaze||[0,0]):[0,0]);gl.uniform1f(uniforms.opacity,eyePart||openEyelash?1-blink:closedEye?blink:1);gl.uniform1f(uniforms.rigidNeckBridge,!deform&&['face','seam_repair_head'].includes(baseName)?1:0);
+        gl.uniform1f(uniforms.eye,iris&&eyeMask?1:0);gl.uniform1f(uniforms.eyeWhite,eyePart?blink:0);gl.uniform2fv(uniforms.eyeCenter,expression.eyeCenter||[0,.52]);gl.uniform2fv(uniforms.eyeOffset,iris?(expression.gaze||[0,0]):[0,0]);gl.uniform1f(uniforms.opacity,eyePart||openEyelash?1-blink:closedEye?blink:1);
         gl.uniform1f(uniforms.chest,expression.chest||0);gl.uniform1f(uniforms.chestLayer,['topwear','neck','handwear','seam_repair_torso'].includes(baseName)?1:0);gl.uniform1f(uniforms.eyelashLine,baseName==='eyelash'&&!hasClosedEyelids?blink:0);gl.uniform2fv(uniforms.chestBand,expression.chestBand||[.2,.5]);
         gl.drawElements(gl.TRIANGLES,indices.length,gl.UNSIGNED_SHORT,0);
       }
