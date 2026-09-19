@@ -28,7 +28,10 @@ void main(){
   gl_Position=vec4(result.xy*scale+center,0.0,1.0);
   uv=(position+1.0)*0.5;
 }`;
-const fragment=`precision mediump float; varying vec2 uv; uniform sampler2D image, eyeMask; uniform float eye, eyeWhite, opacity; void main(){vec4 c=texture2D(image,uv);c.a*=opacity;gl_FragColor=c;}`;
+// Textures are uploaded premultiplied and blended with ONE / ONE_MINUS_SRC_ALPHA.
+// Therefore an opacity fade must scale RGB and alpha together; scaling alpha
+// alone leaves bright premultiplied RGB behind as a white card.
+const fragment=`precision mediump float; varying vec2 uv; uniform sampler2D image, eyeMask; uniform float eye, eyeWhite, opacity; void main(){vec4 c=texture2D(image,uv);c.rgb*=opacity;c.a*=opacity;gl_FragColor=c;}`;
 const mat3=m=>new Float32Array([m[0],m[1],0,m[2],m[3],0,m[4],m[5],1]);
 export function createMeshRenderer(canvas){
   const gl=canvas.getContext('webgl',{alpha:true,premultipliedAlpha:true,antialias:true,preserveDrawingBuffer:true});
