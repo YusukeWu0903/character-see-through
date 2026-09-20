@@ -76,7 +76,9 @@ export function createMeshRenderer(canvas){
       reduced.width=Math.max(1,Math.round(width*ratio));reduced.height=Math.max(1,Math.round(height*ratio));
       reduced.getContext('2d').drawImage(image,0,0,reduced.width,reduced.height);source=reduced;
     }
-    gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,source);textures.set(image,tex);return tex;
+    gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,source);
+    if(source!==image){source.width=1;source.height=1;}
+    textures.set(image,tex);return tex;
   }
   return {
     clear(){gl.viewport(0,0,canvas.width,canvas.height);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);},

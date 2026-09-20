@@ -12,6 +12,7 @@ test('premultiplied texture fades scale RGB together with alpha', async () => {
   assert.match(source, /texture\(eyeMask\|\|image\)/);
   assert.match(source, /maxUpload=1024/);
   assert.match(source, /drawImage\(image,0,0,reduced\.width,reduced\.height\)/);
+  assert.match(source, /source\.width=1;source\.height=1/);
   assert.match(source, /openEyelash/);
   assert.match(source, /openOpacity/);
   assert.match(source, /separate oscillation/);

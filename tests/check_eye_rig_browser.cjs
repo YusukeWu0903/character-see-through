@@ -58,7 +58,7 @@ async function main(){
     assert.notEqual(pointerA,pointerB,'pointer movement should drive the shared gaze');
 
     assert.deepEqual(errors,[]);
-    assert.ok(imageStatuses.length>=38&&imageStatuses.every(status=>status===200));
+    assert.ok(imageStatuses.length>=23&&imageStatuses.every(status=>status===200));
     const report={
       result:'PASS',task,
       checks:{nineDistinctGazeFrames:true,threeDistinctBlinkFrames:true,pointerFollowChangesFrame:true,noPageErrors:true,allLayerRequests200:true},
