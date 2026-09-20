@@ -78,7 +78,11 @@ export function createMeshRenderer(canvas){
         const side=eyeSide(name),eyeMask=baseName==='irides'?selectEyeMask(layers,name):null;
         const iris=baseName==='irides',white=baseName==='eyewhite',closedEye=baseName==='eyelid_closed',openEyelash=baseName==='eyelash'&&hasClosedEyelids,eyePart=iris||white,blink=Math.max(0,Math.min(1,expression.blink||0));
         gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,texture(image));gl.uniform1i(uniforms.image,0);
-        gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,eyeMask?texture(eyeMask):null);gl.uniform1i(uniforms.eyeMask,1);
+        // WebGL requires every sampler used by the linked shader to reference
+        // a complete texture, even when a uniform-controlled branch will not
+        // sample it for this draw. Reuse the layer texture outside the irises
+        // instead of binding null, which makes Chromium reject the draw call.
+        gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,texture(eyeMask||image));gl.uniform1i(uniforms.eyeMask,1);
         // Rigid mode is a layer-integrity baseline, not a fake head-turn.
         // The current decomposition has no hidden neck fill, so lock the
         // complete head group to the torso rather than displaying a false
