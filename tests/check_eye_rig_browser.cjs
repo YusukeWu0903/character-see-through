@@ -14,7 +14,7 @@ async function main(){
     page.on('response',response=>{if(response.url().includes('/layers/')){imageStatuses.push(response.status());layerUrls.push(response.url());}});
     const task=process.env.RIG_TEST_TASK||'Eris_full_body_casual_20260918_113905';
     const base=process.env.RIG_TEST_BASE||'http://127.0.0.1:8011';
-    await page.goto(base+'/preview-deform?local='+encodeURIComponent(task)+'&texture-max=768');
+    await page.goto(base+'/preview-deform?local='+encodeURIComponent(task)+'&quality-profile=browser-validation');
     try{
       await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('已載入'),null,{timeout:30000});
     }catch(error){
@@ -58,14 +58,18 @@ async function main(){
     assert.notEqual(pointerA,pointerB,'pointer movement should drive the shared gaze');
 
     assert.deepEqual(errors,[]);
+    const quality=await page.evaluate(()=>window.__viewerQuality);
+    assert.deepEqual(quality,{name:'browser-validation',isProduction:false,maxUpload:768,label:'非正式驗證模式 · 768px'});
+    assert.match(await page.locator('#status').textContent(),/非正式驗證模式 · 768px（不可作為交付畫面）/);
     assert.ok(imageStatuses.length>=23&&imageStatuses.every(status=>status===200));
     assert.ok(['seam_repair_head.png','seam_repair_torso.png'].every(name=>layerUrls.some(url=>url.endsWith('/'+name))),'approved shoulder/neck seam layers should load by default');
     const report={
       result:'PASS',task,
-      checks:{nineDistinctGazeFrames:true,threeDistinctBlinkFrames:true,pointerFollowChangesFrame:true,noPageErrors:true,allLayerRequests200:true,approvedSeamLayersLoaded:true},
+      checks:{nineDistinctGazeFrames:true,threeDistinctBlinkFrames:true,pointerFollowChangesFrame:true,noPageErrors:true,allLayerRequests200:true,approvedSeamLayersLoaded:true,nonProductionProfileVisible:true},
       screenshots:{gaze:9,blink:3,pointer:2},
       loadedLayerRequests:imageStatuses.length,
-      textureUploadMax:768,
+      qualityProfile:quality.name,
+      textureUploadMax:quality.maxUpload,
       visualAcceptance:'pending manual inspection of generated PNGs'
     };
     fs.writeFileSync(path.join(out,'browser_eye_rig_report.json'),JSON.stringify(report,null,2));

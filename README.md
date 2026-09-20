@@ -97,14 +97,21 @@ models. Front-view yaw is only a conservative 2D cue, not real 3/4 artwork.
 ## Testing
 
 ```powershell
+python quality_contract.py
+python quality_contract.py --task outputs/seethrough_local/<task-name>
 python -m pytest tests/test_seethrough_alpha.py -q
-node --test tests/test_rig.mjs tests/test_deformation.mjs tests/test_expression.mjs tests/test_renderer_alpha.mjs
+node --test tests/test_rig.mjs tests/test_deformation.mjs tests/test_expression.mjs tests/test_renderer_alpha.mjs tests/test_quality_profile.mjs
 python validate_eye_rig.py outputs/seethrough_local/Eris_full_body_casual_20260918_113905
 node tests/check_eye_rig_browser.cjs
 ```
 
 Tests prove implementation contracts. Always perform checkerboard and rendered
 visual review before calling character artwork accepted.
+
+Production defaults are locked in `viewer/quality-baseline.json`. Test or
+memory accommodations must use a named, visibly non-production profile and
+cannot silently replace the normal viewer settings. See
+[`docs/spec-change-policy.md`](docs/spec-change-policy.md).
 
 ## Temporary sharing
 

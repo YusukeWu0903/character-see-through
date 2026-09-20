@@ -3,6 +3,7 @@ import {drivePose} from './motion.mjs';
 import {createMeshRenderer} from './mesh-renderer.mjs';
 import {validateDeformation,serializeSettings,parseSettings,deformPoint} from './deformation.mjs';
 import {buildExpression,applyExpressivePose,advanceSpring,sharedGazeTarget} from './expression.mjs';
+import {assertViewerDefaults,resolveQualityProfile} from './quality-profile.mjs';
 const $=id=>document.getElementById(id);
 const task=new URLSearchParams(location.search).get('local');
 $('legacy').href='/preview-rig?local='+encodeURIComponent(task||'');
@@ -15,17 +16,11 @@ for(const name of ['body','torso','head','breath','hair','energy','bust','yaw','
   el.addEventListener('input',update);update();
 }
 const inspection=new URLSearchParams(location.search);
-for(const name of ['blink','bust','gaze-x','gaze-y']){
-  if(!inspection.has(name))continue;
-  const value=Math.max(0,Math.min(100,Number(inspection.get(name))));
-  if(Number.isFinite(value)){ $(name).value=String(value);$(name).dispatchEvent(new Event('input')); }
-}
-if(inspection.get('paused')==='1')$('paused').checked=true;
-if(inspection.get('view')==='upper')$('view').value='upper';
 function values(v){for(const [key,value] of Object.entries(v)){$(key).value=value;$(key).dispatchEvent(new Event('input'));}}
 function neutral(){values({body:0,torso:0,head:0,breath:0,hair:0,energy:0,bust:0,yaw:0,'gaze-x':0,'gaze-y':0,blink:0});$('idle').checked=false;$('follow').checked=false;$('gaze-follow').checked=false;$('auto-blink').checked=false;}
 $('neutral').onclick=neutral;
-$('defaults').onclick=()=>{values({body:0,torso:0,head:0,breath:30,hair:10,energy:55,bust:28,yaw:0,'gaze-x':0,'gaze-y':0,blink:0});$('idle').checked=true;$('follow').checked=true;$('gaze-follow').checked=true;$('auto-blink').checked=true;$('paused').checked=false;$('calibrate').checked=false;};
+let productionViewer=null;
+$('defaults').onclick=()=>{if(!productionViewer)return;values(productionViewer.controls);for(const [name,value] of Object.entries(productionViewer.toggles))$(name).checked=value;};
 $('blink-now').onclick=()=>{values({blink:100});setTimeout(()=>values({blink:0}),180);};
 $('compare').onchange=async()=>{
   $('left-title').textContent=$('compare').value==='cloud'?'雲端素材 · 柔性':'本機素材 · 剛性';
@@ -87,9 +82,22 @@ async function loadSeamAssets(prefix){
 }
 try{
   if(!task)throw new Error('請提供 local 任務名稱');
-  const response=await fetch('/viewer-assets/eris-deform.json');
+  const [response,baselineResponse]=await Promise.all([fetch('/viewer-assets/eris-deform.json'),fetch('/viewer-assets/quality-baseline.json',{cache:'no-store'})]);
   if(!response.ok)throw new Error('角色設定載入失敗');
+  if(!baselineResponse.ok)throw new Error('正式規格基準載入失敗');
   const preset=validateDeformation(await response.json());
+  const baseline=await baselineResponse.json();
+  const quality=resolveQualityProfile(inspection,baseline);
+  productionViewer=baseline.production.viewer;
+  assertViewerDefaults($,productionViewer);
+  for(const name of ['blink','bust','gaze-x','gaze-y']){
+    if(!inspection.has(name))continue;
+    const value=Math.max(0,Math.min(100,Number(inspection.get(name))));
+    if(Number.isFinite(value)){ $(name).value=String(value);$(name).dispatchEvent(new Event('input')); }
+  }
+  if(inspection.get('paused')==='1')$('paused').checked=true;
+  if(inspection.get('view')==='upper')$('view').value='upper';
+  window.__viewerQuality=quality;
   let rig=structuredClone(preset),evaluate=createRig(rig);
   const storageKey='see-through-rig-v2:'+task;
   function apply(candidate){
@@ -100,7 +108,7 @@ try{
   }
   try{const saved=localStorage.getItem(storageKey);if(saved){apply(parseSettings(saved,task));$('settings-status').textContent='已載入此任務的瀏覽器設定。';}}
   catch(e){$('settings-status').textContent='保存設定無法載入，改用預設：'+e.message;}
-  const renderer=createMeshRenderer(canvas,{maxUpload:inspection.get('texture-max')??1280});
+  const renderer=createMeshRenderer(canvas,{maxUpload:quality.maxUpload});
   canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();$('status').textContent='繪圖環境中斷，請重新整理頁面。';});
   const localPrefix='/layers/seethrough_local/'+encodeURIComponent(task)+'/';
   // The cloud comparison is optional and expensive: decoding it alongside the
@@ -145,6 +153,7 @@ try{
   if(eyeAssets?.closedEyelids)$('status').textContent='已載入：新版眼瞼、同步雙眼與眼白裁切 · 已經使用者核准\n自動眨眼與其他動作可正常使用';
   if(seamCandidate)$('status').textContent+='\n肩頸接縫候選：'+seamCandidate+'（待人工驗收）';
   else if(seamAssets)$('status').textContent+='\n肩頸接縫修補：已經使用者核准並預設啟用';
+  $('status').textContent+='\n'+(quality.isProduction?quality.label:'⚠ '+quality.label+'（不可作為交付畫面）');
   $('head-limit').oninput=()=>{
     try{const candidate=structuredClone(rig);candidate.nodes.find(n=>n.id==='head').maxDegrees=Number($('head-limit').value);apply(candidate);$('settings-status').textContent='設定已調整，尚未保存。';}
     catch(e){$('settings-status').textContent=e.message;apply(rig);}

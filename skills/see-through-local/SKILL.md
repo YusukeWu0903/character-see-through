@@ -46,6 +46,17 @@ send the viewer to someone else.
 
 ## Change discipline
 
+Read `viewer/quality-baseline.json` and `docs/spec-change-policy.md` before any
+change that can affect inference resolution, viewer fidelity, approved assets,
+or test/runtime profiles. Never alter the production baseline to accommodate a
+test or memory limit. Put temporary deviations in a named, visibly labelled
+non-production profile; never use one in a user delivery URL. A production
+baseline change requires explicit user approval and a new decision record.
+
+Run `python quality_contract.py` before handoff. For a generated-character
+delivery, also pass `--task outputs/seethrough_local/<task>`; failure blocks
+delivery rather than becoming a warning.
+
 Run `python -m pytest tests/test_seethrough_alpha.py -q` after changing alpha
 cleanup or PSD-writing logic. Keep viewer control changes in
 `preview_viewer.html`; reload the local viewer to verify slider defaults and

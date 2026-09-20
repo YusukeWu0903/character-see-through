@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "production": {
+    "inference": {
+      "layerResolution": 1280,
+      "steps": 30,
+      "depthResolution": 768
+    },
+    "viewer": {
+      "textureUploadMode": "native",
+      "textureUploadMax": 1280,
+      "maxDevicePixelRatio": 2,
+      "approvedSeamsRequired": true,
+      "controls": {
+        "body": 0,
+        "torso": 0,
+        "head": 0,
+        "breath": 30,
+        "hair": 10,
+        "energy": 55,
+        "bust": 28,
+        "yaw": 0,
+        "gaze-x": 0,
+        "gaze-y": 0,
+        "blink": 0
+      },
+      "toggles": {
+        "idle": true,
+        "follow": true,
+        "gaze-follow": true,
+        "auto-blink": true,
+        "paused": false,
+        "calibrate": false
+      }
+    }
+  },
+  "acceptedTasks": {
+    "Eris_full_body_casual_20260918_113905": {
+      "gazePixels": {
+        "x": 2.0,
+        "y": 1.5
+      },
+      "closedEyelidSha256": {
+        "eyelid_closed_left.png": "ca46bba3f4a5c4169d120a2c5beebc88286c5aae8e04acbbbb51ac6c1d92c223",
+        "eyelid_closed_right.png": "679825331561794daf125ae9eafbb6a943c1c7bd1df319d04ffdc5fa42996edf"
+      },
+      "seamRepairSha256": {
+        "seam_repair_head.png": "601335ec2e1d0841e76fe407b12bd39fc5a830b3ea48cb31e3dd474631590548",
+        "seam_repair_torso.png": "d575a83d90c4780507e4f4eb603d7087971690591dc31a50ae6c592654c586dc"
+      }
+    }
+  },
+  "nonProductionProfiles": {
+    "browser-validation": {
+      "nonProduction": true,
+      "textureUploadMax": 768,
+      "visibleLabel": "非正式驗證模式 · 768px"
+    }
+  },
+  "changeControl": {
+    "baselineChangesRequireExplicitUserApproval": true,
+    "decisionRecord": "docs/spec-decisions/2026-09-20-production-baseline.md"
+  }
+}

@@ -17,6 +17,8 @@ import numpy as np
 from PIL import Image, ImageDraw
 from scipy import ndimage
 
+from quality_contract import load_quality_baseline
+
 ST_HOME_RAW = os.environ.get("SEE_THROUGH_HOME")
 ST_HOME = Path(ST_HOME_RAW).expanduser() if ST_HOME_RAW else None
 ST_PY = ST_HOME / ".venv" / "Scripts" / "python.exe" if ST_HOME else None
@@ -37,6 +39,10 @@ def safe(name):
 
 
 SAFE = {name: safe(name) for name in CANON}
+QUALITY_BASELINE = load_quality_baseline()
+DEFAULT_LAYER_RESOLUTION = QUALITY_BASELINE["production"]["inference"]["layerResolution"]
+DEFAULT_INFERENCE_STEPS = QUALITY_BASELINE["production"]["inference"]["steps"]
+DEFAULT_DEPTH_RESOLUTION = QUALITY_BASELINE["production"]["inference"]["depthResolution"]
 
 
 def _border_mask(shape):
@@ -234,9 +240,9 @@ def main():
     ap.add_argument("src")
     # Match the upstream quality defaults.  The head is a second inference
     # stage, so reducing these values materially damages facial boundaries.
-    ap.add_argument("--resolution", type=int, default=1280)
-    ap.add_argument("--steps", type=int, default=30)
-    ap.add_argument("--depth-h", type=int, default=768)
+    ap.add_argument("--resolution", type=int, default=DEFAULT_LAYER_RESOLUTION)
+    ap.add_argument("--steps", type=int, default=DEFAULT_INFERENCE_STEPS)
+    ap.add_argument("--depth-h", type=int, default=DEFAULT_DEPTH_RESOLUTION)
     args = ap.parse_args()
     src = Path(args.src)
     if not src.exists():
