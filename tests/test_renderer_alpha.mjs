@@ -10,6 +10,8 @@ test('premultiplied texture fades scale RGB together with alpha', async () => {
   assert.match(source, /c\.rgb\*=mask;c\.a\*=mask/);
   assert.match(source, /gl\.blendFunc\(gl\.ONE,gl\.ONE_MINUS_SRC_ALPHA\)/);
   assert.match(source, /texture\(eyeMask\|\|image\)/);
+  assert.match(source, /maxUpload=1024/);
+  assert.match(source, /drawImage\(image,0,0,reduced\.width,reduced\.height\)/);
   assert.match(source, /openEyelash/);
   assert.match(source, /openOpacity/);
   assert.match(source, /separate oscillation/);

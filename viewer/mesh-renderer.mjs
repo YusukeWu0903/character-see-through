@@ -64,7 +64,19 @@ export function createMeshRenderer(canvas){
     const tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tex);
     gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
-    gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,image);textures.set(image,tex);return tex;
+    // The comparison view can hold more than forty full-canvas layers. At
+    // 1280px each that crosses the practical SwiftShader/WebGL memory limit
+    // and loses the entire context, leaving a deceptively "loaded" blank
+    // viewer. The stage never displays one character above 1024px, so reduce
+    // only the GPU upload while retaining the original PNGs on disk.
+    const width=image.naturalWidth||image.width,height=image.naturalHeight||image.height,maxUpload=1024;
+    let source=image;
+    if(Math.max(width,height)>maxUpload){
+      const ratio=maxUpload/Math.max(width,height),reduced=document.createElement('canvas');
+      reduced.width=Math.max(1,Math.round(width*ratio));reduced.height=Math.max(1,Math.round(height*ratio));
+      reduced.getContext('2d').drawImage(image,0,0,reduced.width,reduced.height);source=reduced;
+    }
+    gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,source);textures.set(image,tex);return tex;
   }
   return {
     clear(){gl.viewport(0,0,canvas.width,canvas.height);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);},
