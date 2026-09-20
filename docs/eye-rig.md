@@ -40,8 +40,10 @@ measured from its own alpha geometry and are not universal character defaults.
    Both irises receive that exact vector. There is no per-eye cursor target,
    convergence term, or inward neutral bias.
 2. `derive_eye_assets.py` measures the most restrictive symmetric pixel radius
-   that preserves at least 92% of each eye's neutral masked alpha. The common
-   radius is written to `eye_assets.json`; the more constrained eye wins.
+   in quarter-pixel steps, capped at 2 px horizontally and 1.5 px vertically.
+   It preserves at least 86.5% of each eye's neutral masked alpha; the hard
+   eyewhite mask still guarantees zero spill onto skin. The common radius is
+   written to `eye_assets.json`, and the more constrained eye wins.
 3. Each iris selects only `eyewhite_<same-side>.png`. The fragment shader
    samples that mask at `uv + eyeOffset / 2`, matching the translated iris
    destination in the full-canvas coordinate system. Mask alpha multiplies

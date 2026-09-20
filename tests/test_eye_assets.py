@@ -25,6 +25,8 @@ def test_derives_full_canvas_left_right_assets_and_safe_gaze_limit(tmp_path: Pat
     assert report["layers"]["irides"]["left"]["bbox"] == [10, 20, 21, 31]
     assert report["limits"]["gazeX"] > 0
     assert report["limits"]["gazeY"] > 0
+    assert report["limits"]["pixels"] == {"x": 2.0, "y": 1.5}
+    assert report["mask"]["minimumRelativeCoverage"] == 0.865
     assert report["mask"]["source"] == "eyewhite_alpha"
     # The eye pair may be off-centre in a character frame; preserve its
     # measured position instead of assuming a centre-aligned portrait.

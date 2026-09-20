@@ -85,16 +85,18 @@ def retained_fraction(iris: Image.Image, white: Image.Image, dx: int, dy: int, t
 
 
 def shared_safe_radius(pairs: list[tuple[Image.Image, Image.Image]], axis: str,
-                       max_radius: int = 4, minimum_relative_coverage: float = 0.92) -> int:
+                       max_radius: float, step: float = 0.25,
+                       minimum_relative_coverage: float = 0.865) -> float:
     """Find one symmetric limit that is safe for both eyes and directions."""
-    baselines = [retained_fraction(iris, white, 0, 0) for iris, white in pairs]
-    safe = 0
-    for radius in range(1, max_radius + 1):
+    baselines = [retained_fraction_float(iris, white, 0, 0) for iris, white in pairs]
+    safe = 0.0
+    for index in range(1, math.floor(max_radius / step) + 1):
+        radius = round(index * step, 6)
         valid = True
         for (iris, white), baseline in zip(pairs, baselines):
             for sign in (-1, 1):
                 dx, dy = (sign * radius, 0) if axis == "x" else (0, sign * radius)
-                relative = retained_fraction(iris, white, dx, dy) / baseline if baseline else 0
+                relative = retained_fraction_float(iris, white, dx, dy) / baseline if baseline else 0
                 if relative < minimum_relative_coverage:
                     valid = False
         if not valid:
@@ -134,8 +136,9 @@ def retained_fraction_float(iris: Image.Image, white: Image.Image, dx: float, dy
     return kept / total if total else 0.0
 
 
-def jointly_safe_radii(pairs: list[tuple[Image.Image, Image.Image]], safe_x: int, safe_y: int,
-                       minimum_relative_coverage: float = 0.92) -> tuple[int, int]:
+def jointly_safe_radii(pairs: list[tuple[Image.Image, Image.Image]], safe_x: float, safe_y: float,
+                       step: float = 0.25,
+                       minimum_relative_coverage: float = 0.865) -> tuple[float, float]:
     """Reduce axis radii until unit-circle corners also satisfy both eyes."""
     baselines = [retained_fraction_float(iris, white, 0, 0) for iris, white in pairs]
     while safe_x and safe_y:
@@ -150,9 +153,9 @@ def jointly_safe_radii(pairs: list[tuple[Image.Image, Image.Image]], safe_x: int
         if valid:
             break
         if safe_x >= safe_y:
-            safe_x -= 1
+            safe_x = max(0.0, round(safe_x - step, 6))
         else:
-            safe_y -= 1
+            safe_y = max(0.0, round(safe_y - step, 6))
     return safe_x, safe_y
 
 
@@ -177,7 +180,7 @@ def derive(task_dir: Path) -> dict:
             "source": "eyewhite_alpha",
             "sampling": "destination_uv",
             "alphaThreshold": 8,
-            "minimumRelativeCoverage": 0.92,
+            "minimumRelativeCoverage": 0.865,
         },
     }
     all_parts = {}
@@ -212,8 +215,12 @@ def derive(task_dir: Path) -> dict:
     # decides the shared range.
     width, height = sources["irides"].size
     pairs = [(split_layers["irides"][side], split_layers["eyewhite"][side]) for side in ("left", "right")]
-    safe_x = shared_safe_radius(pairs, "x")
-    safe_y = shared_safe_radius(pairs, "y")
+    # The original irises nearly fill the openings, so a 92% retention gate
+    # made motion technically safe but visually imperceptible.  The hard
+    # eyewhite mask already guarantees zero spill onto skin; use a modest,
+    # sub-pixel-aware clipping budget and explicit perceptual caps instead.
+    safe_x = shared_safe_radius(pairs, "x", max_radius=2.0)
+    safe_y = shared_safe_radius(pairs, "y", max_radius=1.5)
     safe_x, safe_y = jointly_safe_radii(pairs, safe_x, safe_y)
     report["limits"] = {
         "gazeX": round(safe_x * 2 / width, 6),
