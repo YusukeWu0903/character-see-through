@@ -1,4 +1,10 @@
 const clamp=(x,min,max)=>Math.max(min,Math.min(max,Number.isFinite(x)?x:0));
+export function sharedGazeTarget(manual=[0,0],pointer=[0,0],follow=true,strength=.8){
+  const gain=clamp(strength,0,1);
+  const result=[0,1].map(i=>clamp((manual[i]||0)+(follow?(pointer[i]||0)*gain:0),-1,1));
+  const length=Math.hypot(...result);
+  return length>1?result.map(value=>value/length):result;
+}
 export function blinkPulse(time, enabled=true){
   if(!enabled||!Number.isFinite(time))return 0;
   const phase=((time%4.6)+4.6)%4.6;

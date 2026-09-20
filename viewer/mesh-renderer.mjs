@@ -1,3 +1,9 @@
+export const eyeSide=name=>name.endsWith('_left')?'left':name.endsWith('_right')?'right':null;
+export function selectEyeMask(layers,name){
+  const side=eyeSide(name);
+  return layers.find(layer=>layer.name===(side?`eyewhite_${side}`:'eyewhite'))?.image
+    ||layers.find(layer=>layer.name==='eyewhite')?.image||null;
+}
 const vertex=`precision mediump float;
 attribute vec2 position;
 uniform mat3 body, torso, head, layer;
@@ -34,7 +40,7 @@ void main(){
 // Textures are uploaded premultiplied and blended with ONE / ONE_MINUS_SRC_ALPHA.
 // Therefore an opacity fade must scale RGB and alpha together; scaling alpha
 // alone leaves bright premultiplied RGB behind as a white card.
-const fragment=`precision mediump float; varying vec2 uv; uniform sampler2D image, eyeMask; uniform float eye, eyeWhite, opacity; void main(){vec4 c=texture2D(image,uv);c.rgb*=opacity;c.a*=opacity;gl_FragColor=c;}`;
+const fragment=`precision mediump float; varying vec2 uv; uniform sampler2D image, eyeMask; uniform float eye, eyeWhite, opacity; uniform vec2 eyeOffset; void main(){vec4 c=texture2D(image,uv);if(eye>0.5){float mask=texture2D(eyeMask,uv+eyeOffset*.5).a;c.rgb*=mask;c.a*=mask;}c.rgb*=opacity;c.a*=opacity;gl_FragColor=c;}`;
 const mat3=m=>new Float32Array([m[0],m[1],0,m[2],m[3],0,m[4],m[5],1]);
 export function createMeshRenderer(canvas){
   const gl=canvas.getContext('webgl',{alpha:true,premultipliedAlpha:true,antialias:true,preserveDrawingBuffer:true});
@@ -65,14 +71,14 @@ export function createMeshRenderer(canvas){
     draw(layers,matrices,bands,cx,cy,scale,deform=true,expression={}){
       gl.uniformMatrix3fv(uniforms.body,false,mat3(matrices.legwear));gl.uniformMatrix3fv(uniforms.torso,false,mat3(matrices.neck));gl.uniformMatrix3fv(uniforms.head,false,mat3(matrices.face));
       gl.uniform4fv(uniforms.bands,[...bands.waist,...bands.neck]);gl.uniform2f(uniforms.scale,scale*2/canvas.width,scale*2/canvas.height);gl.uniform2f(uniforms.center,cx*2/canvas.width-1,1-cy*2/canvas.height);gl.uniform1f(uniforms.deform,deform?1:0);
-      const eyeMask=layers.find(x=>x.name==='eyewhite')?.image;
       const hasClosedEyelids=layers.some(({name})=>name.replace(/_(left|right)$/,'')==='eyelid_closed');
-      gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,eyeMask?texture(eyeMask):null);gl.uniform1i(uniforms.eyeMask,1);
       const faceSet=new Set(['face','mouth','nose','eyelash','eyelid_closed','eyewhite','eyebrow','irides','ears','earwear','eyewear','headwear','seam_repair_head','fronthair','backhair']);
       for(const {name,image} of layers){
         const baseName=name.replace(/_(left|right)$/,'');
+        const side=eyeSide(name),eyeMask=baseName==='irides'?selectEyeMask(layers,name):null;
         const iris=baseName==='irides',white=baseName==='eyewhite',closedEye=baseName==='eyelid_closed',openEyelash=baseName==='eyelash'&&hasClosedEyelids,eyePart=iris||white,blink=Math.max(0,Math.min(1,expression.blink||0));
         gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,texture(image));gl.uniform1i(uniforms.image,0);
+        gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,eyeMask?texture(eyeMask):null);gl.uniform1i(uniforms.eyeMask,1);
         // Rigid mode is a layer-integrity baseline, not a fake head-turn.
         // The current decomposition has no hidden neck fill, so lock the
         // complete head group to the torso rather than displaying a false
@@ -80,8 +86,12 @@ export function createMeshRenderer(canvas){
         const layerMatrix=!deform&&faceSet.has(baseName)?matrices.neck:matrices[baseName];
         gl.uniformMatrix3fv(uniforms.layer,false,mat3(layerMatrix));gl.uniform1f(uniforms.hair,baseName==='fronthair'||baseName==='backhair'?1:0);
         gl.uniform1f(uniforms.facial,faceSet.has(baseName)?1:0);gl.uniform1f(uniforms.yaw,expression.yaw||0);gl.uniform2fv(uniforms.headPivot,expression.headPivot||[0,.48]);
-        gl.uniform1f(uniforms.eye,iris&&eyeMask?1:0);gl.uniform1f(uniforms.eyeWhite,eyePart?blink:0);gl.uniform2fv(uniforms.eyeCenter,expression.eyeCenter||[0,.52]);gl.uniform2fv(uniforms.eyeOffset,iris?(expression.gaze||[0,0]):[0,0]);gl.uniform1f(uniforms.opacity,eyePart||openEyelash?1-blink:closedEye?blink:1);
-        gl.uniform1f(uniforms.chest,expression.chest||0);gl.uniform1f(uniforms.chestLayer,['topwear','neck','handwear','seam_repair_torso'].includes(baseName)?1:0);gl.uniform1f(uniforms.eyelashLine,baseName==='eyelash'&&!hasClosedEyelids?blink:0);gl.uniform2fv(uniforms.chestBand,expression.chestBand||[.2,.5]);
+        const eyeCenter=side&&expression.eyeCenters?.[side]||expression.eyeCenter||[0,.52];
+        // Perceptual closure is intentionally eased: a numerical 50% keeps a
+        // readable eye slit instead of looking indistinguishable from closed.
+        const closure=blink*blink,openOpacity=1-closure,closedOpacity=closure;
+        gl.uniform1f(uniforms.eye,iris&&eyeMask?1:0);gl.uniform1f(uniforms.eyeWhite,eyePart?closure:0);gl.uniform2fv(uniforms.eyeCenter,eyeCenter);gl.uniform2fv(uniforms.eyeOffset,iris?(expression.gaze||[0,0]):[0,0]);gl.uniform1f(uniforms.opacity,eyePart||openEyelash?openOpacity:closedEye?closedOpacity:1);
+        gl.uniform1f(uniforms.chest,expression.chest||0);gl.uniform1f(uniforms.chestLayer,['topwear','neck','handwear','seam_repair_torso'].includes(baseName)?1:0);gl.uniform1f(uniforms.eyelashLine,baseName==='eyelash'?closure:0);gl.uniform2fv(uniforms.chestBand,expression.chestBand||[.2,.5]);
         gl.drawElements(gl.TRIANGLES,indices.length,gl.UNSIGNED_SHORT,0);
       }
     }

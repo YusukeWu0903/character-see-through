@@ -82,6 +82,10 @@ models. Front-view yaw is only a conservative 2D cue, not real 3/4 artwork.
 - Closed eyelids are versioned task-local assets. Only an explicitly reviewed
   and promoted candidate is loaded by default; rejected experiments remain
   separate for rollback.
+- The eye rig uses one shared cursor/manual gaze vector for both irises. Each
+  iris is clipped by its matching eyewhite Alpha at the translated destination;
+  conservative common limits and per-eye blink centres are measured into the
+  task-local manifest. See [`docs/eye-rig.md`](docs/eye-rig.md).
 - `seams_v2` is an explicit Eris seam-repair candidate, split into head-bound
   and torso-bound patches. It requires per-character visual review and is not
   a universal repair.
@@ -95,6 +99,8 @@ models. Front-view yaw is only a conservative 2D cue, not real 3/4 artwork.
 ```powershell
 python -m pytest tests/test_seethrough_alpha.py -q
 node --test tests/test_rig.mjs tests/test_deformation.mjs tests/test_expression.mjs tests/test_renderer_alpha.mjs
+python validate_eye_rig.py outputs/seethrough_local/Eris_full_body_casual_20260918_113905
+node tests/check_eye_rig_browser.cjs
 ```
 
 Tests prove implementation contracts. Always perform checkerboard and rendered
