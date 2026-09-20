@@ -3,7 +3,7 @@ import {drivePose} from './motion.mjs';
 import {createMeshRenderer} from './mesh-renderer.mjs';
 import {validateDeformation,serializeSettings,parseSettings,deformPoint} from './deformation.mjs';
 import {buildExpression,applyExpressivePose,advanceSpring,sharedGazeTarget} from './expression.mjs';
-import {assertViewerDefaults,resolveQualityProfile} from './quality-profile.mjs';
+import {assertViewerDefaults,resolveQualityProfile} from './quality-profile.mjs?v=21';
 const $=id=>document.getElementById(id);
 const task=new URLSearchParams(location.search).get('local');
 $('legacy').href='/preview-rig?local='+encodeURIComponent(task||'');

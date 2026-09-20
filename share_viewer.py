@@ -14,7 +14,7 @@ TASK = "Eris_full_body_casual_20260918_113905"
 TASK_DIR = (BASE / "outputs" / "seethrough_local" / TASK).resolve()
 CLOUD_DIR = (BASE / "outputs" / "seethrough").resolve()
 VIEWER_DIR = (BASE / "viewer").resolve()
-VIEWER_FILES = {"deform-preview.mjs", "mesh-renderer.mjs", "rig.mjs", "motion.mjs", "deformation.mjs", "expression.mjs", "eris-deform.json"}
+VIEWER_FILES = {"deform-preview.mjs", "mesh-renderer.mjs", "rig.mjs", "motion.mjs", "deformation.mjs", "expression.mjs", "quality-profile.mjs", "eris-deform.json", "quality-baseline.json"}
 CLOUD_FILES = {"backhair.png", "handwear.png", "legwear.png", "topwear.png", "neck.png", "bottomwear.png", "earwear.png", "ears.png", "face.png", "mouth.png", "eyelash.png", "nose.png", "eyebrow.png", "irides.png", "fronthair.png"}
 
 app = FastAPI(title="Character Preview Share", docs_url=None, redoc_url=None, openapi_url=None)
