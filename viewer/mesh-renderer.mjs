@@ -67,9 +67,9 @@ export function createMeshRenderer(canvas){
     // The comparison view can hold more than forty full-canvas layers. At
     // 1280px each that crosses the practical SwiftShader/WebGL memory limit
     // and loses the entire context, leaving a deceptively "loaded" blank
-    // viewer. The stage never displays one character above 1024px, so reduce
-    // only the GPU upload while retaining the original PNGs on disk.
-    const width=image.naturalWidth||image.width,height=image.naturalHeight||image.height,maxUpload=1024;
+    // viewer. Keep enough headroom for the visible viewer plus an automated
+    // review tab; reduce only the GPU upload while retaining original PNGs.
+    const width=image.naturalWidth||image.width,height=image.naturalHeight||image.height,maxUpload=768;
     let source=image;
     if(Math.max(width,height)>maxUpload){
       const ratio=maxUpload/Math.max(width,height),reduced=document.createElement('canvas');
