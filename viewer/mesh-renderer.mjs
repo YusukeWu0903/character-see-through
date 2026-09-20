@@ -42,7 +42,12 @@ void main(){
 // alone leaves bright premultiplied RGB behind as a white card.
 const fragment=`precision mediump float; varying vec2 uv; uniform sampler2D image, eyeMask; uniform float eye, eyeWhite, opacity; uniform vec2 eyeOffset; void main(){vec4 c=texture2D(image,uv);if(eye>0.5){float mask=texture2D(eyeMask,uv+eyeOffset*.5).a;c.rgb*=mask;c.a*=mask;}c.rgb*=opacity;c.a*=opacity;gl_FragColor=c;}`;
 const mat3=m=>new Float32Array([m[0],m[1],0,m[2],m[3],0,m[4],m[5],1]);
-export function createMeshRenderer(canvas){
+export const textureUploadLimit=value=>{
+  const parsed=Number(value);
+  return Number.isFinite(parsed)?Math.max(512,Math.min(1280,Math.round(parsed))):1280;
+};
+export function createMeshRenderer(canvas,{maxUpload=1280}={}){
+  const uploadLimit=textureUploadLimit(maxUpload);
   const gl=canvas.getContext('webgl',{alpha:true,premultipliedAlpha:true,antialias:true,preserveDrawingBuffer:true});
   if(!gl)throw new Error('此瀏覽器無法啟用 WebGL，請使用上一階段預覽');
   function shader(type,source){const s=gl.createShader(type);gl.shaderSource(s,source);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s;}
@@ -67,12 +72,12 @@ export function createMeshRenderer(canvas){
     // The comparison view can hold more than forty full-canvas layers. At
     // 1280px each that crosses the practical SwiftShader/WebGL memory limit
     // and loses the entire context, leaving a deceptively "loaded" blank
-    // viewer. Keep enough headroom for the visible viewer plus an automated
-    // review tab; reduce only the GPU upload while retaining original PNGs.
-    const width=image.naturalWidth||image.width,height=image.naturalHeight||image.height,maxUpload=768;
+    // viewer. Interactive viewing stays at the source-native 1280px; only an
+    // explicit validation query may request a lower-memory upload size.
+    const width=image.naturalWidth||image.width,height=image.naturalHeight||image.height;
     let source=image;
-    if(Math.max(width,height)>maxUpload){
-      const ratio=maxUpload/Math.max(width,height),reduced=document.createElement('canvas');
+    if(Math.max(width,height)>uploadLimit){
+      const ratio=uploadLimit/Math.max(width,height),reduced=document.createElement('canvas');
       reduced.width=Math.max(1,Math.round(width*ratio));reduced.height=Math.max(1,Math.round(height*ratio));
       reduced.getContext('2d').drawImage(image,0,0,reduced.width,reduced.height);source=reduced;
     }

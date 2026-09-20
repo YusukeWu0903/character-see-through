@@ -100,7 +100,7 @@ try{
   }
   try{const saved=localStorage.getItem(storageKey);if(saved){apply(parseSettings(saved,task));$('settings-status').textContent='已載入此任務的瀏覽器設定。';}}
   catch(e){$('settings-status').textContent='保存設定無法載入，改用預設：'+e.message;}
-  const renderer=createMeshRenderer(canvas);
+  const renderer=createMeshRenderer(canvas,{maxUpload:inspection.get('texture-max')??1280});
   canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();$('status').textContent='繪圖環境中斷，請重新整理頁面。';});
   const localPrefix='/layers/seethrough_local/'+encodeURIComponent(task)+'/';
   // The cloud comparison is optional and expensive: decoding it alongside the

@@ -14,7 +14,7 @@ async function main(){
     page.on('response',response=>{if(response.url().includes('/layers/')){imageStatuses.push(response.status());layerUrls.push(response.url());}});
     const task=process.env.RIG_TEST_TASK||'Eris_full_body_casual_20260918_113905';
     const base=process.env.RIG_TEST_BASE||'http://127.0.0.1:8011';
-    await page.goto(base+'/preview-deform?local='+encodeURIComponent(task));
+    await page.goto(base+'/preview-deform?local='+encodeURIComponent(task)+'&texture-max=768');
     try{
       await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('已載入'),null,{timeout:30000});
     }catch(error){
@@ -65,6 +65,7 @@ async function main(){
       checks:{nineDistinctGazeFrames:true,threeDistinctBlinkFrames:true,pointerFollowChangesFrame:true,noPageErrors:true,allLayerRequests200:true,approvedSeamLayersLoaded:true},
       screenshots:{gaze:9,blink:3,pointer:2},
       loadedLayerRequests:imageStatuses.length,
+      textureUploadMax:768,
       visualAcceptance:'pending manual inspection of generated PNGs'
     };
     fs.writeFileSync(path.join(out,'browser_eye_rig_report.json'),JSON.stringify(report,null,2));
