@@ -130,10 +130,11 @@ creates tightly bounded seam-repair patches. Candidate `seams_v2` separates
 head-bound and torso-bound repair assets, avoiding the earlier rigid face tear
 caused by attaching one mixed patch to the torso.
 
-This candidate is selected explicitly with `seam-candidate=seams_v2`; it is not
-silently promoted as a universal repair for all inputs. It improved the Eris
-neck seam, while some shoulder line-art remains part of the original artwork
-rather than a detachable compositing seam. Each future character needs its own
+After user review, `seams_v2` is promoted through
+`promote_seam_candidate.py` into a versioned Eris-only `seam_assets.json`
+manifest and loads by default. It is not a universal repair for other inputs.
+Some shoulder line-art remains part of the original artwork rather than a
+detachable compositing seam. Each future character still needs its own
 registration, visual review, and acceptance decision.
 
 ## 7. Secondary chest motion

@@ -9,9 +9,9 @@ async function main(){
   const browser=await chromium.launch({headless:true,executablePath:process.env.RIG_TEST_CHROMIUM||undefined,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']});
   try{
     const page=await browser.newPage({viewport:{width:1440,height:960},deviceScaleFactor:1});
-    const errors=[],imageStatuses=[];
+    const errors=[],imageStatuses=[],layerUrls=[];
     page.on('pageerror',error=>errors.push(String(error)));
-    page.on('response',response=>{if(response.url().includes('/layers/'))imageStatuses.push(response.status());});
+    page.on('response',response=>{if(response.url().includes('/layers/')){imageStatuses.push(response.status());layerUrls.push(response.url());}});
     const task=process.env.RIG_TEST_TASK||'Eris_full_body_casual_20260918_113905';
     const base=process.env.RIG_TEST_BASE||'http://127.0.0.1:8011';
     await page.goto(base+'/preview-deform?local='+encodeURIComponent(task));
@@ -59,9 +59,10 @@ async function main(){
 
     assert.deepEqual(errors,[]);
     assert.ok(imageStatuses.length>=23&&imageStatuses.every(status=>status===200));
+    assert.ok(['seam_repair_head.png','seam_repair_torso.png'].every(name=>layerUrls.some(url=>url.endsWith('/'+name))),'approved shoulder/neck seam layers should load by default');
     const report={
       result:'PASS',task,
-      checks:{nineDistinctGazeFrames:true,threeDistinctBlinkFrames:true,pointerFollowChangesFrame:true,noPageErrors:true,allLayerRequests200:true},
+      checks:{nineDistinctGazeFrames:true,threeDistinctBlinkFrames:true,pointerFollowChangesFrame:true,noPageErrors:true,allLayerRequests200:true,approvedSeamLayersLoaded:true},
       screenshots:{gaze:9,blink:3,pointer:2},
       loadedLayerRequests:imageStatuses.length,
       visualAcceptance:'pending manual inspection of generated PNGs'

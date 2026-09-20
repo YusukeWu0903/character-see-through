@@ -76,6 +76,15 @@ async function loadEyeAssets(prefix){
   }
   return {layers,limits:[manifest.limits.gazeX,manifest.limits.gazeY],eyeCenter:manifest.eyeCenter,eyeCenters:manifest.eyeCenters,closedEyelids:approvedEyelids};
 }
+async function loadSeamAssets(prefix){
+  const response=await fetch(prefix+'_rig_assets/seam_assets.json',{cache:'no-store'});
+  if(response.status===404)return null;
+  if(!response.ok)throw new Error('肩頸修補描述載入失敗');
+  const manifest=await response.json();
+  const approved=manifest.schemaVersion===1&&manifest.source==='registered_original'&&manifest.visualReview?.status==='passed'&&/^[a-zA-Z0-9_-]+$/.test(manifest.assetDirectory||'');
+  if(!approved||manifest.layers?.join(',')!=='seam_repair_head,seam_repair_torso')throw new Error('肩頸修補描述格式無效');
+  return {manifest,layers:await load(manifest.layers,prefix+'_rig_assets/'+manifest.assetDirectory+'/')};
+}
 try{
   if(!task)throw new Error('請提供 local 任務名稱');
   const response=await fetch('/viewer-assets/eris-deform.json');
@@ -97,7 +106,7 @@ try{
   // The cloud comparison is optional and expensive: decoding it alongside the
   // local rig can exceed Chromium's renderer memory before the first frame.
   // Load it only if the user explicitly switches the comparison selector.
-  const [baseLocal,eyeAssets]=await Promise.all([load(LOC,localPrefix),loadEyeAssets(localPrefix)]);
+  const [baseLocal,eyeAssets,seamAssets]=await Promise.all([load(LOC,localPrefix),loadEyeAssets(localPrefix),loadSeamAssets(localPrefix)]);
   let local=eyeAssets?baseLocal.flatMap(layer=>{
     if(layer.name==='eyewhite')return eyeAssets.layers.filter(x=>x.name.startsWith('eyewhite_'));
     if(layer.name==='irides')return eyeAssets.layers.filter(x=>x.name.startsWith('irides_'));
@@ -108,6 +117,7 @@ try{
     }
     return [layer];
   }):baseLocal;
+  if(seamAssets)local.push(...seamAssets.layers);
   const seamCandidate=new URLSearchParams(location.search).get('seam-candidate');
   if(seamCandidate){
     if(!/^[a-zA-Z0-9_-]+$/.test(seamCandidate))throw new Error('Invalid seam candidate name');
@@ -116,6 +126,7 @@ try{
     if(!response.ok)throw new Error('Seam candidate report unavailable');
     const report=await response.json();
     if(report.schemaVersion!==2||report.source!=='registered_original'||report.status!=='candidate')throw new Error('Unsupported seam candidate');
+    local=local.filter(layer=>!['seam_repair_head','seam_repair_torso'].includes(layer.name));
     local.push(...await load(['seam_repair_head','seam_repair_torso'],seamPrefix));
   }
   // Runtime eye order is explicit: sclera and iris sit below the open lash;
@@ -131,8 +142,9 @@ try{
   for(const {name} of local)if(!evaluate()[name.replace(/_(left|right)$/,'')])throw new Error('圖層尚未配對：'+name);
   $('status').textContent=`已載入：雲端 ${REF.length} 層（需要時載入）／本機 ${local.length} 層\n${eyeAssets?.closedEyelids?'同步雙眼、眼白裁切與左右閉眼眼瞼已啟用':eyeAssets?'同步雙眼與眼白裁切已啟用':'未找到左右眼素材，使用合併眼部圖層'}\n第六階段 · 品質檢查中`;
   if(eyeAssets?.candidate)$('status').textContent+='\n候選預覽：'+eyeAssets.candidate+'（半閉眼重影待修正，尚未核准）';
+  if(eyeAssets?.closedEyelids)$('status').textContent='已載入：新版眼瞼、同步雙眼與眼白裁切 · 已經使用者核准\n自動眨眼與其他動作可正常使用';
   if(seamCandidate)$('status').textContent+='\n肩頸接縫候選：'+seamCandidate+'（待人工驗收）';
-  else if(eyeAssets?.closedEyelids)$('status').textContent='已載入：新版眼瞼、同步雙眼與眼白裁切 · 已經使用者核准\n自動眨眼與其他動作可正常使用';
+  else if(seamAssets)$('status').textContent+='\n肩頸接縫修補：已經使用者核准並預設啟用';
   $('head-limit').oninput=()=>{
     try{const candidate=structuredClone(rig);candidate.nodes.find(n=>n.id==='head').maxDegrees=Number($('head-limit').value);apply(candidate);$('settings-status').textContent='設定已調整，尚未保存。';}
     catch(e){$('settings-status').textContent=e.message;apply(rig);}
