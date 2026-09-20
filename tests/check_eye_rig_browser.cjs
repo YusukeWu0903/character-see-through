@@ -6,7 +6,7 @@ const path=require('node:path');
 async function main(){
   const out=path.resolve(__dirname,'../outputs/eye_rig_browser_validation');
   fs.mkdirSync(out,{recursive:true});
-  const browser=await chromium.launch({headless:true,executablePath:process.env.RIG_TEST_CHROMIUM||undefined,args:['--enable-unsafe-swiftshader']});
+  const browser=await chromium.launch({headless:true,executablePath:process.env.RIG_TEST_CHROMIUM||undefined,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']});
   try{
     const page=await browser.newPage({viewport:{width:1440,height:960},deviceScaleFactor:1});
     const errors=[],imageStatuses=[];
