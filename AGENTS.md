@@ -32,3 +32,12 @@ user-approved milestone, read [`skills/daily-work-log/SKILL.md`](skills/daily-wo
 and append the project entry to the shared dated log before handing off. Keep
 all projects changed on the same date in the same file; never overwrite another
 project's entry or create an empty log when nothing material changed.
+
+# Reusable cross-agent skills
+
+All agents must read the matching `skills/<name>/SKILL.md` before acting on its workflow. These files are platform-neutral; Claude, Hermes, and other agents should follow the same contracts through their own tools.
+
+- `portfolio-interactive-showcase`: public static/Vercel/GitHub Pages character showcase packaging.
+- `eye-rig-asset-promotion`: split-eye, gaze, and eyelid asset changes or promotion.
+- `seam-repair-promotion`: neck/shoulder seam candidate review or default activation.
+- `interactive-showcase-release-check`: any final public showcase delivery or URL update.
