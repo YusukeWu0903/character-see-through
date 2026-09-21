@@ -38,3 +38,7 @@ workflow_api.json
 Thumbs.db
 
 desktop.ini
+
+# Public GitHub Pages showcase assets
+!site/**/*.png
+!site/**/*.json

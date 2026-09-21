@@ -1,0 +1,322 @@
+{
+  "algorithm": "neutral colour learned at canvas edge; remove only edge-connected candidates; never globally erase source-mismatching pixels",
+  "layers": {
+    "topwear": {
+      "before": {
+        "opaque_pixels": 70197,
+        "edge_connected_background_pixels": 0,
+        "edge_connected_background_percent": 0.0,
+        "background_model": null
+      },
+      "after": {
+        "opaque_pixels": 70197,
+        "edge_connected_background_pixels": 0,
+        "edge_connected_background_percent": 0.0,
+        "background_model": null
+      },
+      "removed_pixels": 0,
+      "edge_removed_pixels": 0,
+      "source_mismatch_removed_pixels": 0,
+      "status": "pass"
+    },
+    "legwear": {
+      "before": {
+        "opaque_pixels": 142447,
+        "edge_connected_background_pixels": 0,
+        "edge_connected_background_percent": 0.0,
+        "background_model": null
+      },
+      "after": {
+        "opaque_pixels": 142447,
+        "edge_connected_background_pixels": 0,
+        "edge_connected_background_percent": 0.0,
+        "background_model": null
+      },
+      "removed_pixels": 0,
+      "edge_removed_pixels": 0,
+      "source_mismatch_removed_pixels": 0,
+      "status": "pass"
+    },
+    "handwear": {
+      "before": {
+        "opaque_pixels": 74094,
+        "edge_connected_background_pixels": 0,
+        "edge_connected_background_percent": 0.0,
+        "background_model": null
+      },
+      "after": {
+        "opaque_pixels": 74094,
+        "edge_connected_background_pixels": 0,
+        "edge_connected_background_percent": 0.0,
+        "background_model": null
+      },
+      "removed_pixels": 0,
+      "edge_removed_pixels": 0,
+      "source_mismatch_removed_pixels": 0,
+      "status": "pass"
+    },
+    "backhair": {
+      "before": {
+        "opaque_pixels": 26857,
+        "edge_connected_background_pixels": 0,
+        "edge_connected_background_percent": 0.0,
+        "background_model": null
+      },
+      "after": {
+        "opaque_pixels": 26857,
+        "edge_connected_background_pixels": 0,
+        "edge_connected_background_percent": 0.0,
+        "background_model": null
+      },
+      "removed_pixels": 0,
+      "edge_removed_pixels": 0,
+      "source_mismatch_removed_pixels": 0,
+      "status": "pass"
+    },
+    "footwear": {
+      "before": {
+        "opaque_pixels": 91,
+        "edge_connected_background_pixels": 0,
+        "edge_connected_background_percent": 0.0,
+        "background_model": null
+      },
+      "after": {
+        "opaque_pixels": 91,
+        "edge_connected_background_pixels": 0,
+        "edge_connected_background_percent": 0.0,
+        "background_model": null
+      },
+      "removed_pixels": 0,
+      "edge_removed_pixels": 0,
+      "source_mismatch_removed_pixels": 0,
+      "status": "manual-review",
+      "quality_issue": "footwear alpha coverage too small (91px < 1000px)"
+    },
+    "earwear": {
+      "before": {
+        "opaque_pixels": 0,
+        "edge_connected_background_pixels": 0,
+        "edge_connected_background_percent": 0.0,
+        "background_model": null
+      },
+      "after": {
+        "opaque_pixels": 0,
+        "edge_connected_background_pixels": 0,
+        "edge_connected_background_percent": 0.0,
+        "background_model": null
+      },
+      "removed_pixels": 0,
+      "edge_removed_pixels": 0,
+      "source_mismatch_removed_pixels": 0,
+      "status": "pass"
+    },
+    "neck": {
+      "before": {
+        "opaque_pixels": 4067,
+        "edge_connected_background_pixels": 0,
+        "edge_connected_background_percent": 0.0,
+        "background_model": null
+      },
+      "after": {
+        "opaque_pixels": 4067,
+        "edge_connected_background_pixels": 0,
+        "edge_connected_background_percent": 0.0,
+        "background_model": null
+      },
+      "removed_pixels": 0,
+      "edge_removed_pixels": 0,
+      "source_mismatch_removed_pixels": 0,
+      "status": "pass"
+    },
+    "bottomwear": {
+      "before": {
+        "opaque_pixels": 21316,
+        "edge_connected_background_pixels": 0,
+        "edge_connected_background_percent": 0.0,
+        "background_model": null
+      },
+      "after": {
+        "opaque_pixels": 21316,
+        "edge_connected_background_pixels": 0,
+        "edge_connected_background_percent": 0.0,
+        "background_model": null
+      },
+      "removed_pixels": 0,
+      "edge_removed_pixels": 0,
+      "source_mismatch_removed_pixels": 0,
+      "status": "pass"
+    },
+    "eyebrow": {
+      "before": {
+        "opaque_pixels": 425,
+        "edge_connected_background_pixels": 0,
+        "edge_connected_background_percent": 0.0,
+        "background_model": null
+      },
+      "after": {
+        "opaque_pixels": 425,
+        "edge_connected_background_pixels": 0,
+        "edge_connected_background_percent": 0.0,
+        "background_model": null
+      },
+      "removed_pixels": 0,
+      "edge_removed_pixels": 0,
+      "source_mismatch_removed_pixels": 0,
+      "status": "pass"
+    },
+    "ears": {
+      "before": {
+        "opaque_pixels": 1034,
+        "edge_connected_background_pixels": 0,
+        "edge_connected_background_percent": 0.0,
+        "background_model": null
+      },
+      "after": {
+        "opaque_pixels": 1034,
+        "edge_connected_background_pixels": 0,
+        "edge_connected_background_percent": 0.0,
+        "background_model": null
+      },
+      "removed_pixels": 0,
+      "edge_removed_pixels": 0,
+      "source_mismatch_removed_pixels": 0,
+      "status": "pass"
+    },
+    "face": {
+      "before": {
+        "opaque_pixels": 12900,
+        "edge_connected_background_pixels": 0,
+        "edge_connected_background_percent": 0.0,
+        "background_model": null
+      },
+      "after": {
+        "opaque_pixels": 12900,
+        "edge_connected_background_pixels": 0,
+        "edge_connected_background_percent": 0.0,
+        "background_model": null
+      },
+      "removed_pixels": 0,
+      "edge_removed_pixels": 0,
+      "source_mismatch_removed_pixels": 0,
+      "status": "pass"
+    },
+    "nose": {
+      "before": {
+        "opaque_pixels": 112,
+        "edge_connected_background_pixels": 0,
+        "edge_connected_background_percent": 0.0,
+        "background_model": null
+      },
+      "after": {
+        "opaque_pixels": 112,
+        "edge_connected_background_pixels": 0,
+        "edge_connected_background_percent": 0.0,
+        "background_model": null
+      },
+      "removed_pixels": 0,
+      "edge_removed_pixels": 0,
+      "source_mismatch_removed_pixels": 0,
+      "status": "pass"
+    },
+    "mouth": {
+      "before": {
+        "opaque_pixels": 114,
+        "edge_connected_background_pixels": 0,
+        "edge_connected_background_percent": 0.0,
+        "background_model": null
+      },
+      "after": {
+        "opaque_pixels": 114,
+        "edge_connected_background_pixels": 0,
+        "edge_connected_background_percent": 0.0,
+        "background_model": null
+      },
+      "removed_pixels": 0,
+      "edge_removed_pixels": 0,
+      "source_mismatch_removed_pixels": 0,
+      "status": "pass"
+    },
+    "eyelash": {
+      "before": {
+        "opaque_pixels": 900,
+        "edge_connected_background_pixels": 0,
+        "edge_connected_background_percent": 0.0,
+        "background_model": null
+      },
+      "after": {
+        "opaque_pixels": 900,
+        "edge_connected_background_pixels": 0,
+        "edge_connected_background_percent": 0.0,
+        "background_model": null
+      },
+      "removed_pixels": 0,
+      "edge_removed_pixels": 0,
+      "source_mismatch_removed_pixels": 0,
+      "status": "pass"
+    },
+    "eyewhite": {
+      "before": {
+        "opaque_pixels": 595,
+        "edge_connected_background_pixels": 0,
+        "edge_connected_background_percent": 0.0,
+        "background_model": null
+      },
+      "after": {
+        "opaque_pixels": 595,
+        "edge_connected_background_pixels": 0,
+        "edge_connected_background_percent": 0.0,
+        "background_model": null
+      },
+      "removed_pixels": 0,
+      "edge_removed_pixels": 0,
+      "source_mismatch_removed_pixels": 0,
+      "status": "pass"
+    },
+    "irides": {
+      "before": {
+        "opaque_pixels": 324,
+        "edge_connected_background_pixels": 0,
+        "edge_connected_background_percent": 0.0,
+        "background_model": null
+      },
+      "after": {
+        "opaque_pixels": 324,
+        "edge_connected_background_pixels": 0,
+        "edge_connected_background_percent": 0.0,
+        "background_model": null
+      },
+      "removed_pixels": 0,
+      "edge_removed_pixels": 0,
+      "source_mismatch_removed_pixels": 0,
+      "status": "pass"
+    },
+    "fronthair": {
+      "before": {
+        "opaque_pixels": 19436,
+        "edge_connected_background_pixels": 0,
+        "edge_connected_background_percent": 0.0,
+        "background_model": null
+      },
+      "after": {
+        "opaque_pixels": 19436,
+        "edge_connected_background_pixels": 0,
+        "edge_connected_background_percent": 0.0,
+        "background_model": null
+      },
+      "removed_pixels": 0,
+      "edge_removed_pixels": 0,
+      "source_mismatch_removed_pixels": 0,
+      "status": "pass"
+    }
+  },
+  "manual_review": [
+    "footwear"
+  ],
+  "summary": {
+    "removed_pixels": 0,
+    "layers_requiring_manual_review": [
+      "footwear"
+    ],
+    "deliverable": false
+  }
+}

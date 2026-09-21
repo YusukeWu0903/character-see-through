@@ -1,0 +1,70 @@
+[
+  {
+    "name": "topwear",
+    "file": "topwear.png"
+  },
+  {
+    "name": "legwear",
+    "file": "legwear.png"
+  },
+  {
+    "name": "handwear",
+    "file": "handwear.png"
+  },
+  {
+    "name": "back hair",
+    "file": "backhair.png"
+  },
+  {
+    "name": "footwear",
+    "file": "footwear.png"
+  },
+  {
+    "name": "earwear",
+    "file": "earwear.png"
+  },
+  {
+    "name": "neck",
+    "file": "neck.png"
+  },
+  {
+    "name": "bottomwear",
+    "file": "bottomwear.png"
+  },
+  {
+    "name": "eyebrow",
+    "file": "eyebrow.png"
+  },
+  {
+    "name": "ears",
+    "file": "ears.png"
+  },
+  {
+    "name": "face",
+    "file": "face.png"
+  },
+  {
+    "name": "nose",
+    "file": "nose.png"
+  },
+  {
+    "name": "mouth",
+    "file": "mouth.png"
+  },
+  {
+    "name": "eyelash",
+    "file": "eyelash.png"
+  },
+  {
+    "name": "eyewhite",
+    "file": "eyewhite.png"
+  },
+  {
+    "name": "irides",
+    "file": "irides.png"
+  },
+  {
+    "name": "front hair",
+    "file": "fronthair.png"
+  }
+]
