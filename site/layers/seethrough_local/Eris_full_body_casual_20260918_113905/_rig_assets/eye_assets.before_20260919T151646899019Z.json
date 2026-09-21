@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "canvas": [
+    1280,
+    1280
+  ],
+  "layers": {
+    "irides": {
+      "left": {
+        "pixels": 140,
+        "bbox": [
+          607,
+          153,
+          622,
+          165
+        ]
+      },
+      "right": {
+        "pixels": 151,
+        "bbox": [
+          657,
+          150,
+          672,
+          163
+        ]
+      },
+      "midpoint": 639.5
+    },
+    "eyewhite": {
+      "left": {
+        "pixels": 238,
+        "bbox": [
+          601,
+          153,
+          625,
+          166
+        ]
+      },
+      "right": {
+        "pixels": 240,
+        "bbox": [
+          652,
+          150,
+          677,
+          163
+        ]
+      },
+      "midpoint": 638.75
+    }
+  },
+  "limits": {
+    "gazeX": 0.003125,
+    "gazeY": 0.002
+  },
+  "eyeCenter": [
+    -0.000781,
+    0.753516
+  ],
+  "closedEyelids": {
+    "schemaVersion": 2,
+    "source": "approved_artwork",
+    "reference": "closed_eye_reference.png",
+    "boundarySource": "semantic_eyewhite_with_eyebrow_and_fronthair_exclusion",
+    "layers": {
+      "left": {
+        "file": "eyelid_closed_left.png",
+        "sourceRegion": [
+          452,
+          173,
+          501,
+          204
+        ],
+        "targetBbox": [
+          598,
+          150,
+          628,
+          169
+        ],
+        "alphaPixels": 428,
+        "eyebrowOverlapPixels": 0,
+        "fronthairOverlapPixels": 0
+      },
+      "right": {
+        "file": "eyelid_closed_right.png",
+        "sourceRegion": [
+          522,
+          169,
+          570,
+          200
+        ],
+        "targetBbox": [
+          649,
+          147,
+          680,
+          166
+        ],
+        "alphaPixels": 412,
+        "eyebrowOverlapPixels": 0,
+        "fronthairOverlapPixels": 0
+      }
+    }
+  }
+}

@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 2,
+  "canvas": [
+    1280,
+    1280
+  ],
+  "layers": {
+    "irides": {
+      "left": {
+        "pixels": 140,
+        "bbox": [
+          607,
+          153,
+          622,
+          165
+        ]
+      },
+      "right": {
+        "pixels": 151,
+        "bbox": [
+          657,
+          150,
+          672,
+          163
+        ]
+      },
+      "midpoint": 639.5
+    },
+    "eyewhite": {
+      "left": {
+        "pixels": 238,
+        "bbox": [
+          601,
+          153,
+          625,
+          166
+        ]
+      },
+      "right": {
+        "pixels": 240,
+        "bbox": [
+          652,
+          150,
+          677,
+          163
+        ]
+      },
+      "midpoint": 638.75
+    },
+    "eyelash": {
+      "left": {
+        "pixels": 318,
+        "bbox": [
+          592,
+          150,
+          628,
+          167
+        ]
+      },
+      "right": {
+        "pixels": 308,
+        "bbox": [
+          650,
+          146,
+          684,
+          164
+        ]
+      },
+      "midpoint": 638.75
+    }
+  },
+  "mask": {
+    "source": "eyewhite_alpha",
+    "sampling": "destination_uv",
+    "alphaThreshold": 8,
+    "minimumRelativeCoverage": 0.865
+  },
+  "limits": {
+    "gazeX": 0.003125,
+    "gazeY": 0.002344,
+    "pixels": {
+      "x": 2.0,
+      "y": 1.5
+    }
+  },
+  "eyeCenters": {
+    "left": [
+      -0.039844,
+      0.751563
+    ],
+    "right": [
+      0.038281,
+      0.755469
+    ]
+  },
+  "eyeCenter": [
+    -0.000781,
+    0.753516
+  ],
+  "closedEyelids": {
+    "schemaVersion": 3,
+    "source": "hairless_head_artwork",
+    "visualReview": {
+      "status": "passed",
+      "reviewer": "user",
+      "approval": "User explicitly approved integration in this conversation: looks good, implement it.",
+      "acceptedAt": "20260919T151646899019Z"
+    },
+    "reference": "outputs\\seethrough_local\\Eris_full_body_casual_20260918_113905\\_rig_candidates\\head_closed_generated_v3.png",
+    "referenceSha256": "69336883275695ba6774eb5bfcc776046230c1cc7fc527fbdf6938dbefa03e09",
+    "baseSha256": "be6f334d0ac9234b471cb2355d099f3a33c1eff7e4d2ebe8eccf4a2156855fa7",
+    "crop": [
+      540,
+      80,
+      740,
+      230
+    ],
+    "registration": {
+      "score": 0.9998255532478234,
+      "matrix": [
+        [
+          0.9999997019767761,
+          0.0008073640055954456,
+          -0.12589474022388458
+        ],
+        [
+          -0.0008073640055954456,
+          0.9999997019767761,
+          0.01657737046480179
+        ]
+      ]
+    },
+    "layers": {
+      "left": {
+        "file": "eyelid_closed_left.png",
+        "bbox": [
+          586,
+          145,
+          634,
+          172
+        ],
+        "pixels": 1156,
+        "browOverlap": 0
+      },
+      "right": {
+        "file": "eyelid_closed_right.png",
+        "bbox": [
+          644,
+          141,
+          690,
+          169
+        ],
+        "pixels": 1178,
+        "browOverlap": 0
+      }
+    },
+    "sourceLayers": {
+      "handwear": "e897cd5232f4f545c06127ec48cfdfed2e47f5ac83a9eaee2bb84af34b619a54",
+      "legwear": "f4a1cf38066a6394f089184275df83d6b9f30f0f8766eb6c4a5a80c0e6003b9e",
+      "topwear": "ad041fd9564f36bb5210bab362c278e0b277474f6c67994795ac8c3b52f312cb",
+      "backhair": "1c2e554fd74c096d07cc87afb7db2a0284cafe3109bc75e939b017f947a4856d",
+      "footwear": "1502e3d1ecb7c21673458a70cce3df2d8e25c9c73f8f032b151417f18f8b8e4e",
+      "earwear": "8581440eb004a57863f3c4aacb3e4994d917fb475fa4a665699ac5983d1f3b53",
+      "neck": "eb075dd88d16529a773551e9291870fd934cf7b1151e11706208ebd592b2b749",
+      "bottomwear": "864308603e9ff38929a912f449f5b6d80c9e164c9bbab37167aa4b3baf9b6a7b",
+      "ears": "e734cbfeba46252c2df9f704e3965c66cfd51389ed599517832bc2bce157a7f0",
+      "face": "7228c07d2964525d78a43da1c55a9ffb8c5d0b01e512a6069cf7c95d7fa89461",
+      "nose": "ff46affd921ee80116c9580c943c371450d6348d39458d4e3cadf3788bc194af",
+      "mouth": "1a4e23dba127c76b297d99e6cfa59d222661b1c4048d2541d48fcf4ec6911214",
+      "eyelash": "e0e452d2e425247a29ef8dbd0f747184b1c2c02c4437ad8a42106969b68e1582",
+      "eyewhite": "f1139449594e929852fa1037f0dc9976c7b867917b9176d1607073f46af8f64f",
+      "irides": "c62c349608716b0e0a32dfb965beec9932bf914979b6c463645acd3c6dc00bb4",
+      "eyebrow": "1ec92501d99e65a991e14ed6cd93e66328882686ed181c3ddb204a013001ffb5",
+      "fronthair": "439c2777c7cd7c6e86ff0192220801b53f323d152df4a0dac580bf75b7717753"
+    },
+    "note": "Static compositing preview only; browser animation review required before promotion.",
+    "assetDirectory": "hairless_v3_20260919T151646899019Z",
+    "knownLimitations": [
+      "Intermediate blink frames use crossfade and can show ghosting."
+    ],
+    "assetSha256": {
+      "eyelid_closed_left.png": "ca46bba3f4a5c4169d120a2c5beebc88286c5aae8e04acbbbb51ac6c1d92c223",
+      "eyelid_closed_right.png": "679825331561794daf125ae9eafbb6a943c1c7bd1df319d04ffdc5fa42996edf"
+    }
+  }
+}

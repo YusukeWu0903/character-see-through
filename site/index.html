@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-Hant">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>角色姿勢、雙眼視線與眼瞼 · 第六階段</title>
+<style>
+body{margin:0;background:#15181d;color:#eee;font:14px system-ui}canvas{position:fixed;inset:0;width:100%;height:100%}
+header{position:fixed;top:12px;left:12px;right:12px;display:flex;justify-content:space-around;pointer-events:none}header span{background:#000a;padding:7px;border-radius:8px}
+aside{position:fixed;bottom:12px;right:12px;background:#101319ed;padding:16px;border:1px solid #53606b;border-radius:12px;width:270px;max-height:70vh;overflow:auto}
+label{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:10px 0}input[type=range]{width:145px;accent-color:#7ee8ff}button,select{padding:6px;background:#26323e;color:white;border:1px solid #77818c;border-radius:5px}a{color:#7ee8ff}small{display:block;color:#adb9c5;margin:8px 0}#status{font-size:12px;white-space:pre-wrap}output{width:27px;text-align:right}h1{font-size:16px;margin:0}
+@media(max-width:900px){aside{left:12px;width:auto;max-height:30vh}header{font-size:11px}}
+</style>
+<canvas id="stage"></canvas><canvas id="guides" style="pointer-events:none"></canvas>
+<header><span id="left-title">本機素材 · 剛性</span><span>本機素材 · 柔性</span></header>
+<aside>
+<h1>姿勢、雙眼視線與眼瞼 · 第六階段</h1>
+<small>共享網格、同步雙眼視線、眼白 Alpha 裁切、獨立閉眼眼瞼層與保守的呼吸次級動作。正視素材不會生成真正的 3/4 頭部。</small>
+<label>對照<select id="compare"><option value="cloud">雲端／本機，同步姿勢</option><option value="rigid" selected>同一本機素材，剛性／柔性</option></select></label>
+<label>身體側傾<input id="body" type="range" min="-100" max="100" value="0"><output></output></label>
+<label>上身側彎<input id="torso" type="range" min="-100" max="100" value="0"><output></output></label>
+<label>頭部側傾<input id="head" type="range" min="-100" max="100" value="0"><output></output></label>
+<label>呼吸起伏<input id="breath" type="range" min="0" max="100" value="30"><output></output></label>
+<label>髮絲擺動<input id="hair" type="range" min="0" max="100" value="10"><output></output></label>
+<label>動態強度<input id="energy" type="range" min="0" max="100" value="55"><output></output></label>
+<label>胸部起伏<input id="bust" type="range" min="0" max="100" value="28"><output></output></label>
+<label>頭部微轉<input id="yaw" type="range" min="-100" max="100" value="0"><output></output></label>
+<label>視線左右<input id="gaze-x" type="range" min="-100" max="100" value="0"><output></output></label>
+<label>視線上下<input id="gaze-y" type="range" min="-100" max="100" value="0"><output></output></label>
+<label><span>雙眼跟隨滑鼠</span><input id="gaze-follow" type="checkbox" checked></label>
+<label>眨眼<input id="blink" type="range" min="0" max="100" value="0"><output></output></label>
+<label><span>自動眨眼</span><input id="auto-blink" type="checkbox" checked></label>
+<button id="blink-now">眨眼一次</button>
+<label><span>待機擺動</span><input id="idle" type="checkbox" checked></label>
+<label><span>身體跟隨滑鼠</span><input id="follow" type="checkbox" checked></label>
+<label>檢查視角<select id="view"><option value="full">全身</option><option value="upper">上半身放大</option></select></label>
+<label><span>暫停時間</span><input id="paused" type="checkbox"></label>
+<button id="neutral">回到原位</button> <button id="defaults">恢復預設</button>
+<small>左右虹膜只接受同一個共享 gaze 向量，各自以同側眼白 Alpha 裁切，並採兩眼共同可用的保守範圍。眨眼時眼白、虹膜與開眼睫毛會收束並退場；只有人工驗收後標記為 approved 的 <code>eyelid_closed_left/right</code> 層才會覆蓋眼眶。</small>
+<details><summary>角色校正與保存</summary>
+<label><span>顯示錨點／過渡區</span><input id="show-guides" type="checkbox"></label>
+<label><span>點選校正</span><input id="calibrate" type="checkbox"></label>
+<small>啟用校正會回原位並暫停。在右側角色上點選新錨點。</small>
+<label>錨點<select id="anchor"><option value="head">頭／頸</option><option value="torso">上身／腰</option><option value="body">全身支點</option><option value="frontHair">前髮根</option><option value="backHair">後髮根</option></select></label>
+<label>頭部上限<input id="head-limit" type="range" min="2" max="8" step="0.5" value="6"><output>6°</output></label>
+<button id="save">保存設定</button> <button id="export">匯出 JSON</button>
+<label>匯入 JSON<input id="import" type="file" accept=".json" style="width:155px"></label>
+<button id="reset-rig">恢復角色設定</button>
+<small id="settings-status">設定依任務保存在此瀏覽器；跨瀏覽器請匯出。建議將 JSON 存入本專案 outputs 的任務資料夾。</small>
+</details>
+<span>互動展示 · Eris</span>
+<p id="status">載入中…</p>
+</aside>
+<script type="module" src="./viewer-assets/deform-preview.mjs?v=21"></script>
+</html>
