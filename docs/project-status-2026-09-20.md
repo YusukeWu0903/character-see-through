@@ -147,9 +147,18 @@ body or pointer motion it remains still.
 An earlier high-amplitude local-lobe mesh trial was rejected and reverted
 because it exposed unmatched body/clothing fills and produced triangular tears.
 The current work must not be described as a Live2D-quality breast simulation.
-Further chest work is paused by user direction. Any later increase must verify
-real rendered frames at maximum strength against clothing, skin, and shoulder
-intersections before promotion.
+Further chest work was paused by user direction. On 2026-09-23 the user
+requested pointer-driven motion. The first restoration attempted opposing
+left/right signals and broad garment/skin mesh scaling; the user rejected it
+because leftward pointer motion squeezed the chest inward and warped both arms.
+It was replaced with same-direction pointer follow-through on a localized,
+edge-anchored chest patch. The garment and central chest skin share the patch,
+while the skin mask narrows before the shoulders and arms. A still narrower
+skin-mask trial was also rejected because it reopened neckline
+gaps. The high-amplitude local-lobe mesh remains reverted. Native-resolution
+WebGL frames
+at maximum strength were reviewed in both pointer directions; this is a 2D
+preview effect, not an independent Live2D rig or user artwork acceptance.
 
 ## 8. User-facing controls and their scope
 

@@ -1,8 +1,8 @@
 import {createRig} from './rig.mjs';
 import {drivePose} from './motion.mjs';
-import {createMeshRenderer} from './mesh-renderer.mjs';
+import {createMeshRenderer} from './mesh-renderer.mjs?v=30';
 import {validateDeformation,serializeSettings,parseSettings,deformPoint} from './deformation.mjs';
-import {buildExpression,applyExpressivePose,advanceSpring,sharedGazeTarget} from './expression.mjs';
+import {buildExpression,applyExpressivePose,advanceSpring,sharedGazeTarget,chestFollowTarget} from './expression.mjs?v=26';
 import {assertViewerDefaults,resolveQualityProfile} from './quality-profile.mjs?v=21';
 const $=id=>document.getElementById(id);
 const task=new URLSearchParams(location.search).get('local');
@@ -26,6 +26,33 @@ $('compare').onchange=async()=>{
   $('left-title').textContent=$('compare').value==='cloud'?'雲端素材 · 柔性':'本機素材 · 剛性';
   if($('compare').value==='cloud')try{await ensureCloud();}catch(e){$('status').textContent='雲端對照素材載入失敗：'+e.message;}
 };
+// ===== 面板開關 =====
+(function(){
+  const sp=document.getElementById('sidePanel');
+  const tg=document.getElementById('panelToggle');
+  if(sp && tg){
+    tg.addEventListener('click',()=>{
+      sp.classList.toggle('open');
+      tg.setAttribute('aria-expanded', sp.classList.contains('open'));
+    });
+  } else {
+    console.warn('面板元素未找到');
+  }
+})();
+
+// ===== 分頁切換 =====
+(function(){
+  document.querySelectorAll('.panel-tab').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.panel-tab').forEach(b=>{b.classList.remove('active');b.setAttribute('aria-selected','false');});
+      document.querySelectorAll('.panel-content').forEach(c=>c.classList.remove('active'));
+      btn.classList.add('active');btn.setAttribute('aria-selected','true');
+      const p=document.getElementById('tab-'+btn.dataset.tab);
+      if(p)p.classList.add('active');
+    });
+  });
+})();
+
 const canvas=$('stage'),guides=$('guides'),g=guides.getContext('2d');
 let mx=0,my=0,tx=0,ty=0,layout=null;
 canvas.addEventListener('pointermove',e=>{
@@ -154,6 +181,35 @@ try{
   if(seamCandidate)$('status').textContent+='\n肩頸接縫候選：'+seamCandidate+'（待人工驗收）';
   else if(seamAssets)$('status').textContent+='\n肩頸接縫修補：已經使用者核准並預設啟用';
   $('status').textContent+='\n'+(quality.isProduction?quality.label:'⚠ '+quality.label+'（不可作為交付畫面）');
+
+  // ===== 圖層開關清單 =====
+  const layerVisKey='see-through-layer-vis:'+task;
+  let layerVis={};
+  try{const saved=localStorage.getItem(layerVisKey);if(saved)layerVis=JSON.parse(saved);}catch{}
+  for(const {name} of local){if(!(name in layerVis))layerVis[name]=true;}
+  const persistVis=()=>{localStorage.setItem(layerVisKey,JSON.stringify(layerVis));};
+  const setLayerVis=(name,vis)=>{layerVis[name]=vis;persistVis();};
+  const baseLayers=REF;
+  const rigLayersSuffix=['eyewhite_left','eyewhite_right','irides_left','irides_right','eyelash_left','eyelash_right','eyelid_closed_left','eyelid_closed_right','seam_repair_head','seam_repair_torso'];
+  const baseListEl=document.getElementById('layer-list-base');
+  const rigListEl=document.getElementById('layer-list-rig');
+  function makeLayerItem(name){
+    const div=document.createElement('div');
+    div.className='layer-item';
+    const cb=document.createElement('input');cb.type='checkbox';cb.checked=layerVis[name]!==false;
+    cb.addEventListener('change',()=>{setLayerVis(name,cb.checked);});
+    const span=document.createElement('span');span.className='layer-name';span.textContent=name;
+    const badge=document.createElement('span');badge.className='layer-badge';
+    badge.textContent=(baseLayers.includes(name.replace(/_(left|right)$/,''))?'基礎':'Rig');
+    div.append(cb,span,badge);
+    return div;
+  }
+  for(const {name} of [...local].sort((a,b)=>a.name.localeCompare(b.name))){
+    const isBase=baseLayers.includes(name.replace(/_(left|right)$/,''));
+    const target=isBase?baseListEl:rigListEl;
+    if(target)target.appendChild(makeLayerItem(name));
+  }
+
   $('head-limit').oninput=()=>{
     try{const candidate=structuredClone(rig);candidate.nodes.find(n=>n.id==='head').maxDegrees=Number($('head-limit').value);apply(candidate);$('settings-status').textContent='設定已調整，尚未保存。';}
     catch(e){$('settings-status').textContent=e.message;apply(rig);}
@@ -184,7 +240,7 @@ try{
     catch(e){$('settings-status').textContent='匯入失敗：'+e.message;}finally{$('import').value='';}
   };
   $('reset-rig').onclick=()=>{try{localStorage.removeItem(storageKey);apply(preset);$('settings-status').textContent='已恢復角色預設並清除瀏覽器保存設定。';}catch(e){$('settings-status').textContent=e.message;}};
-  let t=0,last=performance.now(),chestSpring={position:0,velocity:0};
+  let t=0,last=performance.now(),chestSpring={position:0,velocity:0},chestFollowSpring={position:0,velocity:0};
   function animate(now){
     const dt=Math.min(Math.max((now-last)/1000,0),.05);last=now;
     if(!$('paused').checked){
@@ -199,6 +255,9 @@ try{
       // instead of creating an unrelated periodic bounce.
       const chestTarget=Math.max(-.85,Math.min(.85,controls.bust*(-pose.torso*1.45-pose.body*.70-($('follow').checked?mx*.75:0))));
       chestSpring=advanceSpring(chestSpring,chestTarget,dt,{frequency:7,damping:.72});
+      // Both sides follow the pointer in the same direction; no inward squeeze.
+      const followTarget=chestFollowTarget(mx,controls.bust,$('follow').checked);
+      chestFollowSpring=advanceSpring(chestFollowSpring,followTarget,dt,{frequency:7,damping:.72});
     }
     const matrices=evaluate(pose,t);
     const gaze=sharedGazeTarget([controls['gaze-x'],controls['gaze-y']],[mx,my],$('gaze-follow').checked,.8);
@@ -206,12 +265,13 @@ try{
     expression.eyeCenter=eyeAssets?.eyeCenter||rig.expression?.eyeCenter||[0,.755];
     expression.eyeCenters=eyeAssets?.eyeCenters||null;
     expression.chest=chestSpring.position;
+    expression.chestFollow=chestFollowSpring.position;
     expression.chestBand=rig.expression?.chestBand||[.2,.5];
     expression.hasClosedEyelids=Boolean(eyeAssets?.closedEyelids);
     // Keep the original open eyes until a rendered blink has passed review.
     // Alpha-overlap tests alone cannot certify the artwork or its alignment.
     if(!expression.hasClosedEyelids)expression.blink=0;
-    const dpr=canvas.width/innerWidth,panel=document.querySelector('aside').getBoundingClientRect();
+    const dpr=canvas.width/innerWidth,panel=(document.querySelector('#sidePanel')||document.querySelector('aside')).getBoundingClientRect();
     const w=canvas.width-(innerWidth>900?(panel.width+24)*dpr:0),h=canvas.height-(innerWidth<=900?(panel.height+24)*dpr:0);
     const zoom=$('view').value==='upper'?1.9:1,s=Math.min(w/2,h)*.96/2.12*zoom;
     const cy=h/2+($('view').value==='upper'?s*.4:0);
@@ -219,8 +279,8 @@ try{
     document.querySelector('header').style.right=innerWidth>900?(panel.width+24)+'px':'12px';
     renderer.clear();
     const leftLayers=$('compare').value==='cloud'&&cloud?cloud:local;
-    renderer.draw(leftLayers,matrices,rig.deformation,w/4,cy,s,$('compare').value==='cloud'&&Boolean(cloud),expression);
-    renderer.draw(local,matrices,rig.deformation,w*.75,cy,s,true,expression);
+    renderer.draw(leftLayers,matrices,rig.deformation,w/4,cy,s,$('compare').value==='cloud'&&Boolean(cloud),expression,layerVis);
+    renderer.draw(local,matrices,rig.deformation,w*.75,cy,s,true,expression,layerVis);
     g.clearRect(0,0,guides.width,guides.height);
     if($('show-guides').checked){
       g.font=`${12*dpr}px system-ui`;g.lineWidth=dpr;

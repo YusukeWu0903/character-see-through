@@ -16,7 +16,10 @@ test('premultiplied texture fades scale RGB together with alpha', async () => {
   assert.match(source, /openEyelash/);
   assert.match(source, /openOpacity/);
   assert.match(source, /separate oscillation/);
-  assert.match(source, /'handwear','seam_repair_torso'/);
+  assert.ok(source.includes("baseName==='topwear'?1:['handwear','seam_repair_torso'].includes(baseName)?2:0"));
+  assert.ok(!source.includes('result.x*='));
+  assert.ok(source.includes('chestPatch*chestFollow'));
+  assert.ok(source.includes('float outer=chestLayer>1.5?.19:.31'));
   assert.match(source, /lock the\r?\n        \/\/ complete head group to the torso/);
 });
 test('interactive texture uploads default to native resolution while validation may opt down',()=>{

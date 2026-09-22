@@ -36,3 +36,7 @@ export function advanceSpring(state,target,dt,{frequency=8,damping=.55}={}){
   const acceleration=f*f*(clamp(target,-1,1)-position)-2*z*f*velocity;
   return {position:clamp(position+velocity*step,-1,1),velocity:clamp(velocity+acceleration*step,-10,10)};
 }
+
+export function chestFollowTarget(pointerX,strength,enabled=true){
+  return enabled?clamp(pointerX,-1,1)*clamp(strength,0,1)*.85:0;
+}

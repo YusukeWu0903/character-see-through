@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {blinkPulse,buildExpression,applyExpressivePose,sharedGazeTarget} from '../viewer/expression.mjs';
-import {advanceSpring} from '../viewer/expression.mjs';
+import {advanceSpring,chestFollowTarget} from '../viewer/expression.mjs';
 test('automatic blink is bounded, periodic, and disabled explicitly',()=>{
   assert.equal(blinkPulse(0),0);assert.ok(blinkPulse(.09)>.99);assert.equal(blinkPulse(.18),0);
   assert.equal(blinkPulse(.09),blinkPulse(4.69));assert.equal(blinkPulse(.09,false),0);
@@ -28,4 +28,13 @@ test('secondary spring is stable, delayed, and returns toward rest',()=>{
   assert.ok(s.position>0&&s.position<=1);assert.ok(peak>0);
   for(let i=0;i<240;i++)s=advanceSpring(s,0,1/60);
   assert.ok(Math.abs(s.position)<.03);assert.ok(Math.abs(s.velocity)<.1);
+});
+
+test('chest follows the pointer direction and stops when disabled',()=>{
+  assert.equal(chestFollowTarget(-1,1),-.85);
+  assert.equal(chestFollowTarget(1,1),.85);
+  assert.equal(chestFollowTarget(0,.28),0);
+  assert.equal(chestFollowTarget(-1,.28),-chestFollowTarget(1,.28));
+  assert.equal(chestFollowTarget(1,0),0);
+  assert.equal(chestFollowTarget(1,1,false),0);
 });

@@ -9,7 +9,7 @@ attribute vec2 position;
 uniform mat3 body, torso, head, layer;
 uniform vec4 bands;
 uniform vec2 scale, center;
-uniform float deform, hair, facial, eye, eyeWhite, yaw, chest, chestLayer, eyelashLine;
+uniform float deform, hair, facial, eye, eyeWhite, yaw, chest, chestLayer, chestFollow, eyelashLine;
 uniform vec2 eyeCenter, eyeOffset, headPivot, chestBand;
 varying vec2 uv;
 void main(){
@@ -27,12 +27,16 @@ void main(){
     result.xy+=(eyeOffset*eye);
     result.y=eyeCenter.y+(result.y-eyeCenter.y)*(1.0-eyeWhite);
   }
-  float cw=smoothstep(chestBand.x,chestBand.x+.08,p.y)*(1.0-smoothstep(chestBand.y-.08,chestBand.y,p.y));
-  // This is deliberately a small, coherent follow-through rather than a
-  // separate oscillation.  Larger independent local deformation tears the
-  // existing body and clothing layers, which have no matching hidden fill.
-  result.y+=chestLayer*cw*chest*.045;
-  result.x*=1.0+chestLayer*cw*chest*.050;
+  float vertical=smoothstep(chestBand.x,chestBand.x+.08,p.y)*(1.0-smoothstep(chestBand.y-.08,chestBand.y,p.y));
+  float inner=chestLayer>1.5?.08:.14;
+  float outer=chestLayer>1.5?.19:.31;
+  float horizontal=1.0-smoothstep(inner,outer,abs(p.x));
+  // A coherent, edge-anchored garment patch follows the pointer. There is no
+  // horizontal scaling or opposing left/right motion to squeeze the center.
+  // This remains restrained follow-through, not a separate oscillation.
+  float chestPatch=step(.5,chestLayer)*vertical*horizontal;
+  result.x+=chestPatch*chestFollow*.028;
+  result.y+=chestPatch*chest*.012;
   result.y=mix(result.y,eyeCenter.y+(result.y-eyeCenter.y)*.15,eyelashLine);
   gl_Position=vec4(result.xy*scale+center,0.0,1.0);
   uv=(position+1.0)*0.5;
@@ -54,7 +58,7 @@ export function createMeshRenderer(canvas,{maxUpload=1280}={}){
   const program=gl.createProgram();gl.attachShader(program,shader(gl.VERTEX_SHADER,vertex));gl.attachShader(program,shader(gl.FRAGMENT_SHADER,fragment));gl.linkProgram(program);
   if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(program));
   gl.useProgram(program);
-  const uniforms=Object.fromEntries(['body','torso','head','layer','bands','scale','center','deform','hair','image','eyeMask','eyeCenter','eyeOffset','headPivot','facial','eye','eyeWhite','yaw','opacity','chest','chestLayer','eyelashLine','chestBand'].map(k=>[k,gl.getUniformLocation(program,k)]));
+  const uniforms=Object.fromEntries(['body','torso','head','layer','bands','scale','center','deform','hair','image','eyeMask','eyeCenter','eyeOffset','headPivot','facial','eye','eyeWhite','yaw','opacity','chest','chestLayer','eyelashLine','chestBand','chestFollow'].map(k=>[k,gl.getUniformLocation(program,k)]));
   const vertices=[],indices=[],cols=24,rows=80;
   for(let y=0;y<=rows;y++)for(let x=0;x<=cols;x++)vertices.push(x/cols*2-1,y/rows*2-1);
   for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){const a=y*(cols+1)+x,b=a+cols+1;indices.push(a,a+1,b,a+1,b+1,b);}
@@ -87,12 +91,13 @@ export function createMeshRenderer(canvas,{maxUpload=1280}={}){
   }
   return {
     clear(){gl.viewport(0,0,canvas.width,canvas.height);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);},
-    draw(layers,matrices,bands,cx,cy,scale,deform=true,expression={}){
+    draw(layers,matrices,bands,cx,cy,scale,deform=true,expression={},visibility=null){
       gl.uniformMatrix3fv(uniforms.body,false,mat3(matrices.legwear));gl.uniformMatrix3fv(uniforms.torso,false,mat3(matrices.neck));gl.uniformMatrix3fv(uniforms.head,false,mat3(matrices.face));
       gl.uniform4fv(uniforms.bands,[...bands.waist,...bands.neck]);gl.uniform2f(uniforms.scale,scale*2/canvas.width,scale*2/canvas.height);gl.uniform2f(uniforms.center,cx*2/canvas.width-1,1-cy*2/canvas.height);gl.uniform1f(uniforms.deform,deform?1:0);
       const hasClosedEyelids=layers.some(({name})=>name.replace(/_(left|right)$/,'')==='eyelid_closed');
       const faceSet=new Set(['face','mouth','nose','eyelash','eyelid_closed','eyewhite','eyebrow','irides','ears','earwear','eyewear','headwear','seam_repair_head','fronthair','backhair']);
       for(const {name,image} of layers){
+        if(visibility?.[name]===false)continue;
         const baseName=name.replace(/_(left|right)$/,'');
         const side=eyeSide(name),eyeMask=baseName==='irides'?selectEyeMask(layers,name):null;
         const iris=baseName==='irides',white=baseName==='eyewhite',closedEye=baseName==='eyelid_closed',openEyelash=baseName==='eyelash'&&hasClosedEyelids,eyePart=iris||white,blink=Math.max(0,Math.min(1,expression.blink||0));
@@ -114,7 +119,7 @@ export function createMeshRenderer(canvas,{maxUpload=1280}={}){
         // readable eye slit instead of looking indistinguishable from closed.
         const closure=blink*blink,openOpacity=1-closure,closedOpacity=closure;
         gl.uniform1f(uniforms.eye,iris&&eyeMask?1:0);gl.uniform1f(uniforms.eyeWhite,eyePart?closure:0);gl.uniform2fv(uniforms.eyeCenter,eyeCenter);gl.uniform2fv(uniforms.eyeOffset,iris?(expression.gaze||[0,0]):[0,0]);gl.uniform1f(uniforms.opacity,eyePart||openEyelash?openOpacity:closedEye?closedOpacity:1);
-        gl.uniform1f(uniforms.chest,expression.chest||0);gl.uniform1f(uniforms.chestLayer,['topwear','neck','handwear','seam_repair_torso'].includes(baseName)?1:0);gl.uniform1f(uniforms.eyelashLine,baseName==='eyelash'?closure:0);gl.uniform2fv(uniforms.chestBand,expression.chestBand||[.2,.5]);
+        gl.uniform1f(uniforms.chest,expression.chest||0);gl.uniform1f(uniforms.chestLayer,baseName==='topwear'?1:['handwear','seam_repair_torso'].includes(baseName)?2:0);gl.uniform1f(uniforms.eyelashLine,baseName==='eyelash'?closure:0);gl.uniform2fv(uniforms.chestBand,expression.chestBand||[.2,.5]);gl.uniform1f(uniforms.chestFollow,expression.chestFollow||0);
         gl.drawElements(gl.TRIANGLES,indices.length,gl.UNSIGNED_SHORT,0);
       }
     }
