@@ -38,7 +38,7 @@ LOCKED_ACCEPTED_TASKS = {
         },
         "seamRepairSha256": {
             "seam_repair_head.png": "601335ec2e1d0841e76fe407b12bd39fc5a830b3ea48cb31e3dd474631590548",
-            "seam_repair_torso.png": "d575a83d90c4780507e4f4eb603d7087971690591dc31a50ae6c592654c586dc",
+            "seam_repair_torso.png": "84faf4cd5715e027735fe91a2df258a45f1da56f00cf35e4cdadc000b9316cee",
         },
     }
 }

@@ -137,6 +137,19 @@ Some shoulder line-art remains part of the original artwork rather than a
 detachable compositing seam. Each future character still needs its own
 registration, visual review, and acceptance decision.
 
+On 2026-09-23 the user approved `seams_skin_straps_v8` as the new Eris
+production default after reviewing its moving local preview. The torso repair
+retains the neck/shoulder skin and straps while removing the black bust
+fragments from the repair overlay; the regular topwear layer is unchanged.
+The active manifest points to a new versioned asset directory, while the
+previous `seams_v2` directory and a rollback manifest remain available.
+The accepted hash and decision are locked in `viewer/quality-baseline.json`
+and `docs/spec-decisions/2026-09-23-seam-repair-v8.md`. The separate static portfolio site was deployed and verified on 2026-09-23
+at https://my-portfolio-omega-beryl-98.vercel.app/eris-demo/ from portfolio
+commit 787d11b. This approval does not resolve the independent `handwear`
+chest-mesh coupling. Mouth shapes and expressions are the next stage, not
+part of this release.
+
 ## 7. Secondary chest motion
 
 The viewer contains an experimental, low-to-moderate chest follow-through
