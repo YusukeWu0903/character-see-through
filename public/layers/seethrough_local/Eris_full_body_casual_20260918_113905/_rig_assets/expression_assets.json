@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "source": "hairless_combined_feature_transplant",
+  "assetDirectory": "expressions_v1_20260923",
+  "visualReview": {
+    "status": "passed",
+    "approvedBy": "user",
+    "approvalDate": "2026-09-23"
+  },
+  "assets": [
+    "mouth_neutral.png",
+    "mouth_smile.png",
+    "mouth_angry.png",
+    "mouth_slight.png",
+    "mouth_wide.png",
+    "mouth_round.png",
+    "mouth_teeth.png",
+    "eyebrow_happy.png",
+    "eyebrow_angry.png",
+    "seam_repair_head_mouthless.png"
+  ],
+  "assetSha256": {
+    "mouth_neutral.png": "c3a7397f43ddde6bb7146c675fe749dffa98f7fc9b7ea939e21626559cada429",
+    "mouth_smile.png": "f8008e79f76702fdfba298604f9e1c48293834e828228938ba614c14b2c49880",
+    "mouth_angry.png": "b479b042cdf8e6fc9c2e0f7e298777b0af07d63fa27adf28f9df008306205ef3",
+    "mouth_slight.png": "e8c2a5c90cb1cecf53debea5b6ce4d9b4305bb96ff92f967216347ffa0e709d3",
+    "mouth_wide.png": "9a2374bd2e3bc0eb3faa5ff58b2f8f997382ea901cd35e86dc3615f7c8e79a3c",
+    "mouth_round.png": "efc05e262ac70dfda3634e8975ec3e4923acaafe05ced51775a408f5c75e4baa",
+    "mouth_teeth.png": "e8c12b0a343eae98f6cecf1c92b916b7234cdad1acddac59d790e9a233376867",
+    "eyebrow_happy.png": "44c11b93d54780ec9936bb44f98081a817cdbedc7b5594a9b201c771a66fdfcf",
+    "eyebrow_angry.png": "b444f6e64e30442989d086c72e27433dae8573aaade5d7db7774f6cf677a5522",
+    "seam_repair_head_mouthless.png": "0141748458e9524dc078c98b04e20ffb1f5d59d217e514d5e933a5c5ffce5628"
+  }
+}

@@ -122,7 +122,7 @@ h1 small{font-size:11px;color:var(--muted);font-weight:400}
       <label>呼吸起伏<input id="breath" type="range" min="0" max="100" value="30"><output></output></label>
       <label>髮絲擺動<input id="hair" type="range" min="0" max="100" value="10"><output></output></label>
       <label>動態強度<input id="energy" type="range" min="0" max="100" value="55"><output></output></label>
-      <label>胸部起伏<input id="bust" type="range" min="0" max="100" value="28"><output></output></label>
+      <label>胸部起伏<input id="bust" type="range" min="0" max="100" value="50"><output></output></label>
     </section>
 
     <section class="panel-section">
@@ -136,6 +136,13 @@ h1 small{font-size:11px;color:var(--muted);font-weight:400}
       <button id="blink-now">眨眼一次</button>
     </section>
 
+    <section class="panel-section" id="face-candidate-controls" hidden>
+      <h2>表情與口型</h2>
+      <label>表情<select id="face-emotion"></select></label>
+      <label>口型<select id="face-mouth"></select></label>
+      <label><span>自動試播口型</span><input id="face-talk" type="checkbox"></label>
+      <small>原圖移植的開心、生氣與七種口型。</small>
+    </section>
     <section class="panel-section">
       <h2>待機與跟隨</h2>
       <label><span>待機擺動</span><input id="idle" type="checkbox" checked></label>
@@ -187,5 +194,5 @@ h1 small{font-size:11px;color:var(--muted);font-weight:400}
   </svg>
 </button>
 
-<script type="module" src="/viewer-assets/deform-preview.mjs?v=1"></script>
+<script type="module" src="/viewer-assets/deform-preview.mjs?v=2"></script>
 </html>

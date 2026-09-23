@@ -2,8 +2,8 @@ import {createRig} from './rig.mjs';
 import {drivePose} from './motion.mjs';
 import {createMeshRenderer} from './mesh-renderer.mjs?v=31';
 import {validateDeformation,serializeSettings,parseSettings,deformPoint} from './deformation.mjs';
-import {buildExpression,applyExpressivePose,advanceSpring,sharedGazeTarget,chestFollowTarget} from './expression.mjs?v=31';
-import {assertViewerDefaults,resolveQualityProfile} from './quality-profile.mjs?v=31';
+import {buildExpression,applyExpressivePose,advanceSpring,sharedGazeTarget,chestFollowTarget} from './expression.mjs?v=26';
+import {assertViewerDefaults,resolveQualityProfile} from './quality-profile.mjs?v=21';
 const $=id=>document.getElementById(id);
 const task=new URLSearchParams(location.search).get('local')||'Eris_full_body_casual_20260918_113905';
 $('legacy').href='https://my-portfolio-omega-beryl-98.vercel.app/';
@@ -174,6 +174,31 @@ try{
     const insertAt=local.findIndex(layer=>layer.name==='fronthair');
     local.splice(insertAt<0?local.length:insertAt,0,...eyeLayers);
   }
+  let faceCandidate=null,facialOptions=null;
+  {
+    const response=await fetch(localPrefix+'_rig_assets/expression_assets.json',{cache:'no-store'});
+    if(!response.ok)throw new Error('正式表情素材描述載入失敗');
+    const manifest=await response.json();
+    if(manifest.schemaVersion!==1||manifest.source!=='hairless_combined_feature_transplant'||manifest.visualReview?.status!=='passed'||!/^[a-zA-Z0-9_-]+$/.test(manifest.assetDirectory||''))throw new Error('正式表情素材描述格式無效');
+    facialOptions=await import('./facial-showcase-candidate.mjs?v=2');
+    const seamHeadIndex=local.findIndex(layer=>layer.name==='seam_repair_head');
+    const mouthIndex=local.findIndex(layer=>layer.name==='mouth');
+    if(seamHeadIndex>=0&&mouthIndex>=0){
+      const [seamHead]=local.splice(seamHeadIndex,1);
+      local.splice(local.findIndex(layer=>layer.name==='mouth'),0,seamHead);
+    }
+    faceCandidate=await facialOptions.createFacialCandidate(local,renderer,localPrefix+'_rig_assets/'+manifest.assetDirectory+'/');
+    for(const [id,label] of facialOptions.MOUTH_OPTIONS)$('face-mouth').add(new Option(label,id));
+    for(const [id,label] of facialOptions.EMOTION_OPTIONS)$('face-emotion').add(new Option(label,id));
+    $('face-candidate-controls').querySelector('h2').textContent='表情與口型';
+    $('face-candidate-controls').querySelector('small').textContent='原圖移植的開心、生氣與七種口型；眼睛、眨眼與視線保持獨立。';
+    $('face-emotion').addEventListener('change',()=>{
+      $('face-mouth').value={neutral:'neutral',happy:'smile',angry:'angry'}[$('face-emotion').value];
+    });
+    $('face-candidate-controls').hidden=false;
+    $('view').add(new Option('臉部放大','face'));
+    if(inspection.get('view')==='face')$('view').value='face';
+  }
   for(const {name} of local)if(!evaluate()[name.replace(/_(left|right)$/,'')])throw new Error('圖層尚未配對：'+name);
   $('status').textContent=`已載入：雲端 ${REF.length} 層（需要時載入）／本機 ${local.length} 層\n${eyeAssets?.closedEyelids?'同步雙眼、眼白裁切與左右閉眼眼瞼已啟用':eyeAssets?'同步雙眼與眼白裁切已啟用':'未找到左右眼素材，使用合併眼部圖層'}\n第六階段 · 品質檢查中`;
   if(eyeAssets?.candidate)$('status').textContent+='\n候選預覽：'+eyeAssets.candidate+'（半閉眼重影待修正，尚未核准）';
@@ -181,6 +206,7 @@ try{
   if(seamCandidate)$('status').textContent+='\n肩頸接縫候選：'+seamCandidate+'（待人工驗收）';
   else if(seamAssets)$('status').textContent+='\n肩頸接縫修補：已經使用者核准並預設啟用';
   $('status').textContent+='\n'+(quality.isProduction?quality.label:'⚠ '+quality.label+'（不可作為交付畫面）');
+  if(faceCandidate)$('status').textContent+='\n口型：開心／生氣與七種口型已核准';
 
   // ===== 圖層開關清單 =====
   const layerVisKey='see-through-layer-vis:'+task;
@@ -273,10 +299,18 @@ try{
     if(!expression.hasClosedEyelids)expression.blink=0;
     const dpr=canvas.width/innerWidth,panel=(document.querySelector('#sidePanel')||document.querySelector('aside')).getBoundingClientRect();
     const w=canvas.width-(innerWidth>900?(panel.width+24)*dpr:0),h=canvas.height-(innerWidth<=900?(panel.height+24)*dpr:0);
-    const zoom=$('view').value==='upper'?1.9:1,s=Math.min(w/2,h)*.96/2.12*zoom;
-    const cy=h/2+($('view').value==='upper'?s*.4:0);
+    const faceView=$('view').value==='face';
+    const zoom=faceView?4.8:$('view').value==='upper'?1.9:1,s=Math.min(w/2,h)*.96/2.12*zoom;
+    const cy=h/2+(faceView?s*.692:$('view').value==='upper'?s*.4:0);
     layout={cx:w*.75,cy,s,dpr,w};
     document.querySelector('header').style.right=innerWidth>900?(panel.width+24)+'px':'12px';
+    if(faceCandidate){
+      if($('face-talk').checked&&!$('paused').checked){
+        const mode=facialOptions.TALK_SEQUENCE[Math.floor(t/.24)%facialOptions.TALK_SEQUENCE.length];
+        $('face-mouth').value=mode;
+      }
+      faceCandidate.update($('face-mouth').value,$('face-emotion').value);
+    }
     renderer.clear();
     const leftLayers=$('compare').value==='cloud'&&cloud?cloud:local;
     renderer.draw(leftLayers,matrices,rig.deformation,w/4,cy,s,$('compare').value==='cloud'&&Boolean(cloud),expression,layerVis);
