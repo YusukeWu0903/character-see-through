@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant">
 <meta charset="utf-8">
+<link rel="icon" href="data:,">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>角色姿勢、雙眼視線與眼瞼 · 第六階段</title>
 <style>
@@ -121,7 +122,7 @@ h1 small{font-size:11px;color:var(--muted);font-weight:400}
       <label>呼吸起伏<input id="breath" type="range" min="0" max="100" value="30"><output></output></label>
       <label>髮絲擺動<input id="hair" type="range" min="0" max="100" value="10"><output></output></label>
       <label>動態強度<input id="energy" type="range" min="0" max="100" value="55"><output></output></label>
-      <label>胸部起伏<input id="bust" type="range" min="0" max="100" value="28"><output></output></label>
+      <label>胸部起伏<input id="bust" type="range" min="0" max="100" value="50"><output></output></label>
     </section>
 
     <section class="panel-section">
@@ -133,6 +134,14 @@ h1 small{font-size:11px;color:var(--muted);font-weight:400}
       <label>眨眼<input id="blink" type="range" min="0" max="100" value="0"><output></output></label>
       <label><span>自動眨眼</span><input id="auto-blink" type="checkbox" checked></label>
       <button id="blink-now">眨眼一次</button>
+    </section>
+
+    <section class="panel-section" id="face-candidate-controls" hidden>
+      <h2>口型與表情 · 候選預覽</h2>
+      <label>表情<select id="face-emotion"></select></label>
+      <label>口型<select id="face-mouth"></select></label>
+      <label><span>自動試播口型</span><input id="face-talk" type="checkbox"></label>
+      <small>六組常用表情和口型供動態驗收；尚未取代核准的臉部素材。</small>
     </section>
 
     <section class="panel-section">
@@ -186,5 +195,5 @@ h1 small{font-size:11px;color:var(--muted);font-weight:400}
   </svg>
 </button>
 
-<script type="module" src="/viewer-assets/deform-preview.mjs?v=30"></script>
+<script type="module" src="/viewer-assets/deform-preview.mjs?v=48"></script>
 </html>

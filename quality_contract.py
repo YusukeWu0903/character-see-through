@@ -20,7 +20,7 @@ LOCKED_PRODUCTION = {
         "approvedSeamsRequired": True,
         "controls": {
             "body": 0, "torso": 0, "head": 0, "breath": 30, "hair": 10,
-            "energy": 55, "bust": 28, "yaw": 0, "gaze-x": 0,
+            "energy": 55, "bust": 50, "yaw": 0, "gaze-x": 0,
             "gaze-y": 0, "blink": 0,
         },
         "toggles": {
@@ -35,6 +35,18 @@ LOCKED_ACCEPTED_TASKS = {
         "closedEyelidSha256": {
             "eyelid_closed_left.png": "ca46bba3f4a5c4169d120a2c5beebc88286c5aae8e04acbbbb51ac6c1d92c223",
             "eyelid_closed_right.png": "679825331561794daf125ae9eafbb6a943c1c7bd1df319d04ffdc5fa42996edf",
+        },
+        "expressionAssetsSha256": {
+            "mouth_neutral.png": "c3a7397f43ddde6bb7146c675fe749dffa98f7fc9b7ea939e21626559cada429",
+            "mouth_smile.png": "f8008e79f76702fdfba298604f9e1c48293834e828228938ba614c14b2c49880",
+            "mouth_angry.png": "b479b042cdf8e6fc9c2e0f7e298777b0af07d63fa27adf28f9df008306205ef3",
+            "mouth_slight.png": "e8c2a5c90cb1cecf53debea5b6ce4d9b4305bb96ff92f967216347ffa0e709d3",
+            "mouth_wide.png": "9a2374bd2e3bc0eb3faa5ff58b2f8f997382ea901cd35e86dc3615f7c8e79a3c",
+            "mouth_round.png": "efc05e262ac70dfda3634e8975ec3e4923acaafe05ced51775a408f5c75e4baa",
+            "mouth_teeth.png": "e8c12b0a343eae98f6cecf1c92b916b7234cdad1acddac59d790e9a233376867",
+            "eyebrow_happy.png": "44c11b93d54780ec9936bb44f98081a817cdbedc7b5594a9b201c771a66fdfcf",
+            "eyebrow_angry.png": "b444f6e64e30442989d086c72e27433dae8573aaade5d7db7774f6cf677a5522",
+            "seam_repair_head_mouthless.png": "0141748458e9524dc078c98b04e20ffb1f5d59d217e514d5e933a5c5ffce5628",
         },
         "seamRepairSha256": {
             "seam_repair_head.png": "601335ec2e1d0841e76fe407b12bd39fc5a830b3ea48cb31e3dd474631590548",
@@ -120,6 +132,16 @@ def verify_task(task: Path, baseline: dict) -> None:
             or seam_manifest.get("visualReview", {}).get("status") != "passed"
             or seam_manifest.get("assetSha256") != accepted["seamRepairSha256"]):
         raise ValueError("accepted shoulder/neck seam repair is missing or changed")
+    expression_manifest = json.loads((rig_assets / "expression_assets.json").read_text(encoding="utf-8"))
+    if (expression_manifest.get("source") != "hairless_combined_feature_transplant"
+            or expression_manifest.get("visualReview", {}).get("status") != "passed"
+            or expression_manifest.get("assetSha256") != accepted["expressionAssetsSha256"]):
+        raise ValueError("accepted expression state is missing or changed")
+    expression_dir = rig_assets / expression_manifest["assetDirectory"]
+    for filename, expected_hash in accepted["expressionAssetsSha256"].items():
+        actual_hash = hashlib.sha256((expression_dir / filename).read_bytes()).hexdigest()
+        if actual_hash != expected_hash:
+            raise ValueError(f"accepted expression bytes changed: {filename}")
     for manifest, hashes in ((eyelids, accepted["closedEyelidSha256"]),
                              (seam_manifest, accepted["seamRepairSha256"])):
         asset_dir = rig_assets / manifest["assetDirectory"]
