@@ -87,3 +87,9 @@ python -m pytest tests/test_seethrough_alpha.py -q
 ## 上游界線
 
 「上游界線」指的是：see-through 是獨立的外部依賴，不屬於本 repo 的原始碼或交付物。請以 `SEE_THROUGH_HOME` 指向你自行安裝的 checkout。除非使用者明確授權，請不要改動其原始碼；任何已授權修改都必須以 patch 記錄在 `patches/`，並在本專案結果上驗收。
+
+## 公開 Eris 互動展示
+
+`public/` 是已核准 Eris 互動展示的獨立靜態發佈包，供 Vercel 從本 repo 部署。它保留姿勢、視線、眨眼、圖層開關與核准的肩頸接縫；瀏覽器直接開啟部署根網址即可，不需要 `local` 參數。此包只包含執行期 HTML、JavaScript、JSON 與 PNG，不包含模型、推論程式、PSD 或候選素材。
+
+Vercel 專案的輸出目錄固定為 `public`（見 `vercel.json`）。作品集卡片應連到此專案的 Vercel 根網址，而不是再複製這份資產進作品集 repo。

@@ -11,6 +11,11 @@ inputs/
 outputs/
 *.png
 
+# The approved public showcase is a deliberately tracked static runtime bundle.
+!public/
+!public/**/
+!public/**/*.png
+
 # Downloaded helper used only for a temporary public viewer tunnel.
 tools/cloudflared.exe
 *.psd

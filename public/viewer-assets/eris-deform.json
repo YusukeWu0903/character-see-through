@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "name": "Eris casual shared deformation v2",
+  "nodes": [
+    {
+      "id": "root",
+      "parent": null,
+      "pivot": [
+        0,
+        0
+      ],
+      "motion": "none",
+      "maxDegrees": 0,
+      "phase": 0
+    },
+    {
+      "id": "body",
+      "parent": "root",
+      "pivot": [
+        0,
+        -0.82
+      ],
+      "motion": "body",
+      "maxDegrees": 1.5,
+      "phase": 0
+    },
+    {
+      "id": "torso",
+      "parent": "body",
+      "pivot": [
+        0,
+        0.02
+      ],
+      "motion": "torso",
+      "maxDegrees": 4,
+      "phase": 0
+    },
+    {
+      "id": "legs",
+      "parent": "body",
+      "pivot": [
+        0,
+        -0.1
+      ],
+      "motion": "none",
+      "maxDegrees": 0,
+      "phase": 0
+    },
+    {
+      "id": "head",
+      "parent": "torso",
+      "pivot": [
+        0,
+        0.48
+      ],
+      "motion": "head",
+      "maxDegrees": 6,
+      "phase": 0
+    },
+    {
+      "id": "frontHair",
+      "parent": "head",
+      "pivot": [
+        0,
+        0.77
+      ],
+      "motion": "hair",
+      "maxDegrees": 0.35,
+      "phase": 0
+    },
+    {
+      "id": "backHair",
+      "parent": "head",
+      "pivot": [
+        0,
+        0.77
+      ],
+      "motion": "hair",
+      "maxDegrees": 0.5,
+      "phase": -0.3
+    }
+  ],
+  "bindings": {
+    "topwear": "torso",
+    "neck": "torso",
+    "handwear": "torso",
+    "seam_repair_head": "head",
+    "seam_repair_torso": "torso",
+    "bottomwear": "legs",
+    "legwear": "legs",
+    "footwear": "legs",
+    "face": "head",
+    "mouth": "head",
+    "nose": "head",
+    "eyelash": "head",
+    "eyelid_closed": "head",
+    "eyewhite": "head",
+    "eyebrow": "head",
+    "irides": "head",
+    "ears": "head",
+    "earwear": "head",
+    "eyewear": "head",
+    "headwear": "head",
+    "fronthair": "frontHair",
+    "backhair": "backHair"
+  },
+  "deformation": {
+    "waist": [
+      -0.16,
+      0.2
+    ],
+    "neck": [
+      0.3,
+      0.56
+    ]
+  },
+  "expression": {
+    "eyeCenter": [0, 0.755],
+    "chestBand": [0.32, 0.60]
+  }
+}

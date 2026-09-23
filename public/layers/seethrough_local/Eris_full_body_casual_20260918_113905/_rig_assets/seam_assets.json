@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "source": "registered_original",
+  "assetDirectory": "seams_skin_straps_v8_20260923T054759025970Z",
+  "layers": [
+    "seam_repair_head",
+    "seam_repair_torso"
+  ],
+  "registration": {
+    "matrix": [
+      [
+        0.8333194073190426,
+        0.00036182505682655645,
+        212.9111509706679
+      ],
+      [
+        -0.00036182505682655645,
+        0.8333194073190426,
+        0.4107600154410958
+      ]
+    ],
+    "matches": 111,
+    "inliers": 97,
+    "scale": 0.8333194858707746
+  },
+  "coverage": {
+    "originalTorsoPixels": 22572,
+    "parentTorsoPixels": 14903,
+    "candidateTorsoPixels": 13693,
+    "removedFromParent": 1210,
+    "candidateTorsoBBox": [
+      531,
+      211,
+      754,
+      332
+    ]
+  },
+  "visualReview": {
+    "status": "passed",
+    "reviewer": "user",
+    "approval": "User explicitly approved the moving seams_skin_straps_v8 preview as final on 2026-09-23: 我覺得你已經做的很棒了，就以這個為定版吧!!!",
+    "acceptedAt": "20260923T054759025970Z"
+  },
+  "assetSha256": {
+    "seam_repair_head.png": "601335ec2e1d0841e76fe407b12bd39fc5a830b3ea48cb31e3dd474631590548",
+    "seam_repair_torso.png": "84faf4cd5715e027735fe91a2df258a45f1da56f00cf35e4cdadc000b9316cee"
+  }
+}
