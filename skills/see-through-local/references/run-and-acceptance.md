@@ -35,7 +35,7 @@ python quality_contract.py --task "outputs/seethrough_local/<task>"
 
 The audit checks task isolation, order uniqueness, expected semantic layer presence, PNG readability/RGBA/native canvas, nonempty alpha, the alpha report, checkerboard, clean PSD signature, and the locked quality contract. `blocked`/1 prevents handoff; `review`/2 requires a human decision; `machine_pass`/0 means only that the mechanical gate passed. Read `_alpha_validation.json` itself. Its `deliverable` field is an alpha/coverage assessment, not a substitute for visual review. If a layer is intentionally absent (e.g. no earrings) or nearly empty (e.g. bare feet), record the semantic reason instead of creating false pixels or silently rewriting the report.
 
-`clean_layer_rgba` removes only a neutral candidate connected to the canvas edge. It deliberately preserves isolated grey clothing/shadows and hidden-region inpainting. Never clear all grey pixels or all pixels unlike the source: LayerDiff can paint valid unseen areas differently from the input, and broad erasure creates skin/hair seams.
+`clean_layer_rgba` removes only a neutral candidate connected to the canvas edge. It deliberately preserves isolated grey clothing/shadows and hidden-region inpainting. Never clear all grey pixels or all pixels unlike the source: LayerDiff can paint valid unseen areas differently from the input, and broad erasure creates skin/hair seams. Check outer connected near-white pixels at low alpha as well as opaque plates; a broad 1–10% alpha rectangle can survive a mechanical alpha report yet show on the dark viewer. Verify visually on both dark and light grounds.
 
 ## 4. Visual acceptance matrix
 
@@ -44,7 +44,7 @@ Open `http://127.0.0.1:8010/preview?local=<task>` with `python main.py` running.
 | Region | Inspect | Common failure to record |
 | --- | --- | --- |
 | Silhouette and background | Full-body outline; all four canvas edges; transparency around fine strands | Grey/white plate, halos, accidental cutouts |
-| Hair and face | Front/back hair overlap; eyes, brows, nose, mouth; face contour | Hair contamination, missing iris/eyelash, doubled mouth, inpaint seam |
+| Hair and face | Front/back hair overlap; eyes, brows, nose, mouth; face contour; each facial part's alpha/background; visible-ear count versus source | Hair contamination, missing brow, colored plate around nose, invented exposed ear, doubled mouth |
 | Neck and shoulders | Head-to-torso join and left/right shoulder under normal pose | Visible seam, duplicate skin, repair covering clothing |
 | Clothing and arms | Sleeve/strap edges, upper arms, wrists/hands, garment occlusion | Torso or garment pixels attached to the wrong moving limb |
 | Lower body | Waist, shorts/skirt, thighs, knees, ankles, shoes/bare feet | Leg cut-off, empty footwear misread as missing feet, gap or doubled edge |

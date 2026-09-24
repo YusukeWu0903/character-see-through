@@ -1,0 +1,285 @@
+{
+  "schemaVersion": 1,
+  "task": "Miffy_full_body_casual_rb_20260924_012138",
+  "candidate": "cheek_outline_v1",
+  "reviewStatus": "pending",
+  "nonProduction": true,
+  "source": "Character/002_Miffy/Miffy_full_body_casual_rb.png",
+  "sourceSha256": "6960410BDBECD14A0F593101C114E38F6B16CBBE55A40E7719C91A3154916253",
+  "drawOrder": [
+    {
+      "file": "backhair.png",
+      "label": "後髮",
+      "group": "頭髮",
+      "parent": "hair"
+    },
+    {
+      "file": "handwear.png",
+      "label": "手臂",
+      "group": "身體／服裝",
+      "parent": "arms"
+    },
+    {
+      "file": "legwear.png",
+      "label": "腿部",
+      "group": "下半身",
+      "parent": "legs"
+    },
+    {
+      "file": "topwear.png",
+      "label": "上衣／上身＋肩內側邊緣清理候選",
+      "group": "身體／服裝",
+      "parent": "torso",
+      "asset": "_review/seam_v1/topwear.png"
+    },
+    {
+      "file": "footwear.png",
+      "label": "腳部",
+      "group": "下半身",
+      "parent": "legs"
+    },
+    {
+      "file": "earwear.png",
+      "label": "耳飾（空）",
+      "group": "五官／頭部",
+      "parent": "head"
+    },
+    {
+      "file": "neck.png",
+      "label": "頸根裁切輪廓漸隱候選",
+      "group": "身體／服裝",
+      "parent": "torso",
+      "asset": "_review/seam_v2/neck.png"
+    },
+    {
+      "file": "bottomwear.png",
+      "label": "短褲",
+      "group": "下半身",
+      "parent": "pelvis"
+    },
+    {
+      "file": "ears.png",
+      "label": "原耳朵停用（已在整頭）",
+      "group": "五官／頭部",
+      "parent": "head",
+      "asset": "_review/full_head_v7/blank.png"
+    },
+    {
+      "file": "face.png",
+      "label": "高解析整頭＋來源描邊三像素修補候選",
+      "group": "五官／頭部",
+      "parent": "head",
+      "asset": "_review/cheek_outline_v1/head.png"
+    },
+    {
+      "file": "eyebrow.png",
+      "label": "原眉毛停用（已在整頭）",
+      "group": "五官／頭部",
+      "parent": "head",
+      "asset": "_review/full_head_v7/blank.png"
+    },
+    {
+      "file": "nose.png",
+      "label": "原鼻子停用（已在整頭）",
+      "group": "五官／頭部",
+      "parent": "head",
+      "asset": "_review/full_head_v7/blank.png"
+    },
+    {
+      "file": "mouth.png",
+      "label": "原嘴巴停用（已在整頭）",
+      "group": "五官／頭部",
+      "parent": "head",
+      "asset": "_review/full_head_v7/blank.png"
+    },
+    {
+      "file": "eyelash.png",
+      "label": "原睫毛停用（已在整頭）",
+      "group": "五官／頭部",
+      "parent": "head",
+      "asset": "_review/full_head_v7/blank.png"
+    },
+    {
+      "file": "eyewhite.png",
+      "label": "原眼白停用（已在整頭）",
+      "group": "五官／頭部",
+      "parent": "head",
+      "asset": "_review/full_head_v7/blank.png"
+    },
+    {
+      "file": "irides.png",
+      "label": "原虹膜停用（已在整頭）",
+      "group": "五官／頭部",
+      "parent": "head",
+      "asset": "_review/full_head_v7/blank.png"
+    },
+    {
+      "file": "fronthair.png",
+      "label": "前髮＋原前髮像素髮際修補候選",
+      "group": "頭髮",
+      "parent": "hair",
+      "asset": "_review/full_head_v10/fronthair.png"
+    }
+  ],
+  "constraints": [
+    {
+      "behind": "backhair.png",
+      "inFrontOf": "topwear.png",
+      "reason": "後髮不得蓋住白色上衣"
+    },
+    {
+      "behind": "handwear.png",
+      "inFrontOf": "topwear.png",
+      "reason": "上衣在手臂內側接縫前"
+    },
+    {
+      "behind": "neck.png",
+      "inFrontOf": "face.png",
+      "reason": "整頭下巴應壓住原頸部上緣"
+    },
+    {
+      "behind": "face.png",
+      "inFrontOf": "fronthair.png",
+      "reason": "前髮在新整頭前方"
+    },
+    {
+      "behind": "ears.png",
+      "inFrontOf": "fronthair.png",
+      "reason": "原耳朵不得蓋過前髮"
+    }
+  ],
+  "openDefects": [
+    "整頭來自光頭版原畫，先作靜態畫面驗收；眼白、虹膜、睫毛、眉毛與嘴巴暫時併入整頭，尚不能獨立眨眼、視線或口型。",
+    "前髮髮際、雙耳遮擋及整頭外輪廓的靜態外觀已獲使用者確認，仍待頭髮與頭部獨立移動檢查。",
+    "頸根與兩側肩膀接縫採局部 alpha 清理，靜態及頭部上下各 6px 初檢改善；手臂獨立水平位移 6px 仍有關節露邊，須在左右手臂拆分與肩部 rig 階段處理。",
+    "左臉頰描邊已補三個來源像素，仍待使用者看靜態與頭／髮分開運動驗收。"
+  ],
+  "headSource": "Character/002_Miffy/Miffy_face_bd.png",
+  "headSourceSha256": "6A49F1D7BD73C944486E041762E037B8C01852FE8B717375B9517F4D8D2464C2",
+  "headConfig": "_review/full_head_v8/config.json",
+  "hairReference": "Character/002_Miffy/Miffy_face.png",
+  "hairReferenceSha256": "8DBDB1A29B0CF679CB0C49213A509DC954E38A119EB1ED34D96F818489F6B1AD",
+  "hairFillConfig": "_review/full_head_v10/config.json",
+  "shoulderSeamMethod": "_review/seam_v1/repair_overlap_edges.mjs",
+  "neckSeamMethod": "_review/seam_v2/repair_neck_contour.mjs",
+  "alphaOnlyRepairs": [
+    {
+      "file": "topwear.png",
+      "underlay": "handwear.png",
+      "minUnderlayAlpha": 230,
+      "allowedBounds": [
+        516,
+        222,
+        750,
+        293
+      ]
+    },
+    {
+      "file": "neck.png",
+      "underlay": "topwear.png",
+      "minUnderlayAlpha": 240,
+      "allowedBounds": [
+        590,
+        210,
+        665,
+        231
+      ]
+    }
+  ],
+  "rollbackManifest": "_review/seam_v2/assembly.json",
+  "faceContourRepair": {
+    "input": "outputs/seethrough_local/Miffy_full_body_casual_rb_20260924_012138/_review/full_head_v8/head.png",
+    "inputSha256": "D5FBF0F9DAA8686F1C571BB7392F5AD042A439575A66B076A6DE30AEC221DD8C",
+    "source": "Character/002_Miffy/Miffy_face_bd.png",
+    "sourceSha256": "6A49F1D7BD73C944486E041762E037B8C01852FE8B717375B9517F4D8D2464C2",
+    "asset": "_review/cheek_outline_v1/head.png",
+    "assetSha256": "BE75B0C6F92F4361587D097062A51175BD3552A58E6C22E84BF95064092E547C",
+    "method": "registered source RGB blend, original alpha retained",
+    "allowedBounds": [
+      598,
+      151,
+      600,
+      153
+    ],
+    "samples": [
+      {
+        "canvas": [
+          598,
+          151
+        ],
+        "source": [
+          434,
+          870
+        ],
+        "old": [
+          178,
+          146,
+          137
+        ],
+        "from": [
+          53,
+          29,
+          23
+        ],
+        "next": [
+          97,
+          70,
+          63
+        ],
+        "alpha": 218
+      },
+      {
+        "canvas": [
+          599,
+          152
+        ],
+        "source": [
+          441,
+          877
+        ],
+        "old": [
+          221,
+          189,
+          180
+        ],
+        "from": [
+          55,
+          30,
+          24
+        ],
+        "next": [
+          113,
+          86,
+          79
+        ],
+        "alpha": 215
+      },
+      {
+        "canvas": [
+          600,
+          153
+        ],
+        "source": [
+          448,
+          884
+        ],
+        "old": [
+          239,
+          209,
+          200
+        ],
+        "from": [
+          54,
+          28,
+          22
+        ],
+        "next": [
+          119,
+          91,
+          84
+        ],
+        "alpha": 211
+      }
+    ]
+  }
+}

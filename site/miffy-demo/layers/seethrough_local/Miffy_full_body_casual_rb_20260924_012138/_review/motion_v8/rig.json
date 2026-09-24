@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "name": "Miffy source-eye blink and gaze v8 · non-production",
+  "task": "Miffy_full_body_casual_rb_20260924_012138",
+  "candidate": "motion_v8",
+  "reviewStatus": "pending",
+  "nonProduction": true,
+  "extends": "_review/motion_v7/rig.json",
+  "extendsSha256": "B0ECE63990E9608612CFF6E24484E4955996BB54AC6A591CC3F91F0B1685E3CC",
+  "rollbackManifest": "_review/motion_v7/rig.json",
+  "eyeRig": {
+    "manifest": "_review/eyes_v8/manifest.json",
+    "manifestSha256": "2A01C47BD72308ECB3FD87BA28FAD48FFD8B30BA462E490C2919354B5A4934C4",
+    "gazeResponseRate": 9,
+    "autoBlinkIntervalSeconds": 4.7,
+    "note": "Eyes and closed lash lines transplanted from user artwork. Inpainted skin and gaze movement are pending visual approval."
+  },
+  "limits": [
+    "Eye rig is a visual candidate only; source art eye shapes and the inpainted eye-free skin require close-up approval.",
+    "Closed lashes use emotion_type02 bottom-left expression and are not an approved default."
+  ]
+}

@@ -32,6 +32,7 @@ workflow_api.json
 # workflow_api.json
 
 # IDE / OS
+.release_worktree/
 .idea/
 .vscode/
 .DS_Store

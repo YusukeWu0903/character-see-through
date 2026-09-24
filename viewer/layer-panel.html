@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>圖層管理面板</title>
+<style>
+:root{
+  --bg:#15181d;--panel:#101319ed;--border:#53606b;--fg:#eee;--muted:#adb9c5;
+  --accent:#7ee8ff;--accent-dim:#5bb8dd;--danger:#ff6b6b;--ok:#6ee8a7;
+  --w:320px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font:14px system-ui;background:var(--bg);color:var(--fg);overflow:hidden}
+
+/* Slide-out panel */
+.panel-wrap{
+  position:fixed;top:0;right:calc(var(--w) * -1);height:100vh;width:var(--w);
+  background:var(--panel);border-left:1px solid var(--border);
+  display:flex;flex-direction:column;transition:right .3s cubic-bezier(.2,.8,.2,1);z-index:1000;
+}
+.panel-wrap.open{right:0}
+
+/* Tab bar */
+.tabs{display:flex;border-bottom:1px solid var(--border);background:rgba(0,0,0,.3)}
+.tab{flex:1;padding:10px 6px;text-align:center;color:var(--muted);cursor:pointer;
+  border:none;background:transparent;font:inherit;position:relative}
+.tab.active{color:var(--accent)}
+.tab.active::after{content:'';position:absolute;bottom:-1px;left:20%;right:20%;height:2px;background:var(--accent);border-radius:1px}
+
+/* Tab panels */
+.tab-panel{display:none;flex:1;overflow:auto;padding:12px}
+.tab-panel.active{display:flex;flex-direction:column}
+
+/* Layer list */
+.layer-group{margin-bottom:16px}
+.group-label{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px}
+.layer-row{display:flex;align-items:center;gap:8px;padding:8px 6px;
+  background:rgba(255,255,255,.03);border:1px solid transparent;border-radius:6px;transition:.15s}
+.layer-row:hover{border-color:var(--border);background:rgba(255,255,255,.06)}
+.layer-row input[type=checkbox]{display:none}
+.toggle{width:40px;height:22px;border-radius:11px;background:#3a4250;border:1px solid var(--border);
+  position:relative;cursor:pointer;flex-shrink:0;transition:.15s}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;
+  background:var(--muted);transition:.15s;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.layer-row input:checked + .toggle{background:var(--accent-dim);border-color:var(--accent)}
+.layer-row input:checked + .toggle::after{left:22px;background:var(--fg)}
+.layer-info{flex:1;min-width:0}
+.layer-name{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.layer-meta{font-size:11px;color:var(--muted)}
+.layer-actions{display:flex;gap:4px}
+.icon-btn{width:26px;height:26px;border:1px solid var(--border);background:rgba(0,0,0,.3);border-radius:4px;
+  color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
+.icon-btn:hover{border-color:var(--accent);color:var(--accent)}
+.icon-btn:active{transform:scale(.95)}
+
+/* Header */
+.panel-header{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border)}
+.panel-title{font-weight:600;font-size:13px}
+.close-btn{width:28px;height:28px;border:1px solid var(--border);background:transparent;border-radius:4px;color:var(--muted);cursor:pointer}
+.close-btn:hover{color:var(--danger);border-color:var(--danger)}
+
+/* Toggle button on main page */
+.fab{position:fixed;right:12px;bottom:12px;width:48px;height:48px;border-radius:50%;
+  background:var(--panel);border:1px solid var(--border);color:var(--fg);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:999;
+  box-shadow:0 4px 16px rgba(0,0,0,.4);transition:.2s}
+.fab:hover{border-color:var(--accent);transform:scale(1.05)}
+.fab svg{width:22px;height:22px}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:8px}::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#3a4250;border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:#53606b}
+
+/* Mobile */
+@media(max-width:600px){:root{--w:100vw}.panel-wrap{border-radius:0}.fab{display:none}}
+</style>
+
+<div class="fab" id="fab" title="開啟圖層面板" aria-label="開啟圖層面板">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v18H3z"/><path d="M9 9h6v6H9z"/></svg>
+</div>
+
+<div class="panel-wrap" id="panel" role="dialog" aria-label="圖層管理">
+  <header class="panel-header">
+    <span class="panel-title">圖層管理</span>
+    <button class="close-btn" id="closeBtn" aria-label="關閉">×</button>
+  </header>
+  <nav class="tabs" role="tablist">
+    <button class="tab active" role="tab" data-tab="layers">主圖層</button>
+    <button class="tab" role="tab" data-tab="rig">Rig 資產</button>
+  </nav>
+  <div class="tab-panel active" id="tab-layers" role="tabpanel"></div>
+  <div class="tab-panel" id="tab-rig" role="tabpanel"></div>
+</div>
+
+<script>
+const LAYER_ORDER = [
+  "topwear","legwear","handwear","backhair","footwear","earwear","neck","bottomwear",
+  "eyebrow","ears","face","nose","mouth","eyelash","eyewhite","irides","fronthair"
+];
+const RIG_ASSETS = [
+  {id:"eyewhite_left",label:"左眼白",file:"eyewhite_left.png"},
+  {id:"eyewhite_right",label:"右眼白",file:"eyewhite_right.png"},
+  {id:"irides_left",label:"左虹膜",file:"irides_left.png"},
+  {id:"irides_right",label:"右虹膜",file:"irides_right.png"},
+  {id:"eyelash_left",label:"左睫毛",file:"eyelash_left.png"},
+  {id:"eyelash_right",label:"右睫毛",file:"eyelash_right.png"},
+  {id:"eyelid_closed_left",label:"左閉眼瞼",file:"eyelid_closed_left.png"},
+  {id:"eyelid_closed_right",label:"右閉眼瞼",file:"eyelid_closed_right.png"},
+  {id:"seam_repair_head",label:"頭部接縫修補",file:"seam_repair_head.png"},
+  {id:"seam_repair_torso",label:"軀幹接縫修補",file:"seam_repair_torso.png"}
+];
+
+const state = {layers:{}, rig:{}};
+let renderer = null;
+
+function $(sel){return document.querySelector(sel)}
+function $$(sel){return [...document.querySelectorAll(sel)]}
+
+/* ---- Panel open/close ---- */
+const panel = $('#panel'), fab = $('#fab'), closeBtn = $('#closeBtn');
+fab.onclick = () => panel.classList.add('open');
+closeBtn.onclick = () => panel.classList.remove('open');
+panel.onclick = e => { if(e.target===panel) panel.classList.remove('open') }
+
+/* ---- Tabs ---- */
+$$('.tab').forEach(t=>t.onclick=()=>{
+  $$('.tab').forEach(x=>x.classList.remove('active'));
+  $$('.tab-panel').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  $('#tab-'+t.dataset.tab).classList.add('active');
+});
+
+/* ---- Layer row builder ---- */
+function makeRow(id, label, type){
+  const row=document.createElement('div');
+  row.className='layer-row';
+  row.dataset.id=id;
+  const checked = type==='rig' ? (state.rig[id]!==false) : (state.layers[id]!==false);
+  row.innerHTML = `
+    <input type="checkbox" id="chk-${id}" ${checked?'checked':''}>
+    <label class="toggle" for="chk-${id}"></label>
+    <div class="layer-info">
+      <div class="layer-name">${label}</div>
+      <div class="layer-meta">${type==='rig'?'Rig 資產':'主圖層'}</div>
+    </div>
+    <div class="layer-actions">
+      <button class="icon-btn" data-act="solo" title="獨顯"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg></button>
+      <button class="icon-btn" data-act="opacity" title="透明度"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg></button>
+    </div>
+  `;
+  row.querySelector('input').onchange = e => {
+    if(type==='rig') state.rig[id]=e.target.checked;
+    else state.layers[id]=e.target.checked;
+    applyVisibility();
+  };
+  row.querySelector('[data-act="solo"]').onclick = () => soloLayer(id,type);
+  row.querySelector('[data-act="opacity"]').onclick = () => toggleOpacity(id,type);
+  return row;
+}
+
+function buildLayersTab(){
+  const wrap=$('#tab-layers'); wrap.innerHTML='';
+  const groups = {
+    '身體/服裝':["topwear","legwear","handwear","footwear","bottomwear","neck","earwear"],
+    '頭部/臉部':["backhair","fronthair","face","eyebrow","eyelash","eyewhite","irides","nose","mouth","ears"],
+  };
+  for(const [gname,ids] of Object.entries(groups)){
+    const grp=document.createElement('div'); grp.className='layer-group';
+    grp.innerHTML=`<div class="group-label">${gname}</div>`;
+    ids.forEach(id=>grp.appendChild(makeRow(id,id,'layer')));
+    wrap.appendChild(grp);
+  }
+}
+
+function buildRigTab(){
+  const wrap=$('#tab-rig'); wrap.innerHTML='';
+  const grp=document.createElement('div'); grp.className='layer-group';
+  grp.innerHTML=`<div class="group-label">Rig 獨立資產</div>`;
+  RIG_ASSETS.forEach(a=>grp.appendChild(makeRow(a.id,a.label,'rig')));
+  wrap.appendChild(grp);
+}
+
+/* ---- Visibility application ---- */
+function applyVisibility(){
+  if(!renderer) return;
+  // We need access to renderer's draw method internals.
+  // Since renderer is in a different module, we'll emit a custom event
+  // that the main viewer can listen to, or we directly manipulate if exposed.
+  window.dispatchEvent(new CustomEvent('layer-visibility-change',{detail:{layers:{...state.layers},rig:{...state.rig}}}));
+}
+
+function soloLayer(id,type){
+  if(type==='rig'){
+    Object.keys(state.rig).forEach(k=>state.rig[k]=k===id);
+  }else{
+    Object.keys(state.layers).forEach(k=>state.layers[k]=k===id);
+  }
+  rebuildUI(); applyVisibility();
+}
+
+function toggleOpacity(id,type){
+  // Placeholder for opacity slider modal
+  alert(`透明度控制: ${id} (待實作)`);
+}
+
+function rebuildUI(){
+  buildLayersTab(); buildRigTab();
+}
+
+/* ---- Initialize from renderer if available ---- */
+function initFromRenderer(r){
+  renderer=r;
+  // Try to read current visibility from renderer if it exposes it
+  if(r && r.layerVisibility){
+    Object.assign(state.layers,r.layerVisibility.layers||{});
+    Object.assign(state.rig,r.layerVisibility.rig||{});
+  }
+  rebuildUI();
+}
+
+/* Expose for main viewer */
+window.LayerPanel = {initFromRenderer, state};
+
+/* Auto-init when renderer ready */
+setTimeout(()=>{
+  if(window.renderer) initFromRenderer(window.renderer);
+},500);
+</script>
+</html>

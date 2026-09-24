@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "nonProduction": true,
+  "reviewStatus": "pending",
+  "sourceHead": "outputs/seethrough_local/Miffy_full_body_casual_rb_20260924_012138/_review/full_head_v8/head.png",
+  "sourceHeadSha256": "D5FBF0F9DAA8686F1C571BB7392F5AD042A439575A66B076A6DE30AEC221DD8C",
+  "closedSource": "Character/002_Miffy/Miffy_face_eyeclose_bd.png",
+  "closedSourceSha256": "CF0B277C9964B1817717A3FAB342C217CE7C99E1237E774F016E50FB2A0771CA",
+  "semanticSource": "outputs/seethrough_local/Miffy_full_body_casual_rb_20260924_012138/_rig_assets/eye_assets.json",
+  "semanticSourceSha256": "91224F15FE224E8A4DCB2B77B2CE0D0623C649996700FBA85913B28BC921A5CB",
+  "canvas": [
+    1280,
+    1280
+  ],
+  "eyes": {
+    "left": {
+      "center": [
+        602,
+        104.5
+      ],
+      "bounds": [
+        574,
+        90,
+        625,
+        125
+      ],
+      "base": {
+        "asset": "left_base.png",
+        "sha256": "81370A0A0B594D8DA186C6B38A637FF7FAB5FC1F8688E2090BFB051328330C15"
+      },
+      "open": {
+        "asset": "left_open.png",
+        "sha256": "2E858D9D25305ECE7D6494E70B860859A2616A794610D1BD35DD86816ECF56F9"
+      },
+      "closed": {
+        "asset": "left_closed.png",
+        "sha256": "52F6C994BD5A193550DCD6B0979990C108B16D2FE6707608946A818A518549FC"
+      },
+      "white": {
+        "asset": "left_white.png",
+        "sha256": "FF7B1631AC0F90D2E6C84B668B68C7CE6BCA6FBC7F37C66C57C4636E5AB7BDC6"
+      },
+      "iris": {
+        "asset": "left_iris.png",
+        "sha256": "D7B4C1767150CD73E32A07A4CC830581125275625604BB65B732A7D3FF89D312"
+      },
+      "lash": {
+        "asset": "left_lash.png",
+        "sha256": "AD33070CD30BD0D9D500DD49D2F1692772B38463BADA4E7AE6740EF1C7B27DFF"
+      },
+      "mask": {
+        "asset": "left_mask.png",
+        "sha256": "1E4FE1CDF104F4FCA3F7278661B90134E1809693A6AD0402FCCE51BA512CF60A"
+      }
+    },
+    "right": {
+      "center": [
+        649,
+        103
+      ],
+      "bounds": [
+        625,
+        90,
+        676,
+        125
+      ],
+      "base": {
+        "asset": "right_base.png",
+        "sha256": "CF37B7A1A264BBE920A697DE04D136CEE6DD3B986DF1E2EFDC94A4B620FA8B8B"
+      },
+      "open": {
+        "asset": "right_open.png",
+        "sha256": "A98B4DD24D5F0962954023558F3DD31BD7C3070DA68ABA44D4C2200F9260DF91"
+      },
+      "closed": {
+        "asset": "right_closed.png",
+        "sha256": "53DF696D7AAC0E19C7BE7FCA152E8B132AA431F36952A579FC99DEECD01DF346"
+      },
+      "white": {
+        "asset": "right_white.png",
+        "sha256": "1303D11BE2E920512CA06355E4B1DCCC229875E34BD5D235087B0A537D5FC9F2"
+      },
+      "iris": {
+        "asset": "right_iris.png",
+        "sha256": "BCE8C7F20F9307B6048093D1FCD3429B3B9FBD43CCB32675F06BC0B38F72DA87"
+      },
+      "lash": {
+        "asset": "right_lash.png",
+        "sha256": "6519CA7E1C579A966D7A550574E2F4CC6B0C975BDEE1EB111D9E6F3BF0676E76"
+      },
+      "mask": {
+        "asset": "right_mask.png",
+        "sha256": "DA09BFDC464BA1F2B2821F0207FA9C1D83BD3EC1FF0E55203856465994871856"
+      },
+      "openMotion": {
+        "asset": "right_open_motion.png",
+        "sha256": "144BC604CE60226369ABEAEC1C122E1BB553B8F434D6483C57C30C08AAA4CD23"
+      },
+      "motionClipX": 670
+    }
+  },
+  "gazeLimit": [
+    2,
+    1
+  ],
+  "maskContract": "same-side eyewhite alpha at iris destination",
+  "registration": {
+    "method": "canonical-semantic-alpha + replacement-head RGB",
+    "colorGapMax": 33,
+    "lashAlphaMax": 200,
+    "sourceHeadSha256": "D5FBF0F9DAA8686F1C571BB7392F5AD042A439575A66B076A6DE30AEC221DD8C",
+    "irisBacking": "exact canonical iris pixels only"
+  },
+  "note": "Eye backing ear-overlap repair candidate; neutral open artwork and blink timing unchanged. Moving visual approval pending.",
+  "priorManifest": "outputs/seethrough_local/Miffy_full_body_casual_rb_20260924_012138/_review/eyes_v14/manifest.json",
+  "priorManifestSha256": "E06EB92F491EFCE4E6038376A4342E6285CEE20F8DFC10BEB57991870FF30402",
+  "edgeCleanup": {
+    "side": "right",
+    "featherStartX": 667,
+    "zeroFromX": 670,
+    "affected": [
+      "base",
+      "white",
+      "openMotion"
+    ],
+    "method": "alpha-only backing crop taper",
+    "note": "The neutral open asset remains unchanged; moving open has the measured eye-only edge."
+  }
+}

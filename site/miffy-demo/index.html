@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-Hant">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Miffy · 互動展示（製作中）</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#1b1e24;color:#eee;font:14px system-ui,sans-serif}
+header{padding:12px 18px;border-bottom:1px solid #50545b}header strong{color:#ffd27e}header small{color:#b9c2cd}header a{color:#a9e8ff;margin-left:12px}
+main{display:grid;grid-template-columns:minmax(300px,1fr) 350px;height:calc(100vh - 53px)}
+.stage{overflow:auto;background:#282c33;padding:20px}
+canvas{display:block;width:704px;height:auto;max-width:none;margin:0 auto;background-color:#343840;background-image:linear-gradient(45deg,#3c424a 25%,transparent 25%),linear-gradient(-45deg,#3c424a 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#3c424a 75%),linear-gradient(-45deg,transparent 75%,#3c424a 75%);background-size:24px 24px;background-position:0 0,0 12px,12px -12px,-12px 0;box-shadow:0 5px 24px #0009}
+aside{overflow:auto;padding:0;background:#15181d;border-left:1px solid #50545b}
+.tabs{display:flex;position:sticky;top:0;z-index:2;background:#101319;border-bottom:1px solid #50545b}
+.tab{flex:1;border:0;border-bottom:2px solid transparent;border-radius:0;background:transparent;color:#b9c2cd;padding:11px 4px}
+.tab.active{color:#a9e8ff;border-bottom-color:#a9e8ff}.panel{display:none;padding:15px}.panel.active{display:block}
+h2{font-size:15px;margin:8px 0 10px;color:#a9e8ff}.row{display:grid;grid-template-columns:88px 1fr 40px;gap:8px;align-items:center;margin:11px 0}
+.row input{width:100%}button{background:#343b45;border:1px solid #707d8c;border-radius:5px;color:white;padding:6px 9px;cursor:pointer}
+button:hover{border-color:#a9e8ff}.checks{display:flex;gap:12px;flex-wrap:wrap;margin:16px 0}
+.note{font-size:12px;line-height:1.55;color:#bec6d0}.status{color:#aff2c2}.warn{color:#ffd27e}.error{color:#ff8989;white-space:pre-wrap}
+.disabled{opacity:.55}.disabled input{cursor:not-allowed}.buttons{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0}
+.layer-row{display:flex;align-items:center;gap:8px;padding:7px;border-bottom:1px solid #343b45}.layer-row span{flex:1}.layer-row small{color:#9faab5}
+select,input[type=file]{max-width:100%;background:#343b45;color:#eee;border:1px solid #707d8c;border-radius:5px;padding:5px}
+@media(max-width:780px){main{display:block;height:auto}.stage{max-height:65vh}aside{border-left:0;border-top:1px solid #50545b}}
+</style>
+<header><strong id="candidate-title">Miffy · 互動展示（製作中）</strong> <small>目前為 v21 階段版本；肩膀接縫與獨立手腳仍待後續美術修整。</small><a id="latest" hidden></a></header>
+<main>
+  <section class="stage"><canvas id="stage" width="1280" height="1280" aria-label="Miffy 動態預覽"></canvas></section>
+  <aside>
+    <nav class="tabs" aria-label="角色面板">
+      <button class="tab active" data-tab="motion">動態控制</button>
+      <button class="tab" data-tab="layers">圖層開關</button>
+      <button class="tab" data-tab="calibrate">角色校正</button>
+    </nav>
+    <div class="panel active" id="panel-motion">
+      <h2>姿勢與動態</h2>
+      <div class="row"><label for="body">身體側傾</label><input id="body" type="range" min="-100" max="100" value="0"><output id="body-value">0</output></div>
+      <div class="row"><label for="torso">上身側彎</label><input id="torso" type="range" min="-100" max="100" value="0"><output id="torso-value">0</output></div>
+      <div class="row"><label for="head">頭部側傾</label><input id="head" type="range" min="-100" max="100" value="0"><output id="head-value">0</output></div>
+      <div class="row"><label for="hair">髮絲擺動</label><input id="hair" type="range" min="0" max="100" value="55"><output id="hair-value">55</output></div>
+      <div class="row"><label for="energy">動態強度</label><input id="energy" type="range" min="0" max="100" value="80"><output id="energy-value">80</output></div>
+      <div class="row disabled"><label for="breath">呼吸起伏</label><input id="breath" type="range" min="0" max="100" value="0" disabled><output>待製作</output></div>
+      <div class="row disabled"><label for="bust">胸部起伏</label><input id="bust" type="range" min="0" max="100" value="0" disabled><output id="bust-value">待製作</output></div>
+      <h2>頭部與視線</h2>
+      <p id="face-note" class="note">頭部側傾可操作；微轉、視線、眨眼與表情需要先從高解析整頭拆出獨立五官。</p>
+      <div class="row disabled"><label for="yaw">頭部微轉</label><input id="yaw" type="range" min="-100" max="100" value="0" disabled><output>待拆</output></div>
+      <div class="row disabled"><label for="gaze-x">視線左右</label><input id="gaze-x" type="range" min="-100" max="100" value="0" disabled><output id="gaze-x-value">待拆</output></div>
+      <div class="row disabled"><label for="gaze-y">視線上下</label><input id="gaze-y" type="range" min="-100" max="100" value="0" disabled><output id="gaze-y-value">待拆</output></div>
+      <div class="row disabled"><label for="blink">眨眼</label><input id="blink" type="range" min="0" max="100" value="0" disabled><output id="blink-value">待拆</output></div>
+      <div class="checks"><label><input id="gaze-follow" type="checkbox" disabled> 眼球跟隨滑鼠</label><label><input id="auto-blink" type="checkbox" disabled> 自動眨眼</label></div>
+      <h2>待機與檢視</h2>
+      <div class="checks"><label><input id="auto" type="checkbox" checked> 待機擺動</label><label><input id="follow" type="checkbox" checked> 跟隨滑鼠</label><label><input id="paused" type="checkbox"> 暫停</label></div>
+      <div class="checks"><label><input id="reference" type="checkbox"> 靜態基準</label><label><input id="show-guides" type="checkbox"> 顯示錨點</label><label><input id="show-bust-field" type="checkbox" disabled> 顯示胸部局部網格</label></div>
+      <p id="bust-field-note" class="note" hidden>藍色格線顯示胸口圖層的變形權重，越亮影響越強；黃色邊線是作用範圍。這是檢視標示，不會存入角色素材。</p>
+      <label for="view">檢查視角</label>
+      <select id="view"><option value="full">全身</option><option value="upper">上半身放大</option><option value="face">臉部放大</option></select>
+      <div class="row"><label for="zoom">預覽縮放</label><input id="zoom" type="range" min="35" max="220" value="55"><output id="zoom-value">55%</output></div>
+      <div class="buttons"><button id="neutral">回到原位</button><button id="defaults">恢復預設</button></div>
+      <p id="status" class="status">載入中……</p>
+      <p id="motion-readout" class="note"></p>
+      <p id="limits-note" class="warn">手臂、腿仍各自合併一層，沒有獨立關節；肩膀、腰際、髮際需檢查動作中間幀。未完成的呼吸、胸部、視線與表情不會假裝可用。</p>
+      <p id="source-info" class="note"></p><p id="error" class="error"></p>
+    </div>
+    <div class="panel" id="panel-layers">
+      <h2>基礎 17 層</h2>
+      <p class="note">開關只影響此預覽；可逐層檢查零件與接縫，不會修改 PNG。</p>
+      <div class="buttons"><button id="show-all">全部顯示</button></div>
+      <div id="layer-list"></div>
+    </div>
+    <div class="panel" id="panel-calibrate">
+      <h2>角色校正 · 只限本機候選</h2>
+      <label><input id="calibrate" type="checkbox"> 點選畫面設定錨點</label>
+      <p class="note">啟用會暫停並回到原位。選好錨點後，在角色畫布上點選新位置；不會覆寫候選檔。</p>
+      <label for="anchor">錨點</label>
+      <select id="anchor"><option value="body">全身支點</option><option value="torso">上身／腰</option><option value="head">頭／頸</option><option value="frontHair">前髮根</option><option value="backHair">後髮根</option></select>
+      <div class="row"><label for="head-limit">頭部旋轉上限</label><input id="head-limit" type="range" min="0" max="3" step="0.1" value="1"><output id="head-limit-value">1°</output></div>
+      <div class="buttons"><button id="save">保存設定</button><button id="export">匯出 JSON</button><button id="reset-rig">恢復角色設定</button></div>
+      <label for="import">匯入 JSON</label><input id="import" type="file" accept=".json">
+      <p id="settings-status" class="note">此瀏覽器可保存候選校正；跨瀏覽器請匯出 JSON。</p>
+    </div>
+  </aside>
+</main>
+<script type="module" src="/miffy-demo/viewer-assets/assembly-motion.mjs"></script>
+</html>

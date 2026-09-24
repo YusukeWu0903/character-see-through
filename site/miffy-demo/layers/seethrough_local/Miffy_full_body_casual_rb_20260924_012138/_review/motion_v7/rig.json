@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "name": "Miffy shared chest response v7 · non-production",
+  "task": "Miffy_full_body_casual_rb_20260924_012138",
+  "candidate": "motion_v7",
+  "reviewStatus": "pending",
+  "nonProduction": true,
+  "extends": "_review/motion_v6/rig.json",
+  "extendsSha256": "CB058C563E507670B603DDEE6EBFC8F2FFC9CF364B7293ECEFAB3E83C3F204B6",
+  "rollbackManifest": "_review/motion_v6/rig.json",
+  "bustField": {
+    "mode": "composite-chest-field",
+    "centerX": 632,
+    "centerY": 342,
+    "radiusX": 105,
+    "radiusY": 92,
+    "maxPixels": 3,
+    "tileWidth": 16,
+    "tileHeight": 3,
+    "defaultStrength": 50,
+    "note": "Full skin-and-garment composite is locally resampled together; straps are outside the strong deformation area. Artistic motion review pending."
+  },
+  "limits": [
+    "Bust is a bounded local follow-through preview, not independent breast anatomy or cloth simulation.",
+    "Blink and gaze are not enabled because eyes are still painted into the approved high-resolution head."
+  ]
+}

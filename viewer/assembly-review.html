@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="zh-Hant">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>角色組裝檢查台 · 非正式</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#191b20;color:#eee;font:14px system-ui,sans-serif}
+header{padding:12px 18px;border-bottom:1px solid #444;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+header strong{color:#ffcf74}header small{color:#aeb8c4}
+main{display:grid;grid-template-columns:minmax(300px,1fr) 350px;height:calc(100vh - 58px)}
+.stage{overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:24px;background:#24272d}
+.canvas-wrap{position:relative;flex:none;transform-origin:top center}
+canvas{display:block;max-width:none;background-color:#343840;background-image:linear-gradient(45deg,#3c424a 25%,transparent 25%),linear-gradient(-45deg,#3c424a 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#3c424a 75%),linear-gradient(-45deg,transparent 75%,#3c424a 75%);background-size:24px 24px;background-position:0 0,0 12px,12px -12px,-12px 0;box-shadow:0 3px 22px #0009}
+aside{overflow:auto;border-left:1px solid #48505a;background:#13161b;padding:14px}
+label{display:inline-flex;align-items:center;gap:5px}.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}.toolbar input[type=range]{width:110px}
+button,.file{background:#303741;color:#eee;border:1px solid #626d79;border-radius:5px;padding:5px 8px;cursor:pointer}
+button:hover,.file:hover{border-color:#8ee0ff}button:disabled{opacity:.35;cursor:default}
+.motion-review{border:1px solid #48505a;border-radius:6px;padding:8px;margin:0 0 12px;display:flex;flex-wrap:wrap;gap:8px}
+.motion-review legend{color:#ffcf74;padding:0 5px}.motion-review label{font-size:12px}.motion-review input{width:82px}
+.group{margin:16px 0 4px;color:#8ee0ff;font-weight:600}.layer{display:grid;grid-template-columns:20px 1fr 34px 34px 34px;gap:4px;align-items:center;padding:5px 0;border-bottom:1px solid #313840}
+.layer span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.layer input[type=range]{grid-column:2/6;width:100%;height:12px}
+.layer button{padding:3px}.note{color:#b2bdc9;font-size:12px;line-height:1.5}.error{color:#ff8585;white-space:pre-wrap}.warning{color:#ffd285;font-size:12px;line-height:1.5;white-space:pre-wrap}
+@media(max-width:760px){main{display:flex;flex-direction:column;height:auto}.stage{max-height:65vh}aside{border-left:0;border-top:1px solid #48505a}}
+</style>
+<header><strong>角色組裝檢查台 · 非正式候選</strong><span id="task-label"></span><small>只供檢視；不會改動原始 PNG、PSD 或正式設定</small></header>
+<main>
+  <section class="stage"><div class="canvas-wrap" id="wrap"><canvas id="canvas" width="1280" height="1280"></canvas></div></section>
+  <aside>
+    <div class="toolbar">
+      <label>縮放 <input id="zoom" type="range" min="35" max="200" value="60"><output id="zoom-value">60%</output></label>
+      <button id="show-all">全顯示</button><button id="reset-order">載入時順序</button>
+      <button id="save">匯出檢查配置</button>
+      <label class="file">載入原圖參考<input id="source" type="file" accept="image/*" hidden></label>
+      <label>原圖參考疊加 <input id="source-opacity" type="range" min="0" max="100" value="0"></label>
+    </div>
+    <fieldset class="motion-review"><legend>局部位移驗收 · 非正式 rig</legend>
+      <label>頭 X <input id="head-x" type="range" min="-12" max="12" value="0"></label>
+      <label>頭 Y <input id="head-y" type="range" min="-12" max="12" value="0"></label>
+      <label>手臂 X <input id="arms-x" type="range" min="-12" max="12" value="0"></label>
+      <label>手臂 Y <input id="arms-y" type="range" min="-12" max="12" value="0"></label>
+      <label>上身 Y <input id="torso-y" type="range" min="-12" max="12" value="0"></label>
+      <label>頭髮 X <input id="hair-x" type="range" min="-12" max="12" value="0"></label>
+      <button id="reset-motion">位移歸零</button>
+    </fieldset>
+    <p class="note">圖層由下往上繪製。開關、獨顯、透明度與上下移動只影響此頁預覽。原圖由你本機選取，不會上傳；原圖未做自動座標對位，疊加僅供外觀參考。</p>
+    <p id="candidate-info" class="note"></p><p id="warnings" class="warning"></p>
+    <div id="layers"></div><p id="error" class="error"></p>
+  </aside>
+</main>
+<script>
+const qs=new URLSearchParams(location.search);
+const task=qs.get('local')||'';
+const orderFile=qs.get('order')||'_order.json';
+const manifestFile=qs.get('manifest');
+const configFile=manifestFile||orderFile;
+const validTask=/^[A-Za-z0-9_-]+$/.test(task);
+const validConfig=/^(?:_review\/(?:[A-Za-z0-9_-]+\/)?)?[A-Za-z0-9_-]+\.json$/.test(configFile);
+const base=validTask?'/layers/seethrough_local/'+encodeURIComponent(task)+'/':'';
+const canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d');
+const error=document.getElementById('error'),list=document.getElementById('layers');
+const zoom=document.getElementById('zoom'),wrap=document.getElementById('wrap');
+let layers=[],originalOrder=[],source=null,sourceOpacity=0,manifest=null;
+const motion={head:{x:0,y:0},arms:{x:0,y:0},torso:{x:0,y:0},hair:{x:0,y:0}};
+document.getElementById('task-label').textContent=task;
+function group(file){
+  if(['backhair','fronthair'].includes(file))return '頭髮';
+  if(['eyebrow','eyelash','eyewhite','irides','nose','mouth','ears','face','earwear'].includes(file))return '五官／頭部';
+  if(['neck','topwear','handwear','bottomwear'].includes(file))return '軀幹／手臂';
+  return '下半身';
+}
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  for(const l of layers)if(l.visible&&l.image){
+    const offset=motion[l.parent]||{x:0,y:0};
+    ctx.globalAlpha=l.opacity;ctx.drawImage(l.image,offset.x,offset.y,canvas.width,canvas.height)
+  }
+  if(source&&sourceOpacity){ctx.globalAlpha=sourceOpacity;ctx.drawImage(source,0,0,canvas.width,canvas.height)}
+  ctx.globalAlpha=1;
+}
+function row(l){
+  const div=document.createElement('div');div.className='layer';
+  const show=document.createElement('input');show.type='checkbox';show.checked=l.visible;show.title='顯示';
+  show.onchange=()=>{l.visible=show.checked;draw()};
+  const name=document.createElement('span');name.textContent=l.label ? l.label+' · '+l.file : l.file;name.title=l.group+' · 跟隨 '+l.parent;
+  const solo=document.createElement('button');solo.textContent='獨';solo.title='獨顯';solo.onclick=()=>{for(const x of layers)x.visible=(x===l);renderList();draw()};
+  const up=document.createElement('button');up.textContent='↑';up.title='往前一層';up.onclick=()=>move(l,1);
+  const down=document.createElement('button');down.textContent='↓';down.title='往後一層';down.onclick=()=>move(l,-1);
+  const op=document.createElement('input');op.type='range';op.min=0;op.max=100;op.value=Math.round(l.opacity*100);op.title='透明度';
+  op.oninput=()=>{l.opacity=Number(op.value)/100;draw()};
+  div.append(show,name,solo,up,down,op);return div;
+}
+function renderList(){
+  list.replaceChildren();let last='';
+  for(const l of [...layers].reverse()){
+    if(l.group!==last){last=l.group;const h=document.createElement('div');h.className='group';h.textContent=last;list.append(h)}
+    list.append(row(l));
+  }
+  updateWarnings();
+}
+function updateWarnings(){
+  const lines=[];
+  if(!manifest)lines.push('舊順序檔沒有角色層級表或順序約束；不能視為完成組裝。');
+  else{
+    for(const c of manifest.constraints||[]){
+      const a=layers.findIndex(l=>l.file===c.behind),b=layers.findIndex(l=>l.file===c.inFrontOf);
+      if(a<0||b<0||a>=b)lines.push('順序違規：'+c.reason);
+    }
+    for(const defect of manifest.openDefects||[])lines.push('待修：'+defect);
+  }
+  document.getElementById('warnings').textContent=lines.join('\n');
+}
+function move(l,delta){const i=layers.indexOf(l),j=i+delta;if(j<0||j>=layers.length)return;[layers[i],layers[j]]=[layers[j],layers[i]];renderList();draw()}
+function setZoom(){wrap.style.transform='scale('+(Number(zoom.value)/100)+')';wrap.style.marginBottom=(canvas.height*(Number(zoom.value)/100-1))+'px';document.getElementById('zoom-value').textContent=zoom.value+'%'}
+zoom.oninput=setZoom;setZoom();
+for(const [id,parent,axis] of [['head-x','head','x'],['head-y','head','y'],
+  ['arms-x','arms','x'],['arms-y','arms','y'],['torso-y','torso','y'],['hair-x','hair','x']]){
+  document.getElementById(id).oninput=e=>{motion[parent][axis]=Number(e.target.value);draw()};
+}
+document.getElementById('reset-motion').onclick=()=>{
+  for(const id of ['head-x','head-y','arms-x','arms-y','torso-y','hair-x']){
+    const input=document.getElementById(id);input.value='0';input.dispatchEvent(new Event('input'));
+  }
+};
+document.getElementById('show-all').onclick=()=>{for(const l of layers){l.visible=true;l.opacity=1}renderList();draw()};
+document.getElementById('reset-order').onclick=()=>{layers.sort((a,b)=>originalOrder.indexOf(a.file)-originalOrder.indexOf(b.file));renderList();draw()};
+document.getElementById('source-opacity').oninput=e=>{sourceOpacity=Number(e.target.value)/100;draw()};
+document.getElementById('source').onchange=e=>{
+  const file=e.target.files?.[0];if(!file)return;
+  const url=URL.createObjectURL(file),img=new Image();
+  img.onload=()=>{source=img;URL.revokeObjectURL(url);draw()};
+  img.onerror=()=>{URL.revokeObjectURL(url);error.textContent='原圖無法讀取'};
+  img.src=url;
+};
+document.getElementById('save').onclick=()=>{
+  const data={task,candidate:manifest?.candidate||'legacy-order',reviewStatus:'pending',nonProduction:true,source:'local-file-not-uploaded',constraints:manifest?.constraints||[],openDefects:manifest?.openDefects||[],drawOrder:layers.map(l=>({file:l.file,label:l.label,group:l.group,parent:l.parent,visible:l.visible,opacity:l.opacity}))};
+  const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+  const a=document.createElement('a');a.href=url;a.download=task+'_assembly_review.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
+async function start(){
+  if(!validTask||!validConfig){error.textContent='請提供有效的 local 任務與配置檔名';return}
+  try{
+    const raw=await fetch(base+configFile);if(!raw.ok)throw Error('讀取配置檔失敗：'+raw.status);
+    const data=await raw.json();
+    manifest=Array.isArray(data)?null:data;
+    if(manifest&&(manifest.schemaVersion!==1||manifest.task!==task||manifest.nonProduction!==true||manifest.reviewStatus!=='pending'))throw Error('候選層級表與任務或狀態不符');
+    const order=manifest?manifest.drawOrder:data;
+    if(!Array.isArray(order)||!order.length)throw Error('順序檔無內容');
+    const files=order.map(x=>x.file);
+    if(new Set(files).size!==files.length||files.some(f=>!/^[A-Za-z0-9_-]+\.png$/.test(f)))throw Error('圖層檔名重複或無效');
+    if(manifest&&order.some(x=>!x.group||!x.parent||!x.label))throw Error('候選層級表缺少部件分類或運動歸屬');
+    if(order.some(x=>x.asset&&!/^(?:_review\/[A-Za-z0-9_-]+\/)?[A-Za-z0-9_-]+\.png$/.test(x.asset)))throw Error('候選圖層路徑無效');
+    originalOrder=[...files];
+    layers=order.map(x=>({file:x.file,asset:x.asset||x.file,label:x.label||'',group:x.group||group(x.file.replace(/\.png$/,'')),parent:x.parent||'unassigned',visible:true,opacity:1,image:null}));
+    document.getElementById('candidate-info').textContent=manifest?'層級表：'+manifest.candidate+' · 狀態：待驗收 · 17 個部件':'舊版順序檔預覽 · 無角色層級表';
+    const images=await Promise.all(layers.map(l=>new Promise((resolve,reject)=>{
+      const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>reject(Error('讀取圖層失敗：'+l.asset));img.src=base+l.asset;
+    })));
+    images.forEach((img,i)=>layers[i].image=img);
+    canvas.width=images[0].naturalWidth;canvas.height=images[0].naturalHeight;
+    if(images.some(i=>i.naturalWidth!==canvas.width||i.naturalHeight!==canvas.height))throw Error('圖層畫布尺寸不一致');
+    renderList();draw();setZoom();
+  }catch(e){error.textContent=e.message}
+}
+start();
+</script>
+</html>

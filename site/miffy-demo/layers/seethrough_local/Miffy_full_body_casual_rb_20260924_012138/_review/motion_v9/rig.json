@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "name": "Miffy combined eye and chest preview v9 · non-production",
+  "task": "Miffy_full_body_casual_rb_20260924_012138",
+  "candidate": "motion_v9",
+  "reviewStatus": "pending",
+  "nonProduction": true,
+  "extends": "_review/motion_v8/rig.json",
+  "extendsSha256": "4A5D9738CB00CA93242A8BF2ADDC2A0AC92426D3550DAD897A9A65C47EA2CB12",
+  "rollbackManifest": "_review/motion_v8/rig.json",
+  "bustField": {
+    "mode": "composite-chest-overlay",
+    "centerX": 632,
+    "centerY": 342,
+    "radiusX": 105,
+    "radiusY": 92,
+    "maxPixels": 3,
+    "tileWidth": 32,
+    "tileHeight": 6,
+    "defaultStrength": 50,
+    "note": "Same v7 bounded chest region and strength; direct overlay onto the stance composite reduces full-canvas resampling and tile count."
+  },
+  "limits": [
+    "Optimized chest resampling must be inspected for tile edges and neutral/source consistency at native zoom."
+  ]
+}
