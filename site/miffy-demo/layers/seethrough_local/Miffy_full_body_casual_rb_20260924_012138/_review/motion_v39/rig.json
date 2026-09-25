@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "name": "Miffy ankle seam and subtle hip sway v39 · non-production",
+  "task": "Miffy_full_body_casual_rb_20260924_012138",
+  "candidate": "motion_v39",
+  "reviewStatus": "pending",
+  "nonProduction": true,
+  "extends": "_review/motion_v38/rig.json",
+  "extendsSha256": "BC581CEBB7D6C54CDC73C1C2E174FE586B693EE2AD5AC44FE003801E08632A26",
+  "rollbackManifest": "_review/motion_v38/rig.json",
+  "assembly": "_review/ankle_hip_v1/assembly.json",
+  "assemblySha256": "1262C86F26B3CFA8AD9B72698FCBC25EB899C8B30B51B665A44B4C1A302FAE9F",
+  "grounding": {
+    "mode": "shared-stance-field",
+    "groundY": 1264,
+    "stripHeight": 4,
+    "bands": [
+      {
+        "y": 0,
+        "body": 7,
+        "torso": 4,
+        "head": 3
+      },
+      {
+        "y": 220,
+        "body": 7,
+        "torso": 4,
+        "head": 0
+      },
+      {
+        "y": 350,
+        "body": 10,
+        "torso": 3,
+        "head": 0
+      },
+      {
+        "y": 490,
+        "body": 13,
+        "torso": 1,
+        "head": 0
+      },
+      {
+        "y": 565,
+        "body": 17,
+        "torso": 0,
+        "head": 0
+      },
+      {
+        "y": 850,
+        "body": 5,
+        "torso": 0,
+        "head": 0
+      },
+      {
+        "y": 1110,
+        "body": 0.3,
+        "torso": 0,
+        "head": 0
+      },
+      {
+        "y": 1180,
+        "body": 0,
+        "torso": 0,
+        "head": 0
+      },
+      {
+        "y": 1264,
+        "body": 0,
+        "torso": 0,
+        "head": 0
+      }
+    ],
+    "hipTilt": {
+      "centerX": 625,
+      "topY": 430,
+      "bottomY": 800,
+      "maxDegrees": 1,
+      "stripHeight": 16
+    },
+    "note": "Candidate: hip body travel 14→17 px at full control; slight pelvis vertical shear peaks at 1 degree, tapers to zero above waist/below upper thighs. Shared composite deformation preserves all layer joins; soles remain fixed. Not leg IK."
+  },
+  "limits": [
+    "Pending user visual review; v38 remains the rollback. Compare neutral and both body extremes, idle, pointer follow and combined motion.",
+    "Hip tilt is a bounded screen-space cue on a shared composite, not independent pelvis/leg anatomy or IK.",
+    "The ankle repair removes only redundant foot-layer top-edge alpha over opaque leg skin; inspect both contours at native size and during body sway."
+  ]
+}

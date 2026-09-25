@@ -23,7 +23,7 @@ let productionViewer=null;
 $('defaults').onclick=()=>{if(!productionViewer)return;values(productionViewer.controls);for(const [name,value] of Object.entries(productionViewer.toggles))$(name).checked=value;};
 $('blink-now').onclick=()=>{values({blink:100});setTimeout(()=>values({blink:0}),180);};
 $('compare').onchange=async()=>{
-  $('left-title').textContent=$('compare').value==='cloud'?'雲端素材 · 柔性':'本機素材 · 剛性';
+  $('left-title').textContent='Eris · 單人展示';
   if($('compare').value==='cloud')try{await ensureCloud();}catch(e){$('status').textContent='雲端對照素材載入失敗：'+e.message;}
 };
 // ===== 面板開關 =====
@@ -260,13 +260,11 @@ try{
     if(inspection.get('view')==='face')$('view').value='face';
   }
   for(const {name} of local)if(!evaluate()[name.replace(/_(left|right)$/,'')])throw new Error('圖層尚未配對：'+name);
-  $('status').textContent=`已載入：雲端 ${REF.length} 層（需要時載入）／本機 ${local.length} 層\n${eyeAssets?.closedEyelids?'同步雙眼、眼白裁切與左右閉眼眼瞼已啟用':eyeAssets?'同步雙眼與眼白裁切已啟用':'未找到左右眼素材，使用合併眼部圖層'}\n第六階段 · 品質檢查中`;
-  if(eyeAssets?.candidate)$('status').textContent+='\n候選預覽：'+eyeAssets.candidate+'（半閉眼重影待修正，尚未核准）';
-  if(eyeAssets?.closedEyelids)$('status').textContent='已載入：新版眼瞼、同步雙眼與眼白裁切 · 已經使用者核准\n自動眨眼與其他動作可正常使用';
-  if(seamCandidate)$('status').textContent+='\n肩頸接縫候選：'+seamCandidate+'（待人工驗收）';
-  else if(seamAssets)$('status').textContent+='\n肩頸接縫修補：已經使用者核准並預設啟用';
-  $('status').textContent+='\n'+(quality.isProduction?quality.label:'⚠ '+quality.label+'（不可作為交付畫面）');
-  if(faceCandidate)$('status').textContent+='\n口型：'+(facialCandidateName?facialCandidateName+' 候選預覽（待人工驗收）':'開心／生氣與七種口型已核准');
+  $('status').textContent='已載入 '+local.length+' 層 · '+
+    (quality.isProduction?quality.label:'⚠ '+quality.label+' · 非交付')+
+    (eyeAssets?.candidate?' · 眼瞼候選':eyeAssets?.closedEyelids?' · 眨眼可用':'')+
+    (seamCandidate?' · 接縫候選':'')+
+    (faceCandidate?(facialCandidateName?' · 表情候選':' · 表情可用'):'');
 
   // ===== 圖層開關清單 =====
   const layerVisKey='see-through-layer-vis:'+task;
@@ -305,7 +303,7 @@ try{
     if(!$('calibrate').checked||!layout)return;
     const {cx,cy,s,dpr,w}=layout;
     const px=e.clientX*dpr,py=e.clientY*dpr;
-    if(px<w/2||px>w)return;
+    if(px<0||px>w)return;
     const pivot=[(px-cx)/s,(cy-py)/s];
     if(pivot.some(v=>Math.abs(v)>1))return;
     try{
@@ -357,13 +355,14 @@ try{
     // Keep the original open eyes until a rendered blink has passed review.
     // Alpha-overlap tests alone cannot certify the artwork or its alignment.
     if(!expression.hasClosedEyelids)expression.blink=0;
-    const dpr=canvas.width/innerWidth,panel=(document.querySelector('#sidePanel')||document.querySelector('aside')).getBoundingClientRect();
-    const w=canvas.width-(innerWidth>900?(panel.width+24)*dpr:0),h=canvas.height-(innerWidth<=900?(panel.height+24)*dpr:0);
+    const dpr=canvas.width/innerWidth,panelElement=document.querySelector('#sidePanel')||document.querySelector('aside');
+    const panel=panelElement.getBoundingClientRect();
+    const w=canvas.width-(innerWidth>900&&panelElement.classList.contains('open')?(panel.width+24)*dpr:0),h=canvas.height;
     const faceView=$('view').value==='face';
-    const zoom=faceView?4.8:$('view').value==='upper'?1.9:1,s=Math.min(w/2,h)*.96/2.12*zoom;
+    const zoom=faceView?4.8:$('view').value==='upper'?1.9:1,s=Math.min(w*(innerWidth<=900?1.9:1),h)*.96/2.12*zoom;
     const cy=h/2+(faceView?s*.692:$('view').value==='upper'?s*.4:0);
-    layout={cx:w*.75,cy,s,dpr,w};
-    document.querySelector('header').style.right=innerWidth>900?(panel.width+24)+'px':'12px';
+    layout={cx:w*.5,cy,s,dpr,w};
+    document.querySelector('header').style.right=innerWidth>900&&panelElement.classList.contains('open')?(panel.width+24)+'px':'12px';
     if(faceCandidate){
       if($('face-talk').checked&&!$('paused').checked){
         const mode=facialOptions.TALK_SEQUENCE[Math.floor(t/.24)%facialOptions.TALK_SEQUENCE.length];
@@ -372,9 +371,7 @@ try{
       faceCandidate.update($('face-mouth').value,$('face-emotion').value);
     }
     renderer.clear();
-    const leftLayers=$('compare').value==='cloud'&&cloud?cloud:local;
-    renderer.draw(leftLayers,matrices,rig.deformation,w/4,cy,s,$('compare').value==='cloud'&&Boolean(cloud),expression,layerVis);
-    renderer.draw(local,matrices,rig.deformation,w*.75,cy,s,true,expression,layerVis);
+    renderer.draw(local,matrices,rig.deformation,w*.5,cy,s,true,expression,layerVis);
     g.clearRect(0,0,guides.width,guides.height);
     if($('show-guides').checked){
       g.font=`${12*dpr}px system-ui`;g.lineWidth=dpr;

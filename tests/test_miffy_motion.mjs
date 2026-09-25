@@ -15,10 +15,35 @@ const rigV5=JSON.parse(readFileSync(new URL('../outputs/seethrough_local/Miffy_f
 const rigV6=JSON.parse(readFileSync(new URL('../outputs/seethrough_local/Miffy_full_body_casual_rb_20260924_012138/_review/motion_v6/rig.json',import.meta.url)));
 const rigV18=JSON.parse(readFileSync(new URL('../outputs/seethrough_local/Miffy_full_body_casual_rb_20260924_012138/_review/motion_v18/rig.json',import.meta.url)));
 const rigV19=JSON.parse(readFileSync(new URL('../outputs/seethrough_local/Miffy_full_body_casual_rb_20260924_012138/_review/motion_v19/rig.json',import.meta.url)));
+const rigV22=JSON.parse(readFileSync(new URL('../outputs/seethrough_local/Miffy_full_body_casual_rb_20260924_012138/_review/motion_v22/rig.json',import.meta.url)));
 const assembly=JSON.parse(readFileSync(new URL('../outputs/seethrough_local/Miffy_full_body_casual_rb_20260924_012138/_review/seam_v2/assembly.json',import.meta.url)));
 const pose=createRig(rig);
 const near=(a,b)=>a.forEach((v,i)=>assert.ok(Math.abs(v-b[i])<1e-9,`matrix index ${i}: ${v} != ${b[i]}`));
 const point=(matrix,[x,y])=>[matrix[0]*x+matrix[2]*y+matrix[4],matrix[1]*x+matrix[3]*y+matrix[5]];
+
+test('v22 small head roll owns face and hair without moving torso or feet',()=>{
+  assert.equal(rigV22.candidate,'motion_v22');
+  assert.equal(rigV22.rollbackManifest,'_review/motion_v21/rig.json');
+  assert.equal(rigV22.headRoll.maxDegrees,1.5);
+  const evaluate=createRig({...rigV6,nodes:rigV22.nodes});
+  const neutral=evaluate({headRoll:0,hair:0},0);
+  for(const matrix of Object.values(neutral))near(matrix,identity());
+  const left=evaluate({headRoll:-1,hair:0},0);
+  const right=evaluate({headRoll:1,hair:0},0);
+  for(const name of ['topwear','neck','legwear','footwear']){
+    near(left[name],identity());
+    near(right[name],identity());
+  }
+  for(const result of [left,right]){
+    for(const name of ['eyebrow','nose','mouth','eyelash','eyewhite','irides'])
+      near(result[name],result.face);
+    near(point(result.fronthair,[625,48]),point(result.face,[625,48]));
+    near(point(result.backhair,[625,48]),point(result.face,[625,48]));
+    near(point(result.face,[625,220]),[625,220]);
+  }
+  assert.ok(point(left.face,[625,70])[0]<625);
+  assert.ok(point(right.face,[625,70])[0]>625);
+});
 
 test('Miffy rig binds every assembly slot without borrowing Eris assets',()=>{
   assert.equal(rig.task,assembly.task);

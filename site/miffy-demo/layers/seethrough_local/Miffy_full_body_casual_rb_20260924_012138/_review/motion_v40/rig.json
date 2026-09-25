@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "name": "Miffy bilateral arm side-sway v40 · non-production",
+  "task": "Miffy_full_body_casual_rb_20260924_012138",
+  "candidate": "motion_v40",
+  "reviewStatus": "pending",
+  "nonProduction": true,
+  "extends": "_review/motion_v39/rig.json",
+  "extendsSha256": "FF531691DF8B473B43F6B2C21AE063F81DC606C1AE3C3FCF668DA81ADEC956D1",
+  "rollbackManifest": "_review/motion_v39/rig.json",
+  "assembly": "_review/ankle_hip_v1/assembly.json",
+  "assemblySha256": "1262C86F26B3CFA8AD9B72698FCBC25EB899C8B30B51B665A44B4C1A302FAE9F",
+  "armSway": {
+    "mode": "bilateral-arm-strip-review",
+    "owner": "handwear.png",
+    "stripHeight": 12,
+    "bands": [
+      {
+        "y": 226,
+        "pixels": 0
+      },
+      {
+        "y": 325,
+        "pixels": 1.4
+      },
+      {
+        "y": 440,
+        "pixels": 3.5
+      },
+      {
+        "y": 560,
+        "pixels": 5.8
+      },
+      {
+        "y": 635,
+        "pixels": 8
+      },
+      {
+        "y": 705,
+        "pixels": 9
+      },
+      {
+        "y": 712,
+        "pixels": 9
+      }
+    ],
+    "sides": [
+      {
+        "name": "left",
+        "x0": 430,
+        "x1": 570,
+        "gain": 1
+      },
+      {
+        "name": "right",
+        "x0": 690,
+        "x1": 820,
+        "gain": 0.94
+      }
+    ],
+    "idleGain": 0.75,
+    "followGain": 0.13,
+    "leftPhase": -0.3,
+    "rightPhase": -0.55,
+    "note": "Same shared arm PNG, separate nonoverlapping pixel regions. Root 0; upper arm small; elbow/forearm/wrist progressively larger. Slightly delayed bilateral idle and small counter-pointer response. This is not articulated elbow IK."
+  },
+  "limits": [
+    "User-requested side-to-side double-arm trial; pending moving-frame artistic approval.",
+    "Shoulder-root displacement is zero; inspect both arm/torso seam lines and hand/hair/shorts occlusion at both extrema.",
+    "Both arms share one source PNG; no independently painted hidden anatomy or bone elbow movement is claimed.",
+    "V39 remains the rollback for ankle/hip-only comparison."
+  ]
+}

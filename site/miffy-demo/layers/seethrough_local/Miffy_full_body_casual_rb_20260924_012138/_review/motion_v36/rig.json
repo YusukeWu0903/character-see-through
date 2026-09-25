@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "name": "Miffy curved crown/chin pitch v36 · non-production",
+  "task": "Miffy_full_body_casual_rb_20260924_012138",
+  "candidate": "motion_v36",
+  "reviewStatus": "pending",
+  "nonProduction": true,
+  "extends": "_review/motion_v35/rig.json",
+  "extendsSha256": "D524CDD58D2854F874C45E64A7531B83CA5AD2F6642B8AA498B5711D8A54D336",
+  "rollbackManifest": "_review/motion_v34/rig.json",
+  "assembly": "_review/cheek_outline_v1/assembly.json",
+  "assemblySha256": "5F084E04FD9677DF972A5B44B3C1C8359E18F128EEA6086E576EFF234BF02625",
+  "headPitchProfile": {
+    "mode": "curved-terminal-push-review",
+    "maxDegrees": 5,
+    "topY": 54,
+    "chinY": 194,
+    "holdY": 221,
+    "upPushPx": 8.5,
+    "downPushPx": 8.5,
+    "arcPower": 1.2,
+    "sideFalloff": 0.12,
+    "note": "The same head ellipsoid used for yaw supplies the vertical surface arc and side curvature. +pitch starts at the chin and increasingly presses chin/mouth/nose/eyes up toward a held crown. -pitch starts at the crown and increasingly presses forehead/eyes/nose/mouth down toward a held chin. Both decrease visible forehead height. Existing yaw inverse sampler carries all face pixels and detached eye overlays together."
+  },
+  "headPitch": {
+    "mode": "frontal-ellipsoid-pitch-review",
+    "maxDegrees": 5,
+    "faceOwner": "face layer with eye overlays, combined in the existing yaw sampler",
+    "driver": "manual pitch slider; +100 up and -100 down",
+    "parts": {
+      "fronthair": {"mode": "bounded-vertical-pitch-follow-review", "bounds": [486, 0, 687, 524], "fullY": 75, "fadeStartY": 120, "holdY": 510, "maxPixels": 2.0, "upMaxPixels": 1.0, "downMaxPixels": 6.0},
+      "backhair": {"mode": "bounded-vertical-pitch-follow-review", "bounds": [478, 0, 782, 545], "fullY": 75, "fadeStartY": 120, "holdY": 525, "maxPixels": 1.3, "upMaxPixels": 1.0, "downMaxPixels": 5.0},
+      "neck": {"mode": "bounded-vertical-pitch-follow-review", "bounds": [585, 122, 671, 225], "fullY": 160, "fadeStartY": 190, "holdY": 224, "maxPixels": 1.6}
+    },
+    "note": "Only v36 changes hair pitch gains by direction: low up-follow keeps the crown near neutral; stronger down-follow prevents the painted hairline from defeating forehead compression. Neck retains v34 behavior."
+  },
+  "limits": [
+    "Pending task-scoped curved-pitch A/B review against v34/v35; not a default or public candidate.",
+    "Opposite end is assumed held during each directional push. This is an art-directed surface arc, not a physical 3D pitch or hidden under-chin reconstruction.",
+    "Review intermediate and endpoint poses, scalp/hairline, lower jaw/neck seam, blink/gaze and yaw/pitch corners."
+  ]
+}

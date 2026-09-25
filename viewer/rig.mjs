@@ -12,7 +12,7 @@ export function validateRig(rig) {
   const nodes = new Map();
   for (const n of rig.nodes) {
     if (!n.id || nodes.has(n.id) || !Array.isArray(n.pivot) || n.pivot.length !== 2 ||
-        !n.pivot.every(Number.isFinite) || !['none','body','torso','head','hair'].includes(n.motion) ||
+        !n.pivot.every(Number.isFinite) || !['none','body','torso','head','hair','head-roll'].includes(n.motion) ||
         !Number.isFinite(n.maxDegrees) || n.maxDegrees < 0 || n.maxDegrees > 10 ||
         !Number.isFinite(n.phase)) throw new Error('Invalid or duplicate node');
     nodes.set(n.id, n);
@@ -37,13 +37,14 @@ export function createRig(rig) {
   return function evaluate(controls = {}, time = 0) {
     const t = Number.isFinite(time) ? time : 0;
     const body = clamp(controls.body, -1, 1), head = clamp(controls.head, -1, 1);
-    const torso = clamp(controls.torso, -1, 1);
+    const torso = clamp(controls.torso, -1, 1), headRoll = clamp(controls.headRoll, -1, 1);
     const breath = clamp(controls.breath, 0, 1), hair = clamp(controls.hair, 0, 1);
     const world = new Map();
     for (const n of ordered) {
       let angle = 0, dy = 0;
       if (n.motion === 'body') { angle = body*n.maxDegrees; dy = Math.sin(t*1.4)*breath*0.004; }
       if (n.motion === 'head') angle = head*n.maxDegrees;
+      if (n.motion === 'head-roll') angle = headRoll*n.maxDegrees;
       if (n.motion === 'torso') angle = torso*n.maxDegrees;
       if (n.motion === 'hair') angle = Math.sin(t*0.8+n.phase)*hair*n.maxDegrees;
       const rad = angle*Math.PI/180, c = Math.cos(rad), s = Math.sin(rad);

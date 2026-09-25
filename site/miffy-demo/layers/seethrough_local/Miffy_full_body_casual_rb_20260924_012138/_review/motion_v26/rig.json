@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "name": "Miffy lower face-depth centre A/B v26 · non-production",
+  "task": "Miffy_full_body_casual_rb_20260924_012138",
+  "candidate": "motion_v26",
+  "reviewStatus": "pending",
+  "nonProduction": true,
+  "extends": "_review/motion_v25/rig.json",
+  "extendsSha256": "D943AA3448269A17A935193B643C7EEA595A7E63F5D6D1CCDE916FF2DA4B0360",
+  "rollbackManifest": "_review/motion_v25/rig.json",
+  "assembly": "_review/cheek_outline_v1/assembly.json",
+  "assemblySha256": "5F084E04FD9677DF972A5B44B3C1C8359E18F128EEA6086E576EFF234BF02625",
+  "headSurface": {
+    "mode": "projected-head-texture-candidate",
+    "bounds": [510, 0, 740, 226],
+    "edgeFade": 18,
+    "neckHoldY": 184,
+    "maxDegrees": 8,
+    "geometry": {
+      "mode": "ellipsoid-landmark-diagnostic",
+      "center": [625, 135],
+      "radii": [67, 80, 56],
+      "cameraDistance": 450,
+      "maxDegrees": 12,
+      "landmarks": {
+        "leftEyeOuter": [574, 104, 0],
+        "leftEyeInner": [620, 104, 0],
+        "rightEyeInner": [629, 103, 0],
+        "rightEyeOuter": [676, 103, 0],
+        "noseTip": [625, 139, 15],
+        "mouthLeft": [610, 169, 4],
+        "mouthRight": [642, 169, 4],
+        "chin": [625, 194, 0],
+        "leftCheek": [566, 143, 0],
+        "rightCheek": [684, 143, 0]
+      }
+    },
+    "owner": "face layer with current eye overlays, below front hair and above neck/back hair",
+    "driver": "manual yaw slider only",
+    "note": "A/B with v25: only curved-surface depth centre y changes from 122 to 135 native pixels. No lighting, range, source art, hair, eye, or neck setting changes."
+  },
+  "limits": [
+    "Only the face-surface depth centre moves downward by 13 native pixels; this is not a literal hinge or new face anatomy.",
+    "Lighting and shadow are intentionally unchanged for this isolated A/B review.",
+    "This remains a frontal-art visual trial. Check both yaw signs, chin/neck boundary, hair/ear occlusion, blink and head roll before accepting a direction."
+  ]
+}

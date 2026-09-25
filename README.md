@@ -7,9 +7,10 @@ around [Shitagaki Lab's see-through](https://github.com/shitagaki-lab/see-throug
 not a fork or redistribution of that upstream project.
 
 > Current baseline: clean local RGBA/PSD delivery and the Eris flexible preview
-> have reached the project's initial acceptance target. See the detailed
-> [current capability audit](docs/project-status-2026-09-20.md) for evidence,
-> decisions, and limitations.
+> have reached the project's initial acceptance target. Miffy's v21 interactive
+> showcase has reached a user-accepted v40 stage checkpoint, with unfinished
+> expressions and known motion-performance work. See the [current project status](docs/project-status-2026-09-25.md)
+> for what is working, pending, and not yet built.
 
 ## What is delivered
 
@@ -68,6 +69,8 @@ missing feet.
 | `/preview-rig?local=<task>` | Parent-child rig prototype | Development review |
 | `/preview-deform?local=<task>` | Shared neck/waist deformation inspection | Development review |
 | `/preview-secondary?local=<task>` | Blink, gaze, secondary motion, and seam candidates | Eris-focused experimental review |
+| `/viewer-assets/assembly-review.html?local=<task>&manifest=<candidate>` | Task-specific static assembly | Local candidate review |
+| `/viewer-assets/assembly-motion.html?local=<task>&rig=<candidate>` | Task-specific interactive motion | Local candidate review; not a release URL |
 
 The flexible side of the deformation preview is the presentation mode. The
 rigid side is a diagnostic baseline for registration and order; it deliberately
@@ -89,10 +92,14 @@ models. Front-view yaw is only a conservative 2D cue, not real 3/4 artwork.
 - `seams_v2` is an explicit Eris seam-repair candidate, split into head-bound
   and torso-bound patches. It requires per-character visual review and is not
   a universal repair.
-- Chest follow-through is experimental and currently paused for further
-  tuning. A previous high-amplitude mesh approach was rejected because it tore
-  unmatched skin and clothing layers. Do not represent the current preview as
-  a Live2D-quality body simulation.
+- Eris and Miffy have separate character-specific motion candidates. Miffy has
+  reviewed local trials for grounded idle/follow, blink/gaze, a visualized
+  two-axis chest field, bounded head motion and lighting, hip motion, and
+  side-to-side arm sway. v40 was accepted as a stage checkpoint, not as a
+  final anatomical or performance standard. None is a general Live2D-quality
+  or 3D simulation.
+- Miffy's rejected smile was removed. Mouth shapes and expressions are not yet
+  complete for Miffy; head pose must not be described as an expression rig.
 
 ## Testing
 
@@ -126,6 +133,10 @@ arbitrary tasks, project files, or credentials through a quick share.
 `AGENTS.md` directs see-through work to
 [`skills/see-through-local/SKILL.md`](skills/see-through-local/SKILL.md), which
 defines task isolation, Alpha/PSD rules, and acceptance checks.
+The [motion-rig skill](skills/character-motion-rig/SKILL.md) routes body,
+face, and deformation-field review; the [dated Miffy plan](docs/miffy-animation-plan-2026-09-24.md)
+preserves earlier decisions. The [current status](docs/project-status-2026-09-25.md)
+supersedes that plan's v21 progress snapshot without rewriting its history.
 
 Any material project outcome must also follow
 [`skills/daily-work-log/SKILL.md`](skills/daily-work-log/SKILL.md). The shared
@@ -142,8 +153,11 @@ milestones without overwriting other projects' notes.
 
 - Upstream research/model: Jian Lin et al.,
   [see-through](https://github.com/shitagaki-lab/see-through) (Apache-2.0).
-- This repository does not include upstream source, model weights, or character
-  artwork. Follow the upstream licence, model terms, and citation requirements.
+- This repository does not include upstream source or model weights. It does
+  include selected character-derived runtime artwork inside packaged showcase
+  bundles such as `site/miffy-demo/`; the original inputs and task-local PSDs
+  are not part of those bundles. Confirm display rights before publishing or
+  redistributing a character, and follow upstream licence/model terms.
 - `SEE_THROUGH_HOME` selects the user's separate upstream checkout. Do not
   modify it unless explicitly authorized; record every approved delta under
   `patches/` and validate it in this repository.

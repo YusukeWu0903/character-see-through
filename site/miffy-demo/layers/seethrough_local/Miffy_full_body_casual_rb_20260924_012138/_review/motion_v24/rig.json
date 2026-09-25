@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "name": "Miffy face-surface projection wireframe v24 · diagnostic only",
+  "task": "Miffy_full_body_casual_rb_20260924_012138",
+  "candidate": "motion_v24",
+  "reviewStatus": "pending",
+  "nonProduction": true,
+  "extends": "_review/motion_v22/rig.json",
+  "extendsSha256": "03458BA0B6AC29695AFF9C0BE5422ECCEA313ECABCB3E5BDE7B1D8C3732F1418",
+  "rollbackManifest": "_review/motion_v22/rig.json",
+  "assembly": "_review/cheek_outline_v1/assembly.json",
+  "assemblySha256": "5F084E04FD9677DF972A5B44B3C1C8359E18F128EEA6086E576EFF234BF02625",
+  "headGeometry": {
+    "mode": "ellipsoid-landmark-diagnostic",
+    "center": [625, 122],
+    "radii": [67, 80, 56],
+    "cameraDistance": 450,
+    "maxDegrees": 12,
+    "landmarks": {
+      "leftEyeOuter": [574, 104, 0],
+      "leftEyeInner": [620, 104, 0],
+      "rightEyeInner": [629, 103, 0],
+      "rightEyeOuter": [676, 103, 0],
+      "noseTip": [625, 139, 15],
+      "mouthLeft": [610, 169, 4],
+      "mouthRight": [642, 169, 4],
+      "chin": [625, 194, 0],
+      "leftCheek": [566, 143, 0],
+      "rightCheek": [684, 143, 0]
+    },
+    "referenceArt": {
+      "neutral": {
+        "file": "Character/002_Miffy/Miffy_face_bd.png",
+        "sha256": "6A49F1D7BD73C944486E041762E037B8C01852FE8B717375B9517F4D8D2464C2"
+      },
+      "emotionSheets": [
+        {"file": "Character/002_Miffy/emotion_type01.png", "sha256": "170734EA2465E8C5A9B59221CFBDBC9C137F5E5EE9D0D21D9F9A468A061FA811"},
+        {"file": "Character/002_Miffy/emotion_type02.png", "sha256": "B19B4F27871B952E97EDD3C0542BBEC5C7E4DE5F1F39A8EB13B29AA32D2A8DF4"},
+        {"file": "Character/002_Miffy/emotion_type03.png", "sha256": "BA8E9C821705A73CAF76372C2646E6DE64F053710D31B1BAE9C4D07661316B5B"},
+        {"file": "Character/002_Miffy/emotion_type04.png", "sha256": "6C2CC2FE172A7ACC4013D1338C246B913F798F9F8B004A3825BC1181AE227E49"}
+      ]
+    },
+    "note": "Hypothesis only: ellipsoid surface and separate feature depths. Lines show mathematical projection while underlying character pixels remain exactly v22."
+  },
+  "limits": [
+    "Wireframe and coloured landmarks are a diagnostic overlay, not a deformed texture or working head-turn animation.",
+    "The assumed face radius, depth, camera distance and ±12° review span are provisional; no safe artistic range is established.",
+    "No side texture, hidden ear/cheek/hair pixels or separable nose/mouth/brow assets are inferred or created."
+  ]
+}

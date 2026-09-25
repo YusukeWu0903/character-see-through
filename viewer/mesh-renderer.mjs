@@ -90,6 +90,10 @@ export function createMeshRenderer(canvas,{maxUpload=1280}={}){
     textures.set(image,tex);return tex;
   }
   return {
+    releaseTexture(image){
+      const existing=textures.get(image);
+      if(existing){gl.deleteTexture(existing);textures.delete(image);}
+    },
     clear(){gl.viewport(0,0,canvas.width,canvas.height);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);},
     draw(layers,matrices,bands,cx,cy,scale,deform=true,expression={},visibility=null){
       gl.uniformMatrix3fv(uniforms.body,false,mat3(matrices.legwear));gl.uniformMatrix3fv(uniforms.torso,false,mat3(matrices.neck));gl.uniformMatrix3fv(uniforms.head,false,mat3(matrices.face));

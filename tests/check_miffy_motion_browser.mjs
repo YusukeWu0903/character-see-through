@@ -107,9 +107,10 @@ const cycle=await evaluate(`new Promise(resolve => {
     if(performance.now()-started>4900){clearInterval(timer);resolve({min,max})}
   },80);
 })`);
+const fitScale=await evaluate(`document.querySelector('#stage').getBoundingClientRect().width/document.querySelector('#stage').width`);
 const defaultHeadTravelCss=(1264-100)*
-  (Math.tan(cycle.max*Math.PI/180)-Math.tan(cycle.min*Math.PI/180))*.55;
-assert.ok(defaultHeadTravelCss>20,'default upper-body sway must be visible at 55% zoom');
+  (Math.tan(cycle.max*Math.PI/180)-Math.tan(cycle.min*Math.PI/180))*fitScale;
+assert.ok(defaultHeadTravelCss>20,'default upper-body sway must be visible at the fitted viewport size');
 const tabCount=await evaluate(`(() => {
   document.querySelector('[data-tab="layers"]').click();
   return {tabs:document.querySelectorAll('.tab').length,layers:document.querySelectorAll('.layer-row').length};
@@ -151,7 +152,7 @@ const views=await evaluate(`(() => {
   document.querySelector('#defaults').click();
   return {upper,face,reset:document.querySelector('#view').value};
 })()`);
-assert.deepEqual(views,{upper:'105',face:'190',reset:'full'});
+assert.deepEqual(views,{upper:'165',face:'260',reset:'full'});
 const follow=await evaluate(`(() => {
   document.querySelector('#paused').checked=true;
   document.querySelector('#auto').checked=false;

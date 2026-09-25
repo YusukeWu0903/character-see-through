@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "name": "Miffy nose-bridge proportion pitch v35 · non-production",
+  "task": "Miffy_full_body_casual_rb_20260924_012138",
+  "candidate": "motion_v35",
+  "reviewStatus": "pending",
+  "nonProduction": true,
+  "extends": "_review/motion_v34/rig.json",
+  "extendsSha256": "32E9C48487DDE87E152D9AED38581C346D50004624ED5C8F15DF75CA78C7B2E8",
+  "rollbackManifest": "_review/motion_v34/rig.json",
+  "assembly": "_review/cheek_outline_v1/assembly.json",
+  "assemblySha256": "5F084E04FD9677DF972A5B44B3C1C8359E18F128EEA6086E576EFF234BF02625",
+  "headPitchProfile": {
+    "mode": "nose-bridge-proportion-review",
+    "maxDegrees": 5,
+    "topY": 54,
+    "bridgeY": 125,
+    "chinY": 194,
+    "holdY": 221,
+    "centerX": 625,
+    "upUpperCompressionPx": 3.4,
+    "upChinRisePx": 6.8,
+    "upUpperWidthNarrowing": 0.035,
+    "downUpperDropPx": 6.4,
+    "note": "At +100, the forehead/eye region recedes and narrows while the lower face rises. At -100, the upper face extends down while the lower face compresses. The bridge is continuous and the lower edge returns to the held neck seam. Drawn from the user's pitch sketch as a bounded 2.5D hypothesis, not a true 3D reconstruction."
+  },
+  "limits": [
+    "Pending face-proportion pitch A/B review against v34; not approved for default or public portfolio.",
+    "The frontal source has no true under-chin artwork. Evaluate both signs, yaw corners, blink, gaze, hairline, jaw and neck seams before promotion."
+  ]
+}

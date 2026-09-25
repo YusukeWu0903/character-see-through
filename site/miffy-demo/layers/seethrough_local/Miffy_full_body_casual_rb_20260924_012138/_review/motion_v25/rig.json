@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "name": "Miffy actual curved-surface facial pixel candidate v25 · non-production",
+  "task": "Miffy_full_body_casual_rb_20260924_012138",
+  "candidate": "motion_v25",
+  "reviewStatus": "pending",
+  "nonProduction": true,
+  "extends": "_review/motion_v24/rig.json",
+  "extendsSha256": "747EA24595E8F4E3F3DC4507B7FFB49A186D9DA3A75B819B18D538ABF7AD94EA",
+  "rollbackManifest": "_review/motion_v22/rig.json",
+  "assembly": "_review/cheek_outline_v1/assembly.json",
+  "assemblySha256": "5F084E04FD9677DF972A5B44B3C1C8359E18F128EEA6086E576EFF234BF02625",
+  "headGeometry": null,
+  "headSurface": {
+    "mode": "projected-head-texture-candidate",
+    "bounds": [510, 0, 740, 226],
+    "edgeFade": 18,
+    "neckHoldY": 184,
+    "maxDegrees": 8,
+    "geometry": {
+      "mode": "ellipsoid-landmark-diagnostic",
+      "center": [625, 122],
+      "radii": [67, 80, 56],
+      "cameraDistance": 450,
+      "maxDegrees": 12,
+      "landmarks": {
+        "leftEyeOuter": [574, 104, 0],
+        "leftEyeInner": [620, 104, 0],
+        "rightEyeInner": [629, 103, 0],
+        "rightEyeOuter": [676, 103, 0],
+        "noseTip": [625, 139, 15],
+        "mouthLeft": [610, 169, 4],
+        "mouthRight": [642, 169, 4],
+        "chin": [625, 194, 0],
+        "leftCheek": [566, 143, 0],
+        "rightCheek": [684, 143, 0]
+      }
+    },
+    "owner": "face layer with current eye overlays, below front hair and above neck/back hair",
+    "driver": "manual yaw slider only",
+    "note": "Perspective-resampled existing frontal head pixels. No generated side art or independent feature reconstruction. ±8° is a review bound, not a safe approved animation range."
+  },
+  "limits": [
+    "Actual projected pixel motion is enabled on the face owner only; hair and neck remain their previous rig parents.",
+    "The bald source has baked-in brow, nose, mouth and ears. Near/far depth is only an estimate and may visibly fail at side contour, ears, hairline, chin or eye overlap.",
+    "No newly exposed side anatomy is generated. Do not promote until the user reviews both extrema, intermediate animation, blink, gaze and head-roll combinations."
+  ]
+}

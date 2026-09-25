@@ -1,5 +1,9 @@
 # Project workflow
 
+## Clarify consequential ambiguity before production work
+
+Before changing a character, animation, image, viewer behavior, SKILL, or public delivery, ask only if the direction is unclear, a consequential detail is missing, or the agent would add a design the user did not specify. Then offer 2–3 concrete options, recommend one, and ask the user to choose or correct them; describe visible differences and review states, including viewer-left/right and negative/zero/positive controls when relevant. Do not implement the unresolved interpretation while waiting; read-only research can continue. Record the clarified acceptance examples in task QA and test them before presenting a candidate. If the request is clear, proceed without redundant confirmation. Pure questions and status checks do not need a menu.
+
 For requests involving see-through inference, alpha cleanup, PSD export, viewer
 comparison, or sharing a generated character, read
 [`skills/see-through-local/SKILL.md`](skills/see-through-local/SKILL.md) before
@@ -37,7 +41,12 @@ project's entry or create an empty log when nothing material changed.
 
 All agents must read the matching `skills/<name>/SKILL.md` before acting on its workflow. These files are platform-neutral; Claude, Hermes, and other agents should follow the same contracts through their own tools.
 
+Before each new character-production stage, inventory the task's existing source layers, candidate assets, scripts, and matching SKILL. Follow and test the established route first. If no SKILL covers that stage, create and validate a focused reusable SKILL before implementing it; if the established route fails on this character, preserve the failure evidence and improve that SKILL instead of silently starting a parallel workflow. Keep character-specific coordinates and artistic decisions in the task, not as universal defaults.
+
 - `portfolio-interactive-showcase`: public static/Vercel/GitHub Pages character showcase packaging.
 - `eye-rig-asset-promotion`: split-eye, gaze, and eyelid asset changes or promotion.
 - `seam-repair-promotion`: neck/shoulder seam candidate review or default activation.
+- `character-assembly-repair`: second-stage part tree, draw-order, face/occlusion, and seam candidate repair before rigging.
+- `character-motion-rig`: character-specific full-body/hair/chest and facial animation after assembly review; includes independent motion and expression acceptance gates.
+- `character-expression-transplant`: source-drawn mouth and expression registration, feature-free backing, switching, and interactive acceptance after assembly/eye candidates.
 - `interactive-showcase-release-check`: any final public showcase delivery or URL update.

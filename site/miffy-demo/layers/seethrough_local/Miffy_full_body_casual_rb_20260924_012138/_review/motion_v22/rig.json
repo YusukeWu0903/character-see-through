@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "name": "Miffy small independent Z head tilt v22 · non-production",
+  "task": "Miffy_full_body_casual_rb_20260924_012138",
+  "candidate": "motion_v22",
+  "reviewStatus": "pending",
+  "nonProduction": true,
+  "extends": "_review/motion_v21/rig.json",
+  "extendsSha256": "D8FBE2CDBDAE471AB7D52A93D8CA2EE6D1F5F4F3155806A5638AE0E9ED0ABAD1",
+  "rollbackManifest": "_review/motion_v21/rig.json",
+  "priorCandidateSha256": "D8FBE2CDBDAE471AB7D52A93D8CA2EE6D1F5F4F3155806A5638AE0E9ED0ABAD1",
+  "assembly": "_review/cheek_outline_v1/assembly.json",
+  "assemblySha256": "5F084E04FD9677DF972A5B44B3C1C8359E18F128EEA6086E576EFF234BF02625",
+  "headRoll": {
+    "mode": "rigid-head-z",
+    "maxDegrees": 1.5,
+    "reviewLandmark": [625, 70],
+    "driver": "manual head-roll only",
+    "guide": "Existing show-guides switch; pivot and extreme forehead path; default off",
+    "note": "Small candidate tilt only. Idle stance compensation and pointer follow remain unchanged."
+  },
+  "nodes": [
+    {"id":"root","parent":null,"pivot":[0,0],"motion":"none","maxDegrees":0,"phase":0},
+    {"id":"body","parent":"root","pivot":[630,1264],"motion":"none","maxDegrees":0,"phase":0},
+    {"id":"torso","parent":"body","pivot":[625,490],"motion":"none","maxDegrees":0,"phase":0},
+    {"id":"head","parent":"torso","pivot":[625,220],"motion":"head-roll","maxDegrees":1.5,"phase":0},
+    {"id":"backHair","parent":"head","pivot":[625,48],"motion":"hair","maxDegrees":0.2,"phase":-0.3},
+    {"id":"frontHair","parent":"head","pivot":[625,48],"motion":"hair","maxDegrees":0.15,"phase":0.2}
+  ],
+  "limits": [
+    "Only small Z-axis tilt is enabled; X/Y yaw and pitch, mouth shapes and expressions remain unimplemented.",
+    "Head, face, eye overlays and hair follow the same head parent, but long hair and the neck/shoulder boundary need visual review at both tilt extremes.",
+    "The ±1.5° bound and [625,220] pivot are review values, not artistically accepted production settings."
+  ]
+}

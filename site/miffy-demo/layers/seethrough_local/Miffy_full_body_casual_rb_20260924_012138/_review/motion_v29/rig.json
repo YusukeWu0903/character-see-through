@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "name": "Miffy upper-face light / lower-face shade v29 · non-production",
+  "task": "Miffy_full_body_casual_rb_20260924_012138",
+  "candidate": "motion_v29",
+  "reviewStatus": "pending",
+  "nonProduction": true,
+  "extends": "_review/motion_v28/rig.json",
+  "extendsSha256": "8CBEB5A53C4F87B09468E86BDA222FC12DD3190E2A5B6A7EBF7BE8709ECFAA17",
+  "rollbackManifest": "_review/motion_v28/rig.json",
+  "assembly": "_review/cheek_outline_v1/assembly.json",
+  "assemblySha256": "5F084E04FD9677DF972A5B44B3C1C8359E18F128EEA6086E576EFF234BF02625",
+  "faceLighting": {
+    "mode": "upper-balanced-review",
+    "lightDirection": [0, 0, 1],
+    "intensity": 1.1,
+    "maxFraction": 0.14,
+    "defaultStrength": 75,
+    "upperLight": {"fullThroughY": 139, "zeroFromY": 153, "liftGain": 1.35},
+    "owner": "existing face-surface skin pixels only",
+    "note": "User chose A. Keep v28's signed dark side; strengthen only the illuminated forehead-to-nose region. Positive lift fades smoothly from the source nose tip y=139 to zero by y=153 and remains zero through chin. Yaw zero is untouched."
+  },
+  "limits": [
+    "The 14-native-pixel fade immediately below the registered nose tip avoids a hard horizontal stripe. No brightening remains at or below y=153; v28's dark-side behavior remains unchanged.",
+    "The upper-face lift is provisional and avoids generating new pixel art or changing head geometry, eyes, lips, hair, neck, body, source files or production settings.",
+    "The user's moving visual review is required before activation or release."
+  ]
+}

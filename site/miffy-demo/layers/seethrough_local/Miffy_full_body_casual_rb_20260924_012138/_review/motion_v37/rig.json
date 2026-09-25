@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "name": "Miffy signed pitch lighting v37 · non-production",
+  "task": "Miffy_full_body_casual_rb_20260924_012138",
+  "candidate": "motion_v37",
+  "reviewStatus": "pending",
+  "nonProduction": true,
+  "extends": "_review/motion_v36/rig.json",
+  "extendsSha256": "6A40AF6AAB98A1C8A31C54A64565B3F63ACE55C33A5AFE1FA89C111F89F56E74",
+  "rollbackManifest": "_review/motion_v36/rig.json",
+  "assembly": "_review/cheek_outline_v1/assembly.json",
+  "assemblySha256": "5F084E04FD9677DF972A5B44B3C1C8359E18F128EEA6086E576EFF234BF02625",
+  "facePitchLighting": {
+    "mode": "nose-axis-pitch-light-review",
+    "maxDegrees": 5,
+    "axisY": 125,
+    "fadeHalfHeight": 12,
+    "upperLiftFraction": 0.12,
+    "lowerShadeFraction": 0.045,
+    "owner": "existing face-surface skin pixels only",
+    "note": "At positive pitch, softly lighten forehead/eye skin above the nose bridge. At negative pitch, softly darken cheek/chin skin below the nose bridge. Both share the existing face-light toggle and strength slider with signed yaw lighting. Zero pitch adds nothing."
+  },
+  "limits": [
+    "Pending separate pitch-lighting review. No new lighting switch, no geometry or artwork change, and no production/public promotion.",
+    "Existing source shading remains baked in the PNG. The pitch light is an artist-directed skin-only differential, not inferred real normals or a 3D relight.",
+    "Review both signs at ±50/±100, neutral, yaw/pitch combinations, eye/lip protection, forehead and chin transitions, and light-off identity."
+  ]
+}

@@ -30,12 +30,13 @@ export function applyExpressivePose(pose, energy,time){
     hair:clamp(pose.hair+.35*e,0,1),
   };
 }
-export function advanceSpring(state,target,dt,{frequency=8,damping=.55}={}){
+export function advanceSpring(state,target,dt,{frequency=8,damping=.55,maxPosition=1}={}){
   const step=clamp(dt,0,.05),f=clamp(frequency,1,20),z=clamp(damping,.05,2);
+  const bound=clamp(maxPosition,1,1.25);
   const position=Number.isFinite(state?.position)?state.position:0;
   const velocity=Number.isFinite(state?.velocity)?state.velocity:0;
-  const acceleration=f*f*(clamp(target,-1,1)-position)-2*z*f*velocity;
-  return {position:clamp(position+velocity*step,-1,1),velocity:clamp(velocity+acceleration*step,-10,10)};
+  const acceleration=f*f*(clamp(target,-bound,bound)-position)-2*z*f*velocity;
+  return {position:clamp(position+velocity*step,-bound,bound),velocity:clamp(velocity+acceleration*step,-10,10)};
 }
 
 export function chestFollowTarget(pointerX,strength,enabled=true){

@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "name": "Miffy bounded frontal pitch v34 · non-production",
+  "task": "Miffy_full_body_casual_rb_20260924_012138",
+  "candidate": "motion_v34",
+  "reviewStatus": "pending",
+  "nonProduction": true,
+  "extends": "_review/motion_v33/rig.json",
+  "extendsSha256": "F96AAFCFAC5FE3D8F41006FA1C823BAAC7C22BD3CEBBE3543BCC57AB9D9B990A",
+  "rollbackManifest": "_review/motion_v33/rig.json",
+  "assembly": "_review/cheek_outline_v1/assembly.json",
+  "assemblySha256": "5F084E04FD9677DF972A5B44B3C1C8359E18F128EEA6086E576EFF234BF02625",
+  "headPitch": {
+    "mode": "frontal-ellipsoid-pitch-review",
+    "maxDegrees": 5,
+    "faceOwner": "face layer with eye overlays, combined in the existing yaw sampler",
+    "driver": "manual pitch slider; +100 up and -100 down",
+    "parts": {
+      "fronthair": {"mode": "bounded-vertical-pitch-follow-review", "bounds": [486, 0, 687, 524], "fullY": 75, "fadeStartY": 120, "holdY": 510, "maxPixels": 2.0},
+      "backhair": {"mode": "bounded-vertical-pitch-follow-review", "bounds": [478, 0, 782, 545], "fullY": 75, "fadeStartY": 120, "holdY": 525, "maxPixels": 1.3},
+      "neck": {"mode": "bounded-vertical-pitch-follow-review", "bounds": [585, 122, 671, 225], "fullY": 160, "fadeStartY": 190, "holdY": 224, "maxPixels": 1.6}
+    },
+    "note": "A small visible pitch trial using the existing frontal texture. The face uses the same depth hypothesis as yaw; eye overlays are composited before sampling. Hair and neck use smaller owner-layer vertical fields with fixed lower boundaries. No unseen scalp, under-chin or nostril artwork is invented."
+  },
+  "limits": [
+    "Pending task-scoped 2.5D pitch test, not Live2D's editor deformers or a true 3D head. No production or portfolio promotion.",
+    "Review pitch at both signs, middle values and combined yaw/pitch corners. The +5/-5 degree endpoints are provisional visual limits, not approved animation defaults.",
+    "Inspect frontal baked brow/nose/mouth, blink/gaze, hairline, ear, jaw/neck seams, and speed. Return to v33 if the frontal art cannot support the intended angle."
+  ]
+}
