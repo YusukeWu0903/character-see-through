@@ -81,7 +81,7 @@ async function main() {
       const substitutions = [
         ["const task = params.get('local') || '';", `const task = params.get('local') || '${task}';`],
         ["const rigFile = params.get('rig') || '_review/motion_v3/rig.json';", `const rigFile = params.get('rig') || '${rigPath}';`],
-        ["const base = safeTask ? '/layers/seethrough_local/' + encodeURIComponent(task) + '/' : '';", "const base = safeTask ? '/miffy-demo/layers/seethrough_local/' + encodeURIComponent(task) + '/' : '';"],
+        ["const base = safeTask ? '/layers/seethrough_local/' + encodeURIComponent(task) + '/' : '';", "const base = safeTask ? './layers/seethrough_local/' + encodeURIComponent(task) + '/' : '';"],
         ["$('candidate-title').textContent='Miffy 全身動態 '+rig.candidate+' · 非正式審查候選';", "$('candidate-title').textContent='Miffy · v40 階段展示';"],
         ["$('status').textContent='已載入 17 層 · '+rig.candidate+' 待審';", "$('status').textContent='已載入 17 層 · v40 階段展示';"]
       ];
@@ -97,7 +97,7 @@ async function main() {
   const htmlSubstitutions = [
     ['<title>Miffy 全身動態候選 · 非正式</title>', '<title>Miffy · 互動展示（製作中）</title>'],
     ['<strong id="candidate-title">Miffy 全身動態 · 非正式審查候選</strong> <small>本機預覽，不改正式圖層與設定</small><a id="latest" hidden>開啟新版動態</a>', '<strong id="candidate-title">Miffy · v40 階段展示</strong> <small>手臂、頭部與胸部動態為階段成果；表情與效能仍將持續改善。</small><a id="latest" hidden></a>'],
-    ['<script type="module" src="./assembly-motion.mjs?review-runtime=v40-arm-sway-r2"></script>', '<script type="module" src="/miffy-demo/viewer-assets/assembly-motion.mjs?v=40"></script>']
+    ['<script type="module" src="./assembly-motion.mjs?review-runtime=v40-arm-sway-r2"></script>', '<script type="module" src="./viewer-assets/assembly-motion.mjs?v=40"></script>']
   ];
   for (const [before, after] of htmlSubstitutions) {
     if (!html.includes(before)) throw new Error(`HTML template changed: ${before.slice(0, 70)}`);
