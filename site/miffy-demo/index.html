@@ -111,5 +111,8 @@ setTimeout(()=>{
   }
 },15000);
 </script>
-<script type="module" src="./viewer-assets/assembly-motion.mjs?v=40"></script>
+<script type="module">
+const demoPath=location.pathname.replace(/\/index\.html$/,'').replace(/\/$/,'');
+await import(demoPath+'/viewer-assets/assembly-motion.mjs?v=40');
+</script>
 </html>

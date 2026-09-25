@@ -22,7 +22,7 @@ const task = params.get('local') || 'Miffy_full_body_casual_rb_20260924_012138';
 const rigFile = params.get('rig') || '_review/motion_v40/rig.json';
 const safeTask = /^[A-Za-z0-9_-]+$/.test(task);
 const safeRig = /^_review\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+\.json$/.test(rigFile);
-const base = safeTask ? './layers/seethrough_local/' + encodeURIComponent(task) + '/' : '';
+const base = safeTask ? new URL('../layers/seethrough_local/' + encodeURIComponent(task) + '/', import.meta.url).pathname : '';
 const canvas = $('stage'), ctx = canvas.getContext('2d');
 const composite = document.createElement('canvas');
 const bustCanvas = document.createElement('canvas');
