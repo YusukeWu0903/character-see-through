@@ -56,6 +56,26 @@ measured from its own alpha geometry and are not universal character defaults.
    vertically contract and fade while the approved closed-eye paint occludes
    them. Unapproved generated eyelids are never enabled by default.
 
+## Eris and Miffy blink parity
+
+The two viewers share one blink control and the same quadratic fade weights:
+`closure = blink * blink`, open opacity `1 - closure`, closed-lid opacity
+`closure`. Both also contract the open-eye art. Eris performs that contraction
+on its separate WebGL eyewhite, iris and lash layers; Miffy contracts a
+registered canvas eye stage because its high-resolution head had baked facial
+details. The pixel deformation is therefore character-specific, not an
+identical renderer. Describing Eris as a closed-lid-only overlay would be
+incorrect; assess control, timing, contraction, and blend separately.
+
+Miffy's `motion_v40` left-eye rectangular crop contained ear-root pixels in
+open/backing art. At half blink those pixels moved/faded with the eye. The
+non-production `motion_v43` candidate keeps the same blink control and artwork,
+but removes only source-verified ear pixels from the eye assets, revealing the
+pixel-identical whole-head underlay. Browser comparison found an identical
+neutral frame and zero changes in the checked outer/lower ear-root regions at
+half and full blink. This numerical check is not a substitute for reviewer
+acceptance of the moving face and hair.
+
 ## Automated and visual gate
 
 Run:

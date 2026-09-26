@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "task": "Miffy_full_body_casual_rb_20260924_012138",
+  "candidate": "motion_v48",
+  "name": "Miffy shared WebGL field migration stage 1 · non-production",
+  "reviewStatus": "pending",
+  "nonProduction": true,
+  "extends": "_review/motion_v45/rig.json",
+  "extendsSha256": "122037F6BF346847C84174FFE0D82EB55FA564CF2E1A6AA1421B4DF8362E9567",
+  "rollbackManifest": "_review/motion_v45/rig.json",
+  "renderer": {
+    "mode": "shared-webgl-scene-stage1",
+    "module": "mesh-renderer.mjs",
+    "nativeTextureSize": 1280,
+    "migrated": [
+      "stance",
+      "hip",
+      "arms",
+      "hair",
+      "neck",
+      "pitch-follow",
+      "bust"
+    ],
+    "remaining": [
+      "head-surface-and-light",
+      "final-canvas-presentation"
+    ]
+  }
+}

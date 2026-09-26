@@ -7,9 +7,9 @@ around [Shitagaki Lab's see-through](https://github.com/shitagaki-lab/see-throug
 not a fork or redistribution of that upstream project.
 
 > Current baseline: clean local RGBA/PSD delivery and the Eris flexible preview
-> have reached the project's initial acceptance target. Miffy's v21 interactive
-> showcase has reached a user-accepted v40 stage checkpoint, with unfinished
-> expressions and known motion-performance work. See the [current project status](docs/project-status-2026-09-25.md)
+> have reached the project's initial acceptance target. Miffy's user-accepted v50
+> checkpoint adds six source-drawn mouths and shared GPU deformation/lighting,
+> fixing flashing mesh seams and improving head-scrub performance. See the [current project status](docs/project-status-2026-09-26.md)
 > for what is working, pending, and not yet built.
 
 ## What is delivered
@@ -95,11 +95,12 @@ models. Front-view yaw is only a conservative 2D cue, not real 3/4 artwork.
 - Eris and Miffy have separate character-specific motion candidates. Miffy has
   reviewed local trials for grounded idle/follow, blink/gaze, a visualized
   two-axis chest field, bounded head motion and lighting, hip motion, and
-  side-to-side arm sway. v40 was accepted as a stage checkpoint, not as a
+  side-to-side arm sway. v50 was accepted as a stage checkpoint, not as a
   final anatomical or performance standard. None is a general Live2D-quality
   or 3D simulation.
-- Miffy's rejected smile was removed. Mouth shapes and expressions are not yet
-  complete for Miffy; head pose must not be described as an expression rig.
+- Miffy's rejected smile was removed. Six source-drawn mouth shapes and a silent
+  talk demo are available; audio lip-sync and broader expressions are not complete.
+  Head pose must not be described as a complete expression rig.
 
 ## Testing
 

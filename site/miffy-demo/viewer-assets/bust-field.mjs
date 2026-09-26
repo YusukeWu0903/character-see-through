@@ -45,7 +45,7 @@ export function validateBustField(field){
   return field;
 }
 
-function bustWeight(x,y,field){
+export function bustWeight(x,y,field){
   const radiusY=y>=field.centerY?(field.lowerRadiusY??field.radiusY):field.radiusY;
   const yy=Math.abs((y-field.centerY)/radiusY);
   if(yy>=1)return 0;

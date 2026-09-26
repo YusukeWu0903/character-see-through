@@ -1,0 +1,479 @@
+{
+  "schemaVersion": 1,
+  "task": "Miffy_full_body_casual_rb_20260924_012138",
+  "candidate": "mouth_v2",
+  "reviewStatus": "pending",
+  "nonProduction": true,
+  "canvas": [
+    1280,
+    1280
+  ],
+  "source": "Character/002_Miffy/mouth_type.png",
+  "sourceSha256": "A0FBACD27DBDA34D91E74BACE31532352A94A8A289AE1527704D544BFF3138A0",
+  "sourceKind": "pixel_transplant_from_user_mouth_sheet",
+  "targetHead": "_review/cheek_outline_v1/head.png",
+  "targetHeadSha256": "BE75B0C6F92F4361587D097062A51175BD3552A58E6C22E84BF95064092E547C",
+  "backing": {
+    "asset": "head_mouthless.png",
+    "sha256": "993C076596F3CFA24DC918E708B8346FB08305E1A98295FF964C5D172D15AACE"
+  },
+  "mouths": {
+    "closed": {
+      "asset": "mouth_closed.png",
+      "sha256": "C79043B89366093EBFA4B9548D198703A2E3A2EA9D09547FB0AE322F8962B370",
+      "label": "閉唇"
+    },
+    "slight": {
+      "asset": "mouth_slight.png",
+      "sha256": "DD153288B0755D70B01300159F41B697F00C1A515C9D7278545D55D267E46521",
+      "label": "微張"
+    },
+    "a": {
+      "asset": "mouth_a.png",
+      "sha256": "7D795D446D7BAB780F085248CD2D724EE9C78656D25574F1B4A6BA51D5E6A6B4",
+      "label": "張口 A"
+    },
+    "e": {
+      "asset": "mouth_e.png",
+      "sha256": "750626A14FA0BF5DF8E524315AA6EF414D92E1FBEAED57B07675EA57FC080AF3",
+      "label": "橫向 E"
+    },
+    "o": {
+      "asset": "mouth_o.png",
+      "sha256": "70C97B5BC6623A2F14BF53FE81BD4627C3E490796593FEF4FA535B48FB950B2B",
+      "label": "圓唇 O"
+    },
+    "u": {
+      "asset": "mouth_u.png",
+      "sha256": "0BF0505E5345B6C4A175BCC2A2EC582D0FA6211DBDF84525F12DFB76214B438A",
+      "label": "小幅嘟唇 U"
+    }
+  },
+  "registrations": {
+    "closed": {
+      "sourceSize": [
+        1536,
+        1024
+      ],
+      "canvas": [
+        1280,
+        1280
+      ],
+      "transform": {
+        "scale": 0.31,
+        "translateX": 545.4,
+        "translateY": 32.47
+      },
+      "anchors": {
+        "sourceIrisCenters": [
+          [
+            181,
+            236
+          ],
+          [
+            334,
+            233
+          ]
+        ],
+        "targetIrisCenters": [
+          [
+            601,
+            103.6
+          ],
+          [
+            649,
+            102
+          ]
+        ],
+        "mouthAnchor": [
+          626,
+          145
+        ],
+        "note": "Eye-span registration, then lip-midline alignment; no source skin transplanted."
+      },
+      "parts": {
+        "mouth": {
+          "roi": [
+            214,
+            338,
+            310,
+            403
+          ],
+          "baselineX": [
+            209,
+            315
+          ],
+          "ellipse": [
+            262,
+            369,
+            48,
+            34
+          ],
+          "difference": [
+            6,
+            24
+          ]
+        }
+      }
+    },
+    "slight": {
+      "sourceSize": [
+        1536,
+        1024
+      ],
+      "canvas": [
+        1280,
+        1280
+      ],
+      "transform": {
+        "scale": 0.31,
+        "translateX": 386.68,
+        "translateY": 32.47
+      },
+      "anchors": {
+        "sourceIrisCenters": [
+          [
+            693,
+            236
+          ],
+          [
+            846,
+            233
+          ]
+        ],
+        "targetIrisCenters": [
+          [
+            601,
+            103.6
+          ],
+          [
+            649,
+            102
+          ]
+        ],
+        "mouthAnchor": [
+          626,
+          145
+        ],
+        "note": "Eye-span registration, then lip-midline alignment; no source skin transplanted."
+      },
+      "parts": {
+        "mouth": {
+          "roi": [
+            726,
+            338,
+            822,
+            403
+          ],
+          "baselineX": [
+            721,
+            827
+          ],
+          "ellipse": [
+            774,
+            369,
+            48,
+            34
+          ],
+          "difference": [
+            6,
+            24
+          ]
+        }
+      }
+    },
+    "a": {
+      "sourceSize": [
+        1536,
+        1024
+      ],
+      "canvas": [
+        1280,
+        1280
+      ],
+      "transform": {
+        "scale": 0.31,
+        "translateX": 227.95999999999998,
+        "translateY": 32.47
+      },
+      "anchors": {
+        "sourceIrisCenters": [
+          [
+            1205,
+            236
+          ],
+          [
+            1358,
+            233
+          ]
+        ],
+        "targetIrisCenters": [
+          [
+            601,
+            103.6
+          ],
+          [
+            649,
+            102
+          ]
+        ],
+        "mouthAnchor": [
+          626,
+          145
+        ],
+        "note": "Eye-span registration, then lip-midline alignment; no source skin transplanted."
+      },
+      "parts": {
+        "mouth": {
+          "roi": [
+            1238,
+            338,
+            1334,
+            403
+          ],
+          "baselineX": [
+            1233,
+            1339
+          ],
+          "ellipse": [
+            1286,
+            369,
+            48,
+            34
+          ],
+          "difference": [
+            6,
+            24
+          ]
+        }
+      }
+    },
+    "e": {
+      "sourceSize": [
+        1536,
+        1024
+      ],
+      "canvas": [
+        1280,
+        1280
+      ],
+      "transform": {
+        "scale": 0.31,
+        "translateX": 545.4,
+        "translateY": -126.25
+      },
+      "anchors": {
+        "sourceIrisCenters": [
+          [
+            181,
+            748
+          ],
+          [
+            334,
+            745
+          ]
+        ],
+        "targetIrisCenters": [
+          [
+            601,
+            103.6
+          ],
+          [
+            649,
+            102
+          ]
+        ],
+        "mouthAnchor": [
+          626,
+          145
+        ],
+        "note": "Eye-span registration, then lip-midline alignment; no source skin transplanted."
+      },
+      "parts": {
+        "mouth": {
+          "roi": [
+            214,
+            850,
+            310,
+            915
+          ],
+          "baselineX": [
+            209,
+            315
+          ],
+          "ellipse": [
+            262,
+            881,
+            48,
+            34
+          ],
+          "difference": [
+            6,
+            24
+          ]
+        }
+      }
+    },
+    "o": {
+      "sourceSize": [
+        1536,
+        1024
+      ],
+      "canvas": [
+        1280,
+        1280
+      ],
+      "transform": {
+        "scale": 0.31,
+        "translateX": 386.68,
+        "translateY": -126.25
+      },
+      "anchors": {
+        "sourceIrisCenters": [
+          [
+            693,
+            748
+          ],
+          [
+            846,
+            745
+          ]
+        ],
+        "targetIrisCenters": [
+          [
+            601,
+            103.6
+          ],
+          [
+            649,
+            102
+          ]
+        ],
+        "mouthAnchor": [
+          626,
+          145
+        ],
+        "note": "Eye-span registration, then lip-midline alignment; no source skin transplanted."
+      },
+      "parts": {
+        "mouth": {
+          "roi": [
+            726,
+            850,
+            822,
+            915
+          ],
+          "baselineX": [
+            721,
+            827
+          ],
+          "ellipse": [
+            774,
+            881,
+            48,
+            34
+          ],
+          "difference": [
+            6,
+            24
+          ]
+        }
+      }
+    },
+    "u": {
+      "sourceSize": [
+        1536,
+        1024
+      ],
+      "canvas": [
+        1280,
+        1280
+      ],
+      "transform": {
+        "scale": 0.31,
+        "translateX": 227.95999999999998,
+        "translateY": -126.25
+      },
+      "anchors": {
+        "sourceIrisCenters": [
+          [
+            1205,
+            748
+          ],
+          [
+            1358,
+            745
+          ]
+        ],
+        "targetIrisCenters": [
+          [
+            601,
+            103.6
+          ],
+          [
+            649,
+            102
+          ]
+        ],
+        "mouthAnchor": [
+          626,
+          145
+        ],
+        "note": "Eye-span registration, then lip-midline alignment; no source skin transplanted."
+      },
+      "parts": {
+        "mouth": {
+          "roi": [
+            1238,
+            850,
+            1334,
+            915
+          ],
+          "baselineX": [
+            1233,
+            1339
+          ],
+          "ellipse": [
+            1286,
+            881,
+            48,
+            34
+          ],
+          "difference": [
+            6,
+            24
+          ]
+        }
+      }
+    }
+  },
+  "backingBounds": [
+    606,
+    133,
+    647,
+    167
+  ],
+  "drawOrder": [
+    "head_mouthless",
+    "selected_mouth",
+    "existing_eye_rig",
+    "existing_head_surface_and_light"
+  ],
+  "talkSequence": [
+    "closed",
+    "slight",
+    "a",
+    "slight",
+    "e",
+    "closed",
+    "o",
+    "u",
+    "slight",
+    "closed"
+  ],
+  "talkStepSeconds": 0.16,
+  "defaultMouth": "original",
+  "autoTalkDefault": false,
+  "rollback": "_review/motion_v43/rig.json",
+  "transition": "discrete-source-art-switch"
+}

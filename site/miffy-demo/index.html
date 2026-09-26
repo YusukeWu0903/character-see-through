@@ -25,7 +25,7 @@ button:hover{border-color:#a9e8ff}.checks{display:flex;gap:12px;flex-wrap:wrap;m
 select,input[type=file]{max-width:100%;background:#343b45;color:#eee;border:1px solid #707d8c;border-radius:5px;padding:5px}
 @media(max-width:780px){header{padding:8px 12px}header small{display:none}main{display:flex;flex-direction:column;height:auto;min-height:100dvh}.stage{height:min(67dvh,700px);flex:none}aside{border-left:0;border-top:1px solid #50545b;overflow:visible}.panel{padding:10px}.tabs{top:0}}
 </style>
-<header><strong id="candidate-title">Miffy · v40 階段展示</strong> <small>手臂、頭部與胸部動態為階段成果；表情與效能仍將持續改善。</small><a id="latest" hidden></a></header>
+<header><strong id="candidate-title">Miffy · v50 階段展示</strong> <small>共用 GPU 動態 · 六種口形</small><a id="latest" hidden></a></header>
 <main>
   <section class="stage"><canvas id="stage" width="1280" height="1280" aria-label="Miffy 動態預覽"></canvas></section>
   <aside>
@@ -55,6 +55,17 @@ select,input[type=file]{max-width:100%;background:#343b45;color:#eee;border:1px 
       <div class="row disabled"><label for="gaze-y">視線上下</label><input id="gaze-y" type="range" min="-100" max="100" value="0" disabled><output id="gaze-y-value">待拆</output></div>
       <div class="row disabled"><label for="blink">眨眼</label><input id="blink" type="range" min="0" max="100" value="0" disabled><output id="blink-value">待拆</output></div>
       <div class="checks"><label><input id="gaze-follow" type="checkbox" disabled> 眼球跟隨滑鼠</label><label><input id="auto-blink" type="checkbox" disabled> 自動眨眼</label></div>
+      <h2 id="mouth-title" hidden>口形</h2>
+      <div id="mouth-controls" hidden>
+        <label for="mouth-shape">口形</label>
+        <select id="mouth-shape" disabled>
+          <option value="original">原始嘴巴</option>
+          <option value="closed">閉唇</option><option value="slight">微張</option>
+          <option value="a">張口 A</option><option value="e">橫向 E</option>
+          <option value="o">圓唇 O</option><option value="u">小幅嘟唇 U</option>
+        </select>
+        <div class="checks"><label><input id="auto-talk" type="checkbox" disabled> 自動說話示範（無聲）</label></div>
+      </div>
       <h2>待機與檢視</h2>
       <div class="checks"><label><input id="auto" type="checkbox" checked> 待機擺動</label><label><input id="follow" type="checkbox" checked> 跟隨滑鼠</label><label><input id="paused" type="checkbox"> 暫停</label></div>
       <div class="checks"><label><input id="reference" type="checkbox"> 靜態基準</label><label><input id="show-guides" type="checkbox"> 顯示錨點</label><label><input id="show-bust-field" type="checkbox" disabled> 顯示胸部局部網格</label></div>
@@ -113,6 +124,6 @@ setTimeout(()=>{
 </script>
 <script type="module">
 const demoPath=location.pathname.replace(/\/index\.html$/,'').replace(/\/$/,'');
-await import(demoPath+'/viewer-assets/assembly-motion.mjs?v=40');
+await import(demoPath+'/viewer-assets/assembly-motion.mjs?v=50');
 </script>
 </html>

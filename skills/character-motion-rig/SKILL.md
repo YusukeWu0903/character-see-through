@@ -7,6 +7,8 @@ description: Build and validate a task-scoped animated character rig after layer
 
 Start from a named character task and an explicitly reviewed assembly candidate. Static appearance approval is not motion approval. Keep all candidates and derived assets under that task, preserve the source PNGs/PSD and prior manifests, and calibrate this character's pivots, registration, and permitted range instead of copying Eris values. Read `viewer/quality-baseline.json` and `docs/spec-change-policy.md` before touching runtime defaults or approved assets.
 
+For repeatable character production, start with the shared renderer and control semantics, not a new per-character rendering stack. Keep source ownership, geometry, weights, amplitudes and timing in task settings/evaluators. Extend the shared backend when a new supported field is required; a temporary diagnostic implementation is not a new production workflow. A renderer migration must inventory retained features and remaining legacy paths explicitly, preserve a named rollback, and pass the same visual/neutral/contact gates before default activation.
+
 Choose the relevant route before implementation:
 
 - For hierarchy, body, arms, legs, hair, and chest response, read [body motion](references/body-motion.md).

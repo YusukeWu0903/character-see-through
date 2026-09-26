@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import {writeFileSync} from 'node:fs';
 
 const url=process.env.MIFFY_SHOWCASE_URL||'http://127.0.0.1:8015/miffy-demo/';
-const opened=await fetch('http://127.0.0.1:9337/json/new?'+encodeURIComponent(url),{method:'PUT'});
+const port=process.env.MIFFY_CDP_PORT||'9348';
+const opened=await fetch('http://127.0.0.1:'+port+'/json/new?'+encodeURIComponent(url),{method:'PUT'});
 assert.ok(opened.ok,'Chrome CDP tab');
 const page=await opened.json();
 const ws=new WebSocket(page.webSocketDebuggerUrl);
@@ -42,6 +43,9 @@ const evaluate=async expression=>(await command('Runtime.evaluate',
 try{
   await command('Network.enable');
   await command('Runtime.enable');
+  await command('Page.enable');
+  await command('Network.setCacheDisabled',{cacheDisabled:true});
+  await command('Page.reload');
   await new Promise(resolve=>setTimeout(resolve,1800));
   const result=await evaluate(`new Promise(resolve=>{
     const deadline=Date.now()+30000;
@@ -65,7 +69,7 @@ try{
   console.log('load result',JSON.stringify({result,failures}));
   assert.equal(result.error,'');
   assert.equal(result.loaded,true);
-  assert.equal(result.candidate,'motion_v40');
+  assert.equal(result.candidate,'motion_v50');
   assert.equal(result.neutralMatches,true);
   assert.ok(result.ink>10000,'visible character pixels');
   assert.equal(result.armEnabled,true);
@@ -85,7 +89,7 @@ try{
     const canvas=document.querySelector('#stage');
     const neutral=canvas.toDataURL();
     const changed={};
-    for(const [id,value] of [['body','60'],['gaze-x','60'],['blink','100']]){
+    for(const [id,value] of [['body','60'],['gaze-x','60'],['blink','100'],['yaw','50'],['pitch','-50']]){
       const input=document.querySelector('#'+id);input.value=value;
       input.dispatchEvent(new Event('input'));
       changed[id]=canvas.toDataURL()!==neutral;
@@ -94,6 +98,12 @@ try{
     return changed;
   })()`);
   assert.ok(core.body&&core['gaze-x']&&core.blink,'body/gaze/blink controls must render');
+  assert.ok(core.yaw&&core.pitch,'shared GPU head controls must render');
+  const mouths=await evaluate(`(()=>{const s=document.querySelector('#mouth-shape'),c=document.querySelector('#stage'),frames=[];
+    for(const mode of ['closed','slight','a','e','o','u']){s.value=mode;s.dispatchEvent(new Event('change'));frames.push(c.toDataURL())}
+    document.querySelector('#neutral').click();return {distinct:new Set(frames).size,reset:window.__miffyMotion.mouth.active,
+      renderer:window.__miffyMotion.renderer.head};})()`);
+  assert.equal(mouths.distinct,6);assert.equal(mouths.reset,'original');assert.equal(mouths.renderer,'shared-gpu-curved-light');
   await command('Emulation.setDeviceMetricsOverride',
     {width:390,height:844,deviceScaleFactor:1,mobile:true});
   const mobile=await evaluate(`(()=>({
@@ -104,10 +114,10 @@ try{
   console.log('mobile layout',JSON.stringify(mobile));
   assert.ok(mobile.canvas.width>=480,'mobile preview retains an enlarged scrollable character');
   const shot=await command('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
-  writeFileSync('outputs/ui_review/miffy_v40_public_mobile.png',Buffer.from(shot.data,'base64'));
+  writeFileSync('outputs/ui_review/miffy_v50_public_mobile.png',Buffer.from(shot.data,'base64'));
   assert.deepEqual(failures,[]);
   console.log(JSON.stringify({url,result,controls,core,mobile,networkFailures:failures},null,2));
 }finally{
   ws.close();
-  await fetch('http://127.0.0.1:9337/json/close/'+page.id).catch(()=>{});
+  await fetch('http://127.0.0.1:'+port+'/json/close/'+page.id).catch(()=>{});
 }

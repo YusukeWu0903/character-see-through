@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "task": "Miffy_full_body_casual_rb_20260924_012138",
+  "candidate": "motion_v50",
+  "name": "Miffy shared GPU head · non-production · canvas-copy",
+  "reviewStatus": "pending",
+  "nonProduction": true,
+  "extends": "_review/motion_v48/rig.json",
+  "extendsSha256": "2FE8E59EDC85460F020D28C7DD51A24FF5B48FD6AFA3B5A09CF3C7DACD3DF248",
+  "rollbackManifest": "_review/motion_v48/rig.json",
+  "renderer": {
+    "mode": "shared-webgl-scene-stage2",
+    "module": "mesh-renderer.mjs",
+    "nativeTextureSize": 1280,
+    "gpuHead": true,
+    "presentation": "canvas-copy",
+    "migrated": [
+      "stance",
+      "hip",
+      "arms",
+      "hair",
+      "neck",
+      "pitch-follow",
+      "bust",
+      "head-surface",
+      "head-light"
+    ],
+    "remaining": [
+      "single-final-canvas-copy"
+    ],
+    "sourceSha256": {
+      "mesh-renderer.mjs": "9F6EFF97F7BD1CC0F756AE56B049B08D7A5EBDA5DA55025AD8E01012053E743F",
+      "shared-field-adapter.mjs": "5269B8284811F6522B96085357AE09655BB17FB1DDCD873940605C72837E090E",
+      "assembly-motion.mjs": "F386669933B5770E70AEA5993FFA2834A0816957919FAEC6A5139A4762C4FE90",
+      "head-surface-warp.mjs": "A884995DD4E0D566D7358F41E899C6F8289C549BD2FA22D4F631EF36D162265F",
+      "head-lighting.mjs": "45A2A17983CB6618095E5AAA09DF007A9D8E30BCB237EF4824F26AD6470C6DB0"
+    }
+  }
+}

@@ -6,6 +6,8 @@ import {pointerTarget,approachPointer} from './pointer-follow.mjs';
 import {validateBustField,drawBustField,drawBustOverlay,
   drawBustFieldGuide} from './bust-field.mjs';
 import {advanceSpring,blinkPulse,sharedGazeTarget,chestFollowTarget} from './expression.mjs';
+import {loadMouthTransplant} from './mouth-transplant.mjs';
+import {createSharedFieldAdapter} from './shared-field-adapter.mjs?review-runtime=v49-full-gpu';
 import {validateHeadYawField,drawHeadYawField,drawHeadYawGuide} from './head-yaw-field.mjs';
 import {validateHeadGeometry,drawHeadGeometry} from './head-geometry.mjs';
 import {validateHeadSurface,drawHeadSurface,drawHeadSurfaceGuide} from './head-surface-warp.mjs?review-runtime=v37-pitch-light';
@@ -61,8 +63,19 @@ let hairFollowDrive={fronthair:0,backhair:0};
 let hairIdleState=initialHairIdleState();
 let hairIdleTargets={fronthair:0,backhair:0};
 let eyeAssets=null,eyeBlink=0,eyeGazeX=0,eyeGazeY=0;
+let mouthAssets=null,activeMouthMode='original';
+let sharedFields=null;
+let gpuPresented=false;
+function faceImage(layer){
+  return layer.name==='face'&&mouthAssets&&activeMouthMode!=='original'
+    ? mouthAssets.backing : layer.image;
+}
+function drawMouth(g){
+  if(mouthAssets&&activeMouthMode!=='original')g.drawImage(mouthAssets.images[activeMouthMode],0,0);
+}
 let eyePointerDesiredX=0,eyePointerDesiredY=0,eyePointerX=0,eyePointerY=0;
 const review = window.__miffyMotion = {loaded:false, neutralMatches:false, task};
+review.redraw=()=>draw(); // Synchronous diagnostics capture; no retained framebuffer needed in playback.
 
 function manualPose() {
   return Object.fromEntries(ids.map(id => [id, Number($(id).value) / 100]));
@@ -177,7 +190,8 @@ function paintPitchPart(g,source,stage,control,config,key){
   const show=$('show-head-pitch').checked;
   if(Math.abs(control)<1e-8&&!show){g.drawImage(source,0,0);return;}
   if(stage.pitchKey!==key){
-    drawPitchFollow(stage.pitch||stage.output,source,control,config);
+    if(sharedFields)sharedFields.pitch(stage.pitch||stage.output,source,control,config);
+    else drawPitchFollow(stage.pitch||stage.output,source,control,config);
     stage.pitchKey=key;
   }
   const output=stage.pitch||stage.output;
@@ -194,7 +208,68 @@ function paintPitchPart(g,source,stage,control,config,key){
     g.drawImage(guideCanvas,0,0);
   }
 }
+function preparedHead(layer,controls){
+  const angle=(controls.yaw||0)*rigCurrent.headSurface.maxDegrees;
+  const pitch=(controls.pitch||0)*(rigCurrent.headPitch?.maxDegrees||0);
+  const lighting=rigCurrent.faceLighting&&$('face-light').checked
+    ? {config:rigCurrent.faceLighting,pitchConfig:rigCurrent.facePitchLighting||null,
+       strength:Number($('face-light-strength').value)/100} : null;
+  const gpu=rigCurrent.renderer?.gpuHead;
+  const key=[gpu?'gpu-source':'cpu-warp',layer.image,activeMouthMode,gpu?0:angle,gpu?0:pitch,eyeBlink,eyeGazeX,eyeGazeY,
+    Boolean(eyeAssets),$('show-head-surface').checked,$('show-head-pitch').checked,lighting?.strength??-1].join('|');
+  if(key!==headSurfaceCacheKey){
+    const g=headSurfaceSource.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,1280,1280);
+    g.drawImage(faceImage(layer),0,0);drawMouth(g);if(eyeAssets)drawEyes(g);
+    if(gpu){headSurfaceCacheKey=key;return headSurfaceSource;}
+    drawHeadSurface(headSurfaceCanvas,headSurfaceSource,angle,rigCurrent.headSurface,lighting,
+      {inverseGridStep:3,pitchDegrees:pitch,pitchProfile:rigCurrent.headPitchProfile||null});
+    if($('show-head-surface').checked||$('show-head-pitch').checked){
+      const guide=headSurfaceGuideCanvas.getContext('2d');guide.setTransform(1,0,0,1,0,0);guide.clearRect(0,0,1280,1280);
+      drawHeadSurfaceGuide(guide,rigCurrent.headSurface,angle,p=>p,pitch,rigCurrent.headPitchProfile||null);
+      guide.globalCompositeOperation='destination-in';guide.drawImage(headSurfaceCanvas,0,0);guide.globalCompositeOperation='source-over';
+      headSurfaceCanvas.getContext('2d').drawImage(headSurfaceGuideCanvas,0,0);
+    }
+    headSurfaceCacheKey=key;
+  }
+  return gpu?headSurfaceSource:headSurfaceCanvas;
+}
+function sharedGuide(layer){
+  const name=layer.name;
+  let image=null;
+  if(name==='face'&&rigCurrent.renderer?.gpuHead&&($('show-head-surface').checked||$('show-head-pitch').checked)){
+    image=headSurfaceGuideCanvas;const g=image.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,1280,1280);
+    drawHeadSurfaceGuide(g,rigCurrent.headSurface,0,p=>p,0,rigCurrent.headPitchProfile);
+  }else if(name==='topwear'&&$('show-bust-field').checked){
+    drawBustFieldGuide(bustGuideCanvas,layer.image,rigCurrent.bustField);image=bustGuideCanvas;
+  }else if(name==='handwear'&&$('show-arm-field').checked){
+    drawArmSwayGuide(armGuideCanvas,layer.image,{left:0,right:0},rigCurrent.armSway);image=armGuideCanvas;
+  }else if(['fronthair','backhair'].includes(name)&&$('show-hair-follow').checked){
+    image=hairFollowStages[name].guide;const g=image.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,1280,1280);
+    drawHairFollowGuide(g,rigCurrent.hairFollow.parts[name],0);
+  }else if(name==='neck'&&$('show-neck-follow').checked){
+    image=neckFollowGuideCanvas;const g=image.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,1280,1280);
+    drawNeckFollowGuide(g,rigCurrent.neckFollow,0,0);
+  }
+  if(image){const g=image.getContext('2d');g.globalCompositeOperation='destination-in';g.drawImage(layer.image,0,0);g.globalCompositeOperation='source-over'}
+  return image;
+}
 function paint(target, transforms, controls={}) {
+  gpuPresented=false;
+  const active=['body','torso','head','left','right','yaw','pitch','headRoll'].some(id=>Math.abs(controls[id]||0)>1e-8)||
+    Math.abs(bustAmplitude)+Math.abs(bustFollowPx)>1e-8||Object.values(hairFollowDrive).some(v=>Math.abs(v)>1e-8);
+  if(sharedFields&&['shared-webgl-scene-stage1','shared-webgl-scene-stage2'].includes(rigCurrent.renderer.mode)&&transforms&&active){
+    sharedFields.scene(target,layers,transforms,controls,rigCurrent,
+      {hair:$('paused').checked?{fronthair:controls.yaw||0,backhair:controls.yaw||0}:hairFollowDrive,
+       roll:(controls.headRoll||0)*(rigCurrent.headRoll?.maxDegrees||0),
+       yaw:(controls.yaw||0)*rigCurrent.headSurface.maxDegrees,bustX:bustFollowPx,bustY:bustAmplitude},
+      ()=>preparedHead(layers.find(l=>l.name==='face'),controls),()=>headSurfaceCacheKey,sharedGuide,
+      $('face-light').checked?{surface:rigCurrent.headSurface,config:rigCurrent.faceLighting,pitchConfig:rigCurrent.facePitchLighting,
+        strength:Number($('face-light-strength').value)/100,yaw:(controls.yaw||0)*rigCurrent.headSurface.maxDegrees,
+        pitch:(controls.pitch||0)*rigCurrent.headPitch.maxDegrees}:null);
+    gpuPresented=rigCurrent.renderer.presentation==='direct-webgl';
+    if(gpuPresented){ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,1280,1280);}
+    return;
+  }
   const stance=transforms && rigCurrent?.grounding?.mode==='shared-stance-field';
   const surface=stance?composite:target;
   const g = surface.getContext('2d');
@@ -213,7 +288,8 @@ function paint(target, transforms, controls={}) {
       const armControls={left:controls.left||0,right:controls.right||0};
       const guide=$('show-arm-field').checked;
       if(Math.abs(armControls.left)+Math.abs(armControls.right)>1e-7||guide){
-        drawArmSway(armCanvas,layer.image,armControls,rigCurrent.armSway);
+        if(sharedFields)sharedFields.arm(armCanvas,layer.image,armControls,rigCurrent.armSway);
+        else drawArmSway(armCanvas,layer.image,armControls,rigCurrent.armSway);
         g.drawImage(armCanvas,0,0);
         if(guide){
           drawArmSwayGuide(armGuideCanvas,armCanvas,armControls,rigCurrent.armSway);
@@ -239,7 +315,8 @@ function paint(target, transforms, controls={}) {
         }
         if(!fast||stage.renderedDrive===null||
            Math.abs(drive-stage.renderedDrive)>.0001){
-          drawHairFollow(stage.output,stage.source,drive,part,sampling);
+          if(sharedFields)sharedFields.hair(stage.output,stage.source,drive,part);
+          else drawHairFollow(stage.output,stage.source,drive,part,sampling);
           stage.renderedDrive=drive;
         }
         hairSource=stage.output;
@@ -276,7 +353,8 @@ function paint(target, transforms, controls={}) {
         }
         const key=roll+'|'+yaw;
         if(!fast||neckFollowPoseKey!==key){
-          drawNeckFollow(neckFollowCanvas,neckFollowSource,roll,yaw,
+          if(sharedFields)sharedFields.neck(neckFollowCanvas,neckFollowSource,roll,yaw,rigCurrent.neckFollow);
+          else drawNeckFollow(neckFollowCanvas,neckFollowSource,roll,yaw,
             rigCurrent.neckFollow);
           neckFollowPoseKey=key;
         }
@@ -304,7 +382,8 @@ function paint(target, transforms, controls={}) {
        Math.abs(bustAmplitude)+Math.abs(bustFollowPx)>1e-6){
       const displacement=rigCurrent.bustField.mode==='topwear-local-bilateral-pixel-xy'
         ? {vertical:bustAmplitude,horizontal:bustFollowPx}:bustAmplitude;
-      drawBustField(bustCanvas,layer.image,displacement,rigCurrent.bustField);
+      if(sharedFields)sharedFields.bust(bustCanvas,layer.image,displacement,rigCurrent.bustField);
+      else drawBustField(bustCanvas,layer.image,displacement,rigCurrent.bustField);
       g.drawImage(bustCanvas,0,0);
     }else if(layer.name==='face'&&transforms&&rigCurrent.headSurface){
       const angle=(controls.yaw||0)*rigCurrent.headSurface.maxDegrees;
@@ -315,7 +394,7 @@ function paint(target, transforms, controls={}) {
             strength:Number($('face-light-strength').value)/100}
         : null;
       const cache=rigCurrent.runtimeOptimization?.mode==='native-pixel-cache-review';
-      const key=cache?[layer.image,angle,pitch,eyeBlink,eyeGazeX,eyeGazeY,
+      const key=cache?[layer.image,activeMouthMode,angle,pitch,eyeBlink,eyeGazeX,eyeGazeY,
         Boolean(eyeAssets),Boolean($('show-head-surface').checked),
         Boolean($('show-head-pitch').checked),
         lighting?.strength??-1].join('|'):null;
@@ -323,7 +402,8 @@ function paint(target, transforms, controls={}) {
         const sourceContext=headSurfaceSource.getContext('2d');
         sourceContext.setTransform(1,0,0,1,0,0);
         sourceContext.clearRect(0,0,canvas.width,canvas.height);
-        sourceContext.drawImage(layer.image,0,0);
+        sourceContext.drawImage(faceImage(layer),0,0);
+        drawMouth(sourceContext);
         if(eyeAssets&&layer.visible)drawEyes(sourceContext);
         drawHeadSurface(headSurfaceCanvas,headSurfaceSource,angle,
           rigCurrent.headSurface,lighting,
@@ -343,7 +423,10 @@ function paint(target, transforms, controls={}) {
         headSurfaceCacheKey=key;
       }
       g.drawImage(headSurfaceCanvas,0,0);
-    }else g.drawImage(layer.image,0,0);
+    }else {
+      g.drawImage(faceImage(layer),0,0);
+      if(layer.name==='face')drawMouth(g);
+    }
     if(layer.name==='topwear'&&$('show-bust-field').checked &&
        ['topwear-local-bilateral','topwear-local-bilateral-pixel',
          'topwear-local-bilateral-pixel-xy'].includes(rigCurrent?.bustField?.mode)){
@@ -367,7 +450,8 @@ function paint(target, transforms, controls={}) {
         drawBustField(bustCanvas,source,bustAmplitude,rigCurrent.bustField);
         source=bustCanvas;
       }
-      drawStanceField(target,source,controls,rigCurrent.grounding);
+      if(sharedFields)sharedFields.stance(target,source,controls,rigCurrent.grounding);
+      else drawStanceField(target,source,controls,rigCurrent.grounding);
     }
   }
 }
@@ -448,7 +532,13 @@ function drawGuides(transforms,controls={}) {
 }
 function draw(time=elapsed) {
   if (!loaded) return;
+  activeMouthMode=mouthAssets&&!$('reference').checked
+    ? mouthAssets.mode($('mouth-shape').value,$('auto-talk').checked,time) : 'original';
+  review.mouth={active:activeMouthMode,requested:$('mouth-shape').value,
+    auto:Boolean(mouthAssets&&$('auto-talk').checked),transition:'discrete-source-art-switch'};
   review.drawCount=(review.drawCount||0)+1;
+  review.renderer={mode:sharedFields?rigCurrent.renderer.mode:'legacy-canvas-fields',
+    gpuDraws:sharedFields?.mesh.draws||0,head:rigCurrent.renderer?.gpuHead?'shared-gpu-curved-light':'existing-native-curved-pixel-light'};
   const controls=controlsAt(time);
   review.pointer={desired:pointerDesired,eased:pointerEased,mix:followMix};
   review.bust={amplitudePx:bustAmplitude,followPx:bustFollowPx,
@@ -514,6 +604,15 @@ function draw(time=elapsed) {
     review.headGeometry=drawHeadGeometry(ctx,rigCurrent.headGeometry,
       review.headGeometryDegrees,mapPoint);
   }
+  if(sharedFields&&rigCurrent.renderer?.presentation==='direct-webgl'){
+    const gpu=sharedFields.mesh.canvas;
+    gpu.hidden=!gpuPresented;canvas.style.opacity=gpuPresented?'0':'1';
+    if(gpuPresented){
+      if($('show-guides').checked||$('show-head-geometry').checked)
+        sharedFields.mesh.draw(canvas,(x,y)=>[x,y],{clear:false});
+    }
+    review.actualCanvas=gpuPresented?gpu:canvas;
+  }else review.actualCanvas=canvas;
   if(rigCurrent.grounding?.mode==='shared-stance-field'){
     const hip=stanceOffset(565,controls,rigCurrent.grounding);
     const face=stanceOffset(125,controls,rigCurrent.grounding);
@@ -711,7 +810,9 @@ function collectSettings() {
       ...(rigCurrent.hairFollow?['show-hair-follow']:[]),
       ...(rigCurrent.faceLighting?['face-light']:[]),
       ...(rigCurrent.eyeRig?['gaze-follow','auto-blink']:[])].map(id=>[id,$(id).checked])),
-    view:$('view').value
+    view:$('view').value,
+    mouth:mouthAssets?$('mouth-shape').value:'original',
+    autoTalk:Boolean(mouthAssets&&$('auto-talk').checked)
   };
 }
 function applySettings(data) {
@@ -762,6 +863,10 @@ function applySettings(data) {
     $('head-geometry-note').hidden=!$('show-head-geometry').checked;
   if (!['full','upper','face'].includes(data.view)) throw Error('檢查視角無效');
   $('view').value=data.view;
+  if(mouthAssets){
+    mouthAssets.mode(data.mouth||'original',false,0);
+    $('mouth-shape').value=data.mouth||'original';$('auto-talk').checked=data.autoTalk===true;
+  }
   setZoom();
   draw();
 }
@@ -946,6 +1051,24 @@ async function start() {
       stage.width=canvas.width;stage.height=canvas.height;
     }
   bustGuideSource=null;
+  if(rig.renderer){
+    if(!['shared-webgl-fields-stage1','shared-webgl-scene-stage1','shared-webgl-scene-stage2'].includes(rig.renderer.mode))throw Error('未知的共用渲染候選');
+    sharedFields=createSharedFieldAdapter(rig.renderer.presentation==='direct-webgl');
+    if(rig.renderer.presentation==='direct-webgl'){
+      const gpu=sharedFields.mesh.canvas;gpu.id='gpu-stage';gpu.hidden=true;
+      Object.assign(gpu.style,{position:'absolute',pointerEvents:'none',margin:'0'});
+      canvas.parentElement.style.position='relative';canvas.parentElement.append(gpu);
+      const sync=()=>{gpu.style.left=canvas.offsetLeft+'px';gpu.style.top=canvas.offsetTop+'px';
+        gpu.style.width=canvas.offsetWidth+'px';gpu.style.height=canvas.offsetHeight+'px';};
+      new ResizeObserver(sync).observe(canvas);window.addEventListener('resize',sync);sync();
+    }
+  }
+  if(rig.mouthRig){
+    mouthAssets=await loadMouthTransplant(base,rig.mouthRig,getImage,sha256);
+    $('mouth-shape').disabled=false;$('auto-talk').disabled=false;
+    $('mouth-controls').hidden=false;
+    $('mouth-title').hidden=false;
+  }
   if (layers.some(layer => layer.image.naturalWidth !== canvas.width ||
       layer.image.naturalHeight !== canvas.height))
     throw Error('圖層尺寸與 Miffy rig 不符');
@@ -1147,7 +1270,8 @@ function compactMotionPanel(){
     for(const title of [...panel.children].filter(node=>node.tagName==='H2')){
       const section=document.createElement('details');
       section.className='control-group';
-      section.open=title.textContent==='姿勢與動態'||title.textContent==='待機與檢視';
+      section.hidden=title.hidden;
+      section.open=['姿勢與動態','口形','待機與檢視'].includes(title.textContent);
       const summary=document.createElement('summary');summary.textContent=title.textContent;
       panel.insertBefore(section,title);section.append(summary);
       let node=title.nextSibling;title.remove();
@@ -1195,6 +1319,8 @@ for (const id of [...ids,'energy','bust','arm-sway','gaze-x','gaze-y','blink','h
   };
 }
 $('zoom').oninput=setZoom;
+$('mouth-shape').onchange=()=>{$('auto-talk').checked=false;draw();};
+$('auto-talk').onchange=()=>draw();
 $('view').onchange=()=>{
   $('zoom').value={full:100,upper:165,face:260}[$('view').value];
   setZoom();
@@ -1263,6 +1389,7 @@ canvas.addEventListener('pointerleave',()=>{
   else{pointerX=0;draw();}
 });
 $('neutral').onclick = () => {
+  $('mouth-shape').value='original';$('auto-talk').checked=false;
   for (const id of [...ids,'energy','bust',
     ...(rigCurrent?.armSway?['arm-sway']:[]),
     ...(rigCurrent?.headRoll?['head-roll']:[]),
@@ -1301,6 +1428,7 @@ $('neutral').onclick = () => {
   draw(0);
 };
 $('defaults').onclick=()=>{
+  $('mouth-shape').value='original';$('auto-talk').checked=false;
   const defaults={body:0,torso:0,head:0,hair:55,energy:80,
     ...(rigCurrent?.armSway?{'arm-sway':0}:{}),
     ...(rigCurrent?.headRoll?{'head-roll':0}:{}),
@@ -1490,6 +1618,7 @@ function frame(now) {
       Math.abs(hairIdleTargets[name]-hairFollowDrive[name])>.0002));
   if (loaded && !$('paused').checked &&
       ($('auto').checked ||
+        (mouthAssets&&$('auto-talk').checked) ||
         (!rigCurrent?.hairFollow?.idleAroundYaw&&Number($('hair').value)) ||
         bustChanging ||
         hairChanging ||
