@@ -23,5 +23,18 @@ checkpoint, not a claim of completed expressions, audio lip-sync or full 3D.
 
 Public target: [Miffy portfolio demo](https://my-portfolio-omega-beryl-98.vercel.app/miffy-demo/).
 Release browser/build evidence must be recorded before claiming deployment complete.
+
+Publication verified at 15:56 Asia/Taipei: portfolio `main` commit `19d67cc`
+deployed through its existing Vercel Git integration. Next.js production build
+passed; the actual deployed default URL rendered v50, passed hash checks and
+all runtime requests, six mouth shapes, body/arms, gaze/blink, yaw/pitch and
+reset controls. The 390px mobile check retained a 520px scrollable canvas.
+Pipeline code/docs/SKILL were pushed to `codex/eye-gaze-rig` (implementation
+`fcbae99`, manifest-byte integrity fix `bcffa4a`), not force-merged into its
+divergent `main`. Unrelated local Eris/site drafts remain uncommitted.
+
+The first cloud check rejected newline-normalized JSON bytes. Scoped Git
+attributes now preserve hashed runtime assets; staged bytes were checked in
+both repositories and the actual cloud browser gate passed after redeployment.
 Historical v40 status remains in the dated 2026-09-25 report. No source artwork,
 PSD, rejected asset or test profile belongs in the public runtime bundle.
