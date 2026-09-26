@@ -18,6 +18,12 @@ Include only runtime HTML, JavaScript, configuration JSON, main RGBA layers, and
 
 Convert local-server routes to the final host path. Do not assume a trailing slash. Inventory every module, JSON, and image request before publishing; 200 for the HTML alone is not acceptance.
 
+For byte-hashed runtime manifests/assets, preserve their exact bytes through Git
+and deployment, not only during local copying. Scope `.gitattributes -text` to
+the hash-addressed runtime tree when newline normalization would invalidate
+existing hashes. Check staged/committed blobs against packaged files before
+publishing; never disable integrity checks to make the cloud page load.
+
 ## Release gate
 
 Run the host build. Open the deployed page in a real browser, not only an HTTP client. Verify the default task renders, controls work, and all runtime assets return success. If any asset is missing or the canvas is blank, stop delivery and repair the bundle before sharing the URL.
