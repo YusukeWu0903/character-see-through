@@ -19,5 +19,8 @@ try{
  const mobile=await ev(`({canvas:document.querySelector('#stage').getBoundingClientRect().toJSON(),width:document.documentElement.scrollWidth})`);assert.ok(mobile.canvas.width>300);
  const shot=await cmd('Page.captureScreenshot',{format:'png'});writeFileSync('outputs/seethrough_local/Mimi_cloud_20260927/_review/motion_v62/public_mobile.png',Buffer.from(shot.data,'base64'));
  assert.deepEqual(failures,[]);
- const evidence={url,result,controls,live,mobile,responses,failures};writeFileSync('outputs/seethrough_local/Mimi_cloud_20260927/_review/motion_v62/public_release_qa.json',JSON.stringify(evidence,null,2));console.log(JSON.stringify({url,result,controls,live,requests:responses.length}));
+ await cmd('Page.navigate',{url:new URL('/',url).href});
+ const cards=await ev(`new Promise((r,j)=>{let n=0;const t=setInterval(()=>{const links=[...document.querySelectorAll('a')].map(a=>a.getAttribute('href'));if(links.includes('/mimi-demo/')){clearInterval(t);r({mimi:document.body.innerText.includes('Mimi · AI 角色分層互動展示'),miffy:links.includes('/miffy-demo/'),eris:links.includes('https://character-see-through.vercel.app/')})}else if(++n>100){clearInterval(t);j(Error('Portfolio card unavailable'))}},100)})`);
+ assert.ok(cards.mimi&&cards.miffy&&cards.eris);
+ const evidence={url,result,controls,live,mobile,cards,responses,failures};writeFileSync('outputs/seethrough_local/Mimi_cloud_20260927/_review/motion_v62/public_release_qa.json',JSON.stringify(evidence,null,2));console.log(JSON.stringify({url,result,controls,live,cards,requests:responses.length}));
 }finally{ws.close();await fetch('http://127.0.0.1:9337/json/close/'+page.id)}
