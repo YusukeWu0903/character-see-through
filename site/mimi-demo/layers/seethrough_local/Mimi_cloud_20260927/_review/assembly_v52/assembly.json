@@ -1,0 +1,442 @@
+{
+  "schemaVersion": 1,
+  "task": "Mimi_cloud_20260927",
+  "nonProduction": true,
+  "reviewStatus": "pending",
+  "source": "Character/003_Mimi/Mimi_full_body_casual.psd",
+  "sourceSha256": "8C026841B1563D07F41353B19CFE8EB68342ACF422F6A15DA0375E105D622432",
+  "canvas": [
+    1280,
+    1280
+  ],
+  "drawOrder": [
+    {
+      "name": "shadow",
+      "file": "shadow.png",
+      "label": "落地陰影",
+      "group": "ground",
+      "parent": "root",
+      "assetSha256": "EA8AFB6CC9D4D8F66D926379F6F546570C4D74F464A4733063BA402B47C7BAF8"
+    },
+    {
+      "name": "legwear",
+      "file": "legwear.png",
+      "label": "雙腿",
+      "group": "character",
+      "parent": "body",
+      "assetSha256": "7905AB86D4CE1A9E2E9A240A49936115F6CEAD0AE7DE0E552E7F307B5F1B55C7"
+    },
+    {
+      "name": "footwear",
+      "file": "footwear.png",
+      "label": "雙腳",
+      "group": "character",
+      "parent": "body",
+      "assetSha256": "35CAA812F3649F73408D268D9348D64BF8F7504734227D08995A7B11374E0CE1",
+      "asset": "_review/assembly_v11/footwear.png"
+    },
+    {
+      "name": "bottomwear",
+      "file": "bottomwear.png",
+      "label": "裙子",
+      "group": "character",
+      "parent": "body",
+      "assetSha256": "324B8F068F60B5F9D49BA9B46848453077240A6F367AF8D35ADDF87F5D831464"
+    },
+    {
+      "name": "handwear_left",
+      "file": "handwear_left.png",
+      "group": "character",
+      "parent": "torso",
+      "asset": "_review/assembly_v11/handwear_left.png",
+      "assetSha256": "D47D9280037A77FF6F0CE91766306EE0C1A8EA93DE71EE06A8232A40E4566F99",
+      "label": "畫面左臂／袖（上衣後方）"
+    },
+    {
+      "name": "topwear",
+      "file": "topwear.png",
+      "label": "上衣與胸口",
+      "group": "character",
+      "parent": "torso",
+      "assetSha256": "72730CBB61618755BA835CA1BE01E6729731CF3B3D01EB439AB69F94408D0B1D"
+    },
+    {
+      "name": "neck",
+      "file": "neck.png",
+      "label": "脖子",
+      "group": "character",
+      "parent": "torso",
+      "assetSha256": "03DB2FFC84F71C9469114CE35C1BC8CA63469A13FBFD405DA4991208A8A8DD35",
+      "asset": "_review/assembly_v34/neck.png"
+    },
+    {
+      "name": "handwear",
+      "file": "handwear.png",
+      "label": "畫面右臂／袖",
+      "group": "character",
+      "parent": "torso",
+      "assetSha256": "1F3A764BFA897F73E6F25AD4C3B429F06C7F292B1848C1445438F38C846E34D1",
+      "asset": "_review/assembly_v11/handwear.png"
+    },
+    {
+      "name": "backhair",
+      "file": "backhair.png",
+      "asset": "_review/assembly_v52/backhair.png",
+      "assetSha256": "15E4561D3D007F5C7B5B98BA4693223254541827B59E6BE60B37DCDF3E23C8E4",
+      "label": "頭髮／遠深度片",
+      "group": "character",
+      "parent": "head"
+    },
+    {
+      "name": "ears",
+      "file": "ears.png",
+      "asset": "_review/assembly_v50/ears.png",
+      "assetSha256": "3F59311C7E49469EE0327F4BE183C7A577E2F661E7312081575DEF2DC4366990",
+      "label": "ears",
+      "group": "character",
+      "parent": "head"
+    },
+    {
+      "name": "face",
+      "file": "face.png",
+      "asset": "_review/assembly_v51/face.png",
+      "assetSha256": "D9980DD756455D948980EEF992B01F0C16F0FFE3981037B2C95FF3B40A68C7DF",
+      "label": "完整臉／不作深度切片",
+      "group": "character",
+      "parent": "head"
+    },
+    {
+      "name": "front_hair_shadow",
+      "file": "front_hair_shadow.png",
+      "asset": "_review/assembly_v49/front_hair_shadow.png",
+      "assetSha256": "810377C201210979618427895203501FD5F5AAD7EE579139C4C25316A6E0B457",
+      "label": "髮影／前髮下填色餘量（可見髮影仍在原 FACE）",
+      "group": "character",
+      "parent": "frontHair",
+      "linkedShadow": {
+        "owner": "fronthair",
+        "receivers": [
+          "face"
+        ],
+        "clip": "receiver-alpha"
+      }
+    },
+    {
+      "name": "nose",
+      "file": "nose.png",
+      "asset": "nose.png",
+      "assetSha256": "61AFD78554E902E2A592FAED24DD96891D319249E9DAB49446FCB1107E9BBA8F",
+      "label": "nose",
+      "group": "character",
+      "parent": "head"
+    },
+    {
+      "name": "mouth",
+      "file": "mouth.png",
+      "asset": "mouth.png",
+      "assetSha256": "D901D44F430E54E3964AE93F115E98D4432893A67DBD05FBDE60153B3CAF0066",
+      "label": "mouth",
+      "group": "character",
+      "parent": "head"
+    },
+    {
+      "name": "eyebrow",
+      "file": "eyebrow.png",
+      "asset": "eyebrow.png",
+      "assetSha256": "A1A4E55DFD0A1177B98C50DC1098ADE2E111E236C0E1CFC6C15EA29581DE15C9",
+      "label": "eyebrow",
+      "group": "character",
+      "parent": "head"
+    },
+    {
+      "name": "eyewhite",
+      "file": "eyewhite.png",
+      "asset": "eyewhite.png",
+      "assetSha256": "CE4558075B06A78928A3580571B7E65AE9851186CC472A35F9DBB240410B5BF8",
+      "label": "eyewhite",
+      "group": "character",
+      "parent": "head"
+    },
+    {
+      "name": "irides",
+      "file": "irides.png",
+      "asset": "irides.png",
+      "assetSha256": "F4189C65F2C250C66C8ADA8C3DAF3C0E3B2450D115AED2BF2E83D1C4E7CB02BC",
+      "label": "irides",
+      "group": "character",
+      "parent": "head"
+    },
+    {
+      "name": "eyelash",
+      "file": "eyelash.png",
+      "asset": "eyelash.png",
+      "assetSha256": "69191D97A24E366DBBD6932C9AE28E1CDFF91319D9A67125B64DEF20F90BD22A",
+      "label": "eyelash",
+      "group": "character",
+      "parent": "head"
+    },
+    {
+      "name": "fronthair",
+      "file": "fronthair.png",
+      "asset": "_review/assembly_v52/fronthair.png",
+      "assetSha256": "DA100627B869D1DE68A8D6E7C084C98F9BD7F138445605F0B4943E7BFE6C058A",
+      "label": "頭髮／近深度片",
+      "group": "character",
+      "parent": "head"
+    }
+  ],
+  "derivedLayers": [
+    {
+      "file": "handwear_left.png",
+      "sourceFiles": [
+        "handwear.png"
+      ],
+      "method": "unchanged existing disjoint arm repair; unrelated to head A route"
+    },
+    {
+      "file": "front_hair_shadow.png",
+      "sourceFiles": [
+        "face.png",
+        "fronthair.png"
+      ],
+      "method": "one-colour filled concealed overlap; original visible FACE shadow deliberately retained to prevent double shadow"
+    }
+  ],
+  "constraints": [
+    {
+      "behind": "topwear.png",
+      "inFrontOf": "neck.png",
+      "reason": "User requested neck above upper clothing/chest"
+    },
+    {
+      "behind": "ears.png",
+      "inFrontOf": "face.png",
+      "reason": "source feature ownership / depth stratum order"
+    },
+    {
+      "behind": "backhair.png",
+      "inFrontOf": "fronthair.png",
+      "reason": "source feature ownership / depth stratum order"
+    },
+    {
+      "behind": "eyewhite.png",
+      "inFrontOf": "irides.png",
+      "reason": "source feature ownership / depth stratum order"
+    },
+    {
+      "behind": "irides.png",
+      "inFrontOf": "eyelash.png",
+      "reason": "source feature ownership / depth stratum order"
+    },
+    {
+      "behind": "face.png",
+      "inFrontOf": "nose.png",
+      "reason": "source feature ownership / depth stratum order"
+    },
+    {
+      "behind": "face.png",
+      "inFrontOf": "mouth.png",
+      "reason": "source feature ownership / depth stratum order"
+    },
+    {
+      "behind": "face.png",
+      "inFrontOf": "eyebrow.png",
+      "reason": "source feature ownership / depth stratum order"
+    },
+    {
+      "behind": "face.png",
+      "inFrontOf": "eyewhite.png",
+      "reason": "source feature ownership / depth stratum order"
+    },
+    {
+      "behind": "face.png",
+      "inFrontOf": "irides.png",
+      "reason": "source feature ownership / depth stratum order"
+    },
+    {
+      "behind": "face.png",
+      "inFrontOf": "eyelash.png",
+      "reason": "source feature ownership / depth stratum order"
+    },
+    {
+      "behind": "nose.png",
+      "inFrontOf": "fronthair.png",
+      "reason": "source feature ownership / depth stratum order"
+    },
+    {
+      "behind": "mouth.png",
+      "inFrontOf": "fronthair.png",
+      "reason": "source feature ownership / depth stratum order"
+    },
+    {
+      "behind": "eyebrow.png",
+      "inFrontOf": "fronthair.png",
+      "reason": "source feature ownership / depth stratum order"
+    },
+    {
+      "behind": "eyewhite.png",
+      "inFrontOf": "fronthair.png",
+      "reason": "source feature ownership / depth stratum order"
+    },
+    {
+      "behind": "irides.png",
+      "inFrontOf": "fronthair.png",
+      "reason": "source feature ownership / depth stratum order"
+    },
+    {
+      "behind": "eyelash.png",
+      "inFrontOf": "fronthair.png",
+      "reason": "source feature ownership / depth stratum order"
+    },
+    {
+      "behind": "front_hair_shadow.png",
+      "inFrontOf": "fronthair.png",
+      "reason": "Filled overlap remains beneath casting hair"
+    }
+  ],
+  "rollback": "_review/assembly_v51/assembly.json",
+  "appearanceReferencesOnly": [
+    "Character/003_Mimi/Mimi_hair.png",
+    "Character/003_Mimi/Mimi_breast_bd.png"
+  ],
+  "specification": {
+    "userChoice": "A",
+    "rgbSources": "original cloud PSD only; ground shadow unchanged",
+    "depthSource": "_review/depth_recovery_v2",
+    "depthSourceSha256": "931FD243745C8B2425640A5B110A1095DBDDE773E93D3D737ACCC4516A4DA545",
+    "noHeadTransplant": true,
+    "noHiddenPainting": true,
+    "hair": {
+      "centers": [
+        0.11484964191913605,
+        0.4411335587501526
+      ],
+      "threshold": 0.2779916003346443,
+      "nearPixels": 27883,
+      "farPixels": 26059,
+      "uncertainPixels": 3100,
+      "exactDisjointRGBAUnion": true,
+      "medians": [
+        0.10980392247438431,
+        0.43529412150382996
+      ],
+      "sourceVisibleOcclusionGuardPixels": 14006
+    },
+    "face": {
+      "centers": [
+        0.3388410806655884,
+        0.40913355350494385
+      ],
+      "threshold": 0.3739873170852661,
+      "nearPixels": 17126,
+      "farPixels": 21359,
+      "uncertainPixels": 1791,
+      "exactDisjointRGBAUnion": true,
+      "medians": [
+        0.3450980484485626,
+        0.4117647111415863
+      ],
+      "runtimePartitionEnabled": false
+    },
+    "hairDepthCombination": "front source depth where front alpha>15, otherwise source back depth; hidden depth remains estimated",
+    "allHeadFragmentsSameMotionParent": true,
+    "sourceVisibleHairGuard": true,
+    "unsupportedLeftEarRemoved": true,
+    "bodyOrder": "assembly_v24 non-head entries preserved byte-for-byte"
+  },
+  "occlusion": "Single complete face behind independent features and hair shadow; hair fragments unchanged.",
+  "neckRepair": {
+    "previousCandidate": "_review/assembly_v33/assembly.json",
+    "reviewerCorrection": "v33 erased source-visible tendon before clavicle",
+    "method": "Registered original pixels in narrow tendon band; no generated paint",
+    "pixelSource": "_review/assembly_v2/source_registered.png",
+    "pixelSourceSha256": "C32F2E0B4FDAA9FFB71904C82D6C44B726E0F76E8DAFB3921CB241524EBE2568",
+    "motionReview": "pending; neck stays torso-owned"
+  },
+  "hairRebuild": {
+    "choice": "A original visible hair",
+    "pixelSource": "_review/assembly_v2/source_registered.png",
+    "sourceSha256": "C32F2E0B4FDAA9FFB71904C82D6C44B726E0F76E8DAFB3921CB241524EBE2568",
+    "depthRole": "tentative guide only on PSD-supported locations; face overlap and continuous crown take precedence",
+    "hiddenUnderfill": "old PSD only inside eroded opaque unchanged face and outside visible source hair",
+    "motion": "shared head field; no independent animation acceptance"
+  },
+  "shadowOwnership": {
+    "owner": "fronthair",
+    "receivers": [
+      "face"
+    ],
+    "method": "one-colour filled overlap; remove exactly that chosen fill from original FACE backing, recomposition checked before use",
+    "colourRGB": [
+      151,
+      103,
+      99
+    ],
+    "faceAlphaUnchanged": true,
+    "visibleShadowDetachedWithinFilledRegion": true,
+    "outsideFilledRegion": "original FACE unchanged; other shading not detached",
+    "motionIntegration": "shared head field only; independent owner clipping unchanged",
+    "reviewStatus": "pending"
+  },
+  "earEdgeRepair": {
+    "sourceAsset": "_review/assembly_v31/ears_source_visible.png",
+    "method": "local one-pixel alpha inset with soft antialias; RGB unchanged",
+    "region": [
+      580,
+      185,
+      640,
+      257
+    ],
+    "scope": "viewer-right ear exterior only",
+    "motionReview": "not integrated; static candidate",
+    "visualAcceptance": "pending"
+  },
+  "facePartitionRemoval": {
+    "method": "exact visible RGBA disjoint union of v50 face fragments",
+    "sourceAssets": [
+      "_review/assembly_v49/face_far.png",
+      "_review/assembly_v51/face.png"
+    ],
+    "noRepainting": true,
+    "depthRole": "reference only; no runtime face partition",
+    "visualAcceptance": "pending"
+  },
+  "hairTipOwnerRepair": {
+    "method": "whole disconnected rear fragments moved to front owner",
+    "componentStats": [
+      [
+        357,
+        190,
+        80,
+        115,
+        1758
+      ],
+      [
+        433,
+        229,
+        41,
+        76,
+        891
+      ],
+      [
+        432,
+        282,
+        1,
+        2,
+        2
+      ],
+      [
+        436,
+        296,
+        6,
+        9,
+        17
+      ]
+    ],
+    "pixelsMoved": 2668,
+    "unionExact": true,
+    "neutralRgbaMaxDifference": 0,
+    "noRepainting": true,
+    "visualAcceptance": "pending"
+  }
+}

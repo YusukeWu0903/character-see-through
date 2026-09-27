@@ -27,11 +27,11 @@ import {validatePitchFollow,drawPitchFollow,drawPitchFollowGuide} from './pitch-
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
-const task = params.get('local') || '';
-const rigFile = params.get('rig') || '_review/motion_v3/rig.json';
+const task = params.get('local') || 'Mimi_cloud_20260927';
+const rigFile = params.get('rig') || '_review/motion_v62/rig.json';
 const safeTask = /^[A-Za-z0-9_-]+$/.test(task);
 const safeRig = /^_review\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+\.json$/.test(rigFile);
-const base = safeTask ? '/layers/seethrough_local/' + encodeURIComponent(task) + '/' : '';
+const base = safeTask ? new URL('../layers/seethrough_local/' + encodeURIComponent(task) + '/', import.meta.url).pathname : '';
 const canvas = $('stage'), ctx = canvas.getContext('2d');
 const composite = document.createElement('canvas');
 const bustCanvas = document.createElement('canvas');
@@ -1457,11 +1457,11 @@ async function start() {
     $('head-limit').disabled=true;
     $('head-limit').title='v4 不以頭部旋轉處理站姿；此項校正暫停使用';
   }
-  $('status').textContent='已載入 '+layers.length+' 層 · '+rig.candidate+' 待審';
+  $('status').textContent='已載入 '+layers.length+' 層 · v62 階段展示';
   document.querySelector('#panel-layers h2').textContent='圖層 '+layers.length+' 層';
   if(rig.characterName){
     document.title=rig.characterName+' 全身動態候選';
-    $('candidate-title').textContent=rig.characterName+' 待機與滑鼠胸部動態 · 待驗收';
+    $('candidate-title').textContent=rig.characterName+' · v62 階段展示';
     canvas.setAttribute('aria-label',rig.characterName+' 動態預覽');
     $('limits-note').textContent=rig.limits.join(' ');
     $('face-note').textContent='眨眼停用：尚未提供閉眼替換素材。';

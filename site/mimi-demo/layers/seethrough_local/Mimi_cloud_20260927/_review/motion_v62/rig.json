@@ -1,0 +1,364 @@
+{
+  "schemaVersion": 1,
+  "task": "Mimi_cloud_20260927",
+  "candidate": "motion_v62",
+  "characterName": "Mimi",
+  "name": "Mimi anchored skirt follow-through A",
+  "reviewStatus": "pending",
+  "nonProduction": true,
+  "coordinateSpace": "canvas-pixels",
+  "canvas": [
+    1280,
+    1280
+  ],
+  "layerCount": 19,
+  "sourceSha256": "8C026841B1563D07F41353B19CFE8EB68342ACF422F6A15DA0375E105D622432",
+  "assembly": "_review/assembly_v52/assembly.json",
+  "assemblySha256": "D7D553734FEA9590F76492FC4C5ADAF6FBD6D0108E9B3339C55284859B445318",
+  "rollbackManifest": "_review/motion_v61/rig.json",
+  "staticLayers": [
+    "shadow"
+  ],
+  "grounding": {
+    "mode": "shared-stance-field",
+    "groundY": 1252,
+    "stripHeight": 4,
+    "bands": [
+      {
+        "y": 0,
+        "body": 12,
+        "torso": 3,
+        "head": 2
+      },
+      {
+        "y": 200,
+        "body": 12,
+        "torso": 3,
+        "head": 2
+      },
+      {
+        "y": 310,
+        "body": 13,
+        "torso": 3,
+        "head": 0
+      },
+      {
+        "y": 470,
+        "body": 15,
+        "torso": 2,
+        "head": 0
+      },
+      {
+        "y": 590,
+        "body": 16,
+        "torso": 0,
+        "head": 0
+      },
+      {
+        "y": 820,
+        "body": 7,
+        "torso": 0,
+        "head": 0
+      },
+      {
+        "y": 1020,
+        "body": 1,
+        "torso": 0,
+        "head": 0
+      },
+      {
+        "y": 1047,
+        "body": 0,
+        "torso": 0,
+        "head": 0
+      },
+      {
+        "y": 1252,
+        "body": 0,
+        "torso": 0,
+        "head": 0
+      }
+    ]
+  },
+  "pointerFollow": {
+    "mode": "smoothed-additive",
+    "centerX": 610,
+    "radius": 470,
+    "responseRate": 7,
+    "body": 0.18,
+    "torso": 0.06,
+    "head": 0.03,
+    "coordination": {
+      "mode": "soft-weight-follow",
+      "torsoRate": 3.5,
+      "headRate": 3,
+      "headGain": -0.03,
+      "bodyRate": 3,
+      "bodyGain": 0.75,
+      "torsoGain": 0.12
+    }
+  },
+  "nodes": [
+    {
+      "id": "root",
+      "parent": null,
+      "pivot": [
+        0,
+        0
+      ],
+      "motion": "none",
+      "maxDegrees": 0,
+      "phase": 0
+    },
+    {
+      "id": "body",
+      "parent": "root",
+      "pivot": [
+        670,
+        1252
+      ],
+      "motion": "none",
+      "maxDegrees": 0,
+      "phase": 0
+    },
+    {
+      "id": "torso",
+      "parent": "body",
+      "pivot": [
+        650,
+        570
+      ],
+      "motion": "none",
+      "maxDegrees": 0,
+      "phase": 0
+    },
+    {
+      "id": "head",
+      "parent": "torso",
+      "pivot": [
+        525,
+        280
+      ],
+      "motion": "none",
+      "maxDegrees": 0,
+      "phase": 0
+    },
+    {
+      "id": "backHair",
+      "parent": "head",
+      "pivot": [
+        520,
+        80
+      ],
+      "motion": "none",
+      "maxDegrees": 0,
+      "phase": 0
+    },
+    {
+      "id": "frontHair",
+      "parent": "head",
+      "pivot": [
+        520,
+        80
+      ],
+      "motion": "none",
+      "maxDegrees": 0,
+      "phase": 0
+    }
+  ],
+  "bindings": {
+    "shadow": "root",
+    "legwear": "body",
+    "footwear": "body",
+    "bottomwear": "body",
+    "handwear_left": "torso",
+    "topwear": "torso",
+    "neck": "torso",
+    "handwear": "torso",
+    "backhair": "backHair",
+    "ears": "head",
+    "face": "head",
+    "front_hair_shadow": "frontHair",
+    "nose": "head",
+    "mouth": "head",
+    "eyebrow": "head",
+    "eyewhite": "head",
+    "irides": "head",
+    "eyelash": "head",
+    "fronthair": "frontHair"
+  },
+  "bustField": {
+    "mode": "topwear-local-bilateral-pixel-xy",
+    "centerX": 520,
+    "centerY": 510,
+    "centers": [
+      [
+        495,
+        510
+      ],
+      [
+        625,
+        510
+      ]
+    ],
+    "radiusX": 90,
+    "radiusY": 140,
+    "lowerRadiusY": 90,
+    "maxPixels": 12,
+    "followMaxPixels": 12,
+    "tileWidth": 16,
+    "tileHeight": 3,
+    "springFrequency": 8,
+    "springDamping": 0.6,
+    "followSpringFrequency": 7,
+    "followSpringDamping": 0.65,
+    "defaultStrength": 50,
+    "separateLobes": true,
+    "horizontalOnly": true,
+    "horizontalGain": 2
+  },
+  "renderer": {
+    "mode": "shared-webgl-scene-stage1",
+    "module": "mesh-renderer.mjs",
+    "nativeTextureSize": 1280,
+    "presentation": "canvas-copy",
+    "gpuHead": false,
+    "reuseSharedGeometry": true,
+    "reuseGpuBuffers": false
+  },
+  "limits": [
+    "Latest v51 single-face assembly is pending user review; ear repair not accepted.",
+    "Existing Mimi idle/pointer chest evaluator unchanged; no new head transplant.",
+    "All head fragments share the head motion field; independent hair remains disabled.",
+    "Hair shadow is a separate layer; FACE retains residual baked shadow; owner-toggle clipping not integrated.",
+    "No blink assets; blink remains disabled. No production default changed.",
+    "face_far removed by user request; full FACE sampled once; other controls unchanged.",
+    "Horizontal inertia only, no vertical local motion or inward squeeze; separate non-additive weights, leading side1/trailing0.7."
+  ],
+  "rangeReview": {
+    "scope": "geometry only; no increased amplitude or bilateral phase",
+    "supportBounds": [
+      405,
+      370,
+      715,
+      600
+    ],
+    "upperChest": "smooth zero taper near y370",
+    "peakWeightY": 510,
+    "owner": "topwear",
+    "priorField": {
+      "mode": "topwear-local-bilateral-pixel-xy",
+      "centerX": 520,
+      "centerY": 445,
+      "centers": [
+        [
+          480,
+          445
+        ],
+        [
+          558,
+          445
+        ]
+      ],
+      "radiusX": 64,
+      "radiusY": 84,
+      "lowerRadiusY": 70,
+      "maxPixels": 12,
+      "followMaxPixels": 12,
+      "tileWidth": 16,
+      "tileHeight": 3,
+      "springFrequency": 8,
+      "springDamping": 0.6,
+      "followSpringFrequency": 7,
+      "followSpringDamping": 0.65,
+      "defaultStrength": 50
+    },
+    "visualAcceptance": "pending",
+    "reviewerCorrection": "v53 cut across right breast; right support extended80px"
+  },
+  "strengthContract": {
+    "new50EqualsOld100": true,
+    "defaultStrength": 50,
+    "geometryAndSpringsUnchanged": true,
+    "maximumHorizontalDriverPixels": 24,
+    "visualAcceptance": "pending"
+  },
+  "followAcceptance": {
+    "scope": "body/hip pointer follow only; local chest config and legacy pointer signal unchanged",
+    "screenLeft": "body/hip left; hip12px, upper body about10px; delayed torso and opposite small head contribution",
+    "screenRight": "body/hip right; hip12px, upper body about10px; delayed torso and opposite small head contribution",
+    "center": "all pointer contributions settle to zero",
+    "groundContact": "unchanged shared stance bands, fixed y1047 and below",
+    "range": "pointer-only native travel: head9.30, shoulder10.11, hip12.00px each sign",
+    "checks": [
+      "left/center/right",
+      "rapid reversal",
+      "pointer leave",
+      "follow off",
+      "pause",
+      "reset",
+      "idle plus follow"
+    ],
+    "visualAcceptance": "pending",
+    "priorVerdict": "v57 rejected by user: imperceptible range and stiff jitter"
+  },
+  "shoulderCompensation": {
+    "mode": "pointer-bank-rebound",
+    "maxPixels": 4,
+    "frequency": 6,
+    "damping": 0.5,
+    "field": {
+      "centerX": 540,
+      "halfWidth": 120,
+      "left": 320,
+      "right": 820,
+      "fadeX": 60,
+      "headThroughY": 260,
+      "shoulderY": 350,
+      "holdY": 590,
+      "leftY": 0,
+      "rightY": 0,
+      "gridStep": 16
+    }
+  },
+  "shoulderAcceptance": {
+    "screenLeft": "left shoulder down/right up",
+    "screenRight": "left shoulder up/right down",
+    "returnCenter": "brief opposite bank then settle",
+    "reference": "screen sides, not anatomical sides",
+    "unchanged": "v58 body/hip follow, local chest configuration, assembly, fixed feet",
+    "scope": "continuous shared upper-body field, not independent layer translations",
+    "visualAcceptance": "pending",
+    "baselineVerdict": "v58 body follow acceptable per user; retained as rollback"
+  },
+  "performanceRepair": {
+    "mode": "per-scene-coordinate-reuse-original-GPU-upload-order",
+    "motionAndTopologyUnchanged": true,
+    "reviewStatus": "pending",
+    "comparison": "motion_v59",
+    "remainingCPU": "point evaluation once per mapping/topology group; spring integration",
+    "remainingCopy": "one native GPU-to-Canvas presentation copy per scene",
+    "trial": "_review/motion_v60/rig.json",
+    "reason": "GPU-buffer trial changes a few rendered channels by1-2 levels despite identical uploaded Float32 data"
+  },
+  "skirtSway": {
+    "mode": "anchored-horizontal-lag",
+    "anchorY": 480,
+    "hemY": 620,
+    "frequency": 4.5,
+    "damping": 0.55,
+    "gainPixels": 10,
+    "maxPixels": 8
+  },
+  "skirtAcceptance": {
+    "owner": "bottomwear",
+    "choice": "A",
+    "waist": "local zero through y480; existing shared body follow retained",
+    "left": "body left; hem initially lags right, then catches up",
+    "right": "mirrored",
+    "return": "small follow-through then settle",
+    "verticalOffset": 0,
+    "sourceArtUnchanged": true,
+    "visualAcceptance": "pending"
+  }
+}

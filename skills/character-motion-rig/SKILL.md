@@ -12,6 +12,7 @@ For repeatable character production, start with the shared renderer and control 
 Choose the relevant route before implementation:
 
 - For hierarchy, body, arms, legs, hair, and chest response, read [body motion](references/body-motion.md).
+- For expression-driven shoulder/head poses and their transitions, read [expression pose](references/expression-pose.md); keep asset switching and pose timing independently specified.
 - For face reconstruction, blink, gaze, mouth and expression switching, read [facial motion](references/facial-motion.md), `skills/eye-rig-asset-promotion/SKILL.md` when eye assets are changed or promoted, and `skills/character-expression-transplant/SKILL.md` before transplanting mouth or expression artwork.
 - For any new or revised part movement, read [visual influence review](references/deformation-field-review.md) before calibrating the affected area or amplitude. Show the actual influence or joint/mask geometry in a default-off review guide; a guide for one part does not certify the others.
 

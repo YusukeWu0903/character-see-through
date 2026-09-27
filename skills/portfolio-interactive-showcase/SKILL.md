@@ -18,6 +18,8 @@ Include only runtime HTML, JavaScript, configuration JSON, main RGBA layers, and
 
 Convert local-server routes to the final host path. Do not assume a trailing slash. Inventory every module, JSON, and image request before publishing; 200 for the HTML alone is not acceptance.
 
+For another card on an existing portfolio, isolate its bundle and keep previously published bundles unchanged. Resolve module imports recursively: optional motion helpers are still runtime dependencies. Match card text and tests to implemented controls; unavailable blink/expression assets stay disabled. Record stage approval in release metadata without rewriting historical hash-pinned manifests.
+
 For byte-hashed runtime manifests/assets, preserve their exact bytes through Git
 and deployment, not only during local copying. Scope `.gitattributes -text` to
 the hash-addressed runtime tree when newline normalization would invalidate

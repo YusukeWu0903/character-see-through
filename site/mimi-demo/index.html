@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Miffy 全身動態候選 · 非正式</title>
+<title>Mimi · 互動階段展示</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#1b1e24;color:#eee;font:14px system-ui,sans-serif}
 [hidden]{display:none!important}
@@ -25,7 +25,7 @@ button:hover{border-color:#a9e8ff}.checks{display:flex;gap:12px;flex-wrap:wrap;m
 select,input[type=file]{max-width:100%;background:#343b45;color:#eee;border:1px solid #707d8c;border-radius:5px;padding:5px}
 @media(max-width:780px){header{padding:8px 12px}header small{display:none}main{display:flex;flex-direction:column;height:auto;min-height:100dvh}.stage{height:min(67dvh,700px);flex:none}aside{border-left:0;border-top:1px solid #50545b;overflow:visible}.panel{padding:10px}.tabs{top:0}}
 </style>
-<header><strong id="candidate-title">Miffy 全身動態 · 非正式審查候選</strong> <small>本機預覽，不改正式圖層與設定</small><a id="latest" hidden>開啟新版動態</a></header>
+<header><strong id="candidate-title">Miffy 全身動態 · 非正式審查候選</strong> <small>原生 1280 · 身體、肩膀與裙襬動態 · 眨眼／表情尚未製作</small><a id="latest" hidden>開啟新版動態</a></header>
 <main>
   <section class="stage"><canvas id="stage" width="1280" height="1280" aria-label="Miffy 動態預覽"></canvas></section>
   <aside>
@@ -131,5 +131,5 @@ setTimeout(()=>{
   }
 },15000);
 </script>
-<script type="module" src="./assembly-motion.mjs?review-runtime=v77-skirt"></script>
+<script type="module">const base=location.pathname.replace(/\/index\.html$/, "").replace(/\/$/, "");await import(base+"/viewer-assets/assembly-motion.mjs?v=mimi62");</script>
 </html>

@@ -14,5 +14,6 @@ This is a delivery gate, not a builder. Do not claim a public showcase is ready 
 - Hash-checked manifest/asset bytes survive the Git/deployment path, and the browser actually passes those checks; successful HTTP responses alone do not prove integrity.
 - A real browser renders visible characters and accepts the core controls: gaze, blink, motion, and reset.
 - The public bundle excludes PSDs, inputs, inference tools, credentials, and rejected assets.
+- Test implemented controls and confirm unsupported ones are disabled. Check slashless and trailing-slash entry URLs, the new portfolio card and unchanged prior targets. Validate committed runtime hashes before pushing.
 
 If any check fails, report the exact missing route or runtime error and stop release. After passing, record URL, host, visual evidence, automated results, branch, commit, and remaining limitations in the shared work log.
