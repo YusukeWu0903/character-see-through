@@ -1,39 +1,42 @@
 import {createRig,multiply,identity} from './rig.mjs';
 import {groundShear} from './grounded-sway.mjs';
 import {validateStanceField,stanceOffset,hipTiltOffset,drawStanceField} from './stance-field.mjs?review-runtime=v39-hip-tilt';
-import {validateArmSway,armOffset,drawArmSway,drawArmSwayGuide} from './arm-sway-field.mjs?review-runtime=v40-arms';
+import {validateArmSway,armVector,drawArmSway,drawArmSwayGuide} from './arm-sway-field.mjs?review-runtime=v41-directed-arm-vector';
 import {pointerTarget,approachPointer} from './pointer-follow.mjs';
 import {initialCoordinatedFollow,advanceCoordinatedFollow,validateCoordinatedFollow} from './coordinated-follow.mjs';
 import {initialShoulderCompensation,advanceShoulderCompensation,validateShoulderCompensation} from './shoulder-compensation.mjs';
-import {advanceSkirt,validateSkirt,drawSkirtGuide} from './skirt-sway-field.mjs';
+import {advanceSkirt,validateSkirt,drawSkirtGuide,drawSkirtSway,prepareSkirtSway} from './skirt-sway-field.mjs?review-runtime=natasha-v11-prepared';
 import {validateBustField,drawBustField,drawBustOverlay,
-  drawBustFieldGuide} from './bust-field.mjs?review-runtime=v55-lateral-lobes';
+  drawBustFieldGuide} from './bust-field.mjs?review-runtime=mimi-chest-lobes-v78';
 import {advanceSpring,blinkPulse,sharedGazeTarget,chestFollowTarget} from './expression.mjs';
 import {loadMouthTransplant} from './mouth-transplant.mjs';
-import {loadExpressionTransplant} from './expression-transplant.mjs?review-runtime=v64-library';
+import {loadExpressionTransplant} from './expression-transplant.mjs?review-runtime=v113-happy-mode';
 import {advanceExpressionBlend} from './expression-blend.mjs?review-runtime=v66-damped-library';
-import {createSharedFieldAdapter} from './shared-field-adapter.mjs?review-runtime=v62-skirt-domain';
+import {createSharedFieldAdapter} from './shared-field-adapter.mjs?review-runtime=mimi-chest-lobes-v78';
 import {validateExpressionPose,advanceExpressionPose,drawShoulderPoseGuide} from './expression-pose.mjs?review-runtime=v67-independent-shoulders';
-import {createRegisteredMorphRenderer} from './mesh-renderer.mjs?review-runtime=v64-library';
+import {createRegisteredMorphRenderer} from './mesh-renderer.mjs?review-runtime=v114-library-4';
 import {validateHeadYawField,drawHeadYawField,drawHeadYawGuide} from './head-yaw-field.mjs';
 import {validateHeadGeometry,drawHeadGeometry} from './head-geometry.mjs';
 import {validateHeadSurface,drawHeadSurface,drawHeadSurfaceGuide} from './head-surface-warp.mjs?review-runtime=v37-pitch-light';
 import {validateHeadPitchProportion} from './head-pitch-proportion.mjs';
 import {validateHeadLighting,validatePitchHeadLighting} from './head-lighting.mjs?review-runtime=v37-pitch-light';
 import {validateNeckFollow,drawNeckFollow,drawNeckFollowGuide} from './neck-follow-field.mjs';
-import {validateHairFollow,drawHairFollow,drawHairFollowGuide} from './hair-follow-field.mjs';
+import {validateHairFollow,drawHairFollow,drawHairFollowGuide} from './hair-follow-field.mjs?review-runtime=mimi-hair-tips-v77';
 import {validateHairIdle,initialHairIdleState,advanceHairIdle} from './hair-idle-state.mjs';
 import {validatePitchFollow,drawPitchFollow,drawPitchFollowGuide} from './pitch-follow-field.mjs?review-runtime=v36-directional-hair';
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const task = params.get('local') || 'Mimi_cloud_20260927';
-const rigFile = params.get('rig') || '_review/motion_v62/rig.json';
+const rigFile = params.get('rig') || '_review/motion_v78/rig.json';
 const safeTask = /^[A-Za-z0-9_-]+$/.test(task);
 const safeRig = /^_review\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+\.json$/.test(rigFile);
 const base = safeTask ? new URL('../layers/seethrough_local/' + encodeURIComponent(task) + '/', import.meta.url).pathname : '';
 const canvas = $('stage'), ctx = canvas.getContext('2d');
+const bodySinkSource=document.createElement('canvas');
+bodySinkSource.width=canvas.width;bodySinkSource.height=canvas.height;
 const composite = document.createElement('canvas');
+
 const bustCanvas = document.createElement('canvas');
 const bustGuideCanvas = document.createElement('canvas');
 const armCanvas=document.createElement('canvas');
@@ -64,10 +67,23 @@ let coordinatedFollow=initialCoordinatedFollow();
 let shoulderCompensation=initialShoulderCompensation();
 let skirtState={position:0,velocity:0,offset:0};
 const skirtGuide=document.createElement('canvas');
+const skirtCanvas=document.createElement('canvas');
 const skirtControl=document.createElement('label');
 skirtControl.hidden=true;skirtControl.innerHTML='<input id="show-skirt-field" type="checkbox"> 顯示裙襬影響範圍';
 $('shoulder-guide-control').after(skirtControl);
 $('show-skirt-field').onchange=()=>draw();
+const skirtInspect=document.createElement('div');
+skirtInspect.className='row';skirtInspect.hidden=true;
+skirtInspect.innerHTML='<label><input id="skirt-inspect-enable" type="checkbox"> 固定裙擺測試</label>'+
+  '<input id="skirt-inspect" type="range" min="-100" max="100" value="0" aria-label="裙擺位置">'+
+  '<output id="skirt-inspect-value">0</output>';
+skirtControl.after(skirtInspect);
+$('skirt-inspect-enable').onchange=()=>draw();
+$('skirt-inspect').oninput=()=>{$('skirt-inspect-value').textContent=$('skirt-inspect').value;draw()};
+function skirtOffset(){
+  return rigCurrent?.skirtSway&&$('skirt-inspect-enable').checked?
+    Number($('skirt-inspect').value)/100*rigCurrent.skirtSway.maxPixels:skirtState.offset;
+}
 let bustAmplitude=0,bustFollowPx=0,bustVelocity=0;
 let bustSpring={position:0,velocity:0};
 let bustFollowSpring={position:0,velocity:0};
@@ -78,11 +94,23 @@ let hairFollowDrive={fronthair:0,backhair:0};
 let hairIdleState=initialHairIdleState();
 let hairIdleTargets={fronthair:0,backhair:0};
 let eyeAssets=null,eyeBlink=0,eyeGazeX=0,eyeGazeY=0;
+const sharedSceneEyeLayers=new Map();
+const morphedMouthEmpty=document.createElement('canvas');
+morphedMouthEmpty.width=morphedMouthEmpty.height=1280;
 let mouthAssets=null,activeMouthMode='original';
 let expressionAssets=null,neutralEyeAssets=null,activeExpression='neutral',expressionSuppressed=false;
 let expressionLibrary={},expressionWeights=[1,0,0],expressionVelocities=[0,0,0];
-const expressionPart=()=>expressionLibrary[activeExpression]||(activeExpression==='anxious'?expressionAssets:null);
-const expressionNames=()=>rigCurrent?.faceMorph?.expressionNames||['neutral','anxious'];
+const expressionPart=()=>expressionLibrary[activeExpression]||
+  (activeExpression===expressionAssets?.manifest.mode?expressionAssets:null);
+const expressionNames=()=>rigCurrent?.faceMorph?.expressionNames||
+  ['neutral',...(expressionAssets?[expressionAssets.manifest.mode]:['anxious'])];
+function resetExpressionBlend(name='neutral'){
+  const names=expressionNames();
+  expressionWeights=names.map(item=>item===name?1:0);
+  expressionVelocities=names.map(()=>0);
+  const anxious=names.indexOf('anxious');
+  expressionPoseState={position:anxious<0?0:expressionWeights[anxious],velocity:0};
+}
 let sharedFields=null;
 let expressionPoseState={position:0,velocity:0};
 const shoulderGuides=new Map();
@@ -106,9 +134,16 @@ function faceImage(layer){
     ? mouthAssets.backing : layer.image;
 }
 function drawMouth(g){
-  if(!expressionSuppressed&&expressionPart()&&activeMouthMode==='original'){
-    g.drawImage(expressionPart().parts.mouth,0,0);return;
+  if(rigCurrent?.faceMorph&&!expressionSuppressed){
+    const source=mouthAssets&&activeMouthMode!=='original'
+      ? mouthAssets.images[activeMouthMode]
+      : expressionPart()?.parts.mouth||layers.find(layer=>layer.name==='mouth'&&!layer.blank)?.image;
+    if(source)g.drawImage(source,0,0);
+    return;
   }
+  // A discrete expression mouth owns the detached mouth slot, not the face
+  // backing: nose/face paint can occlude pixels drawn earlier on the face.
+  if(!expressionSuppressed&&expressionPart())return;
   if(mouthAssets&&activeMouthMode!=='original')g.drawImage(mouthAssets.images[activeMouthMode],0,0);
 }
 function drawExpressionDetails(g){
@@ -168,13 +203,15 @@ function controlsAt(time,legacyPointer=false) {
     }
     if(rigCurrent.armSway){
       const field=rigCurrent.armSway;
+      const directed=field.driveMode==='directed-reach';
       const manual=Number($('arm-sway').value)/100;
       const idle=$('auto').checked?field.idleGain*strength:0;
       const follow=field.followGain*pointerEased*followMix;
-      controls.left=Math.max(-1,Math.min(1,
-        manual+idle*Math.sin(time*.82+field.leftPhase)-follow));
-      controls.right=Math.max(-1,Math.min(1,
-        manual+idle*Math.sin(time*.82+field.rightPhase)-follow));
+      const leftIdle=directed?(1-Math.cos(time*.82+field.leftPhase))/2:Math.sin(time*.82+field.leftPhase);
+      const rightIdle=directed?(1-Math.cos(time*.82+field.rightPhase))/2:Math.sin(time*.82+field.rightPhase);
+      const limit=directed?value=>Math.max(0,Math.min(1,value)):value=>Math.max(-1,Math.min(1,value));
+      controls.left=limit(manual+idle*leftIdle-follow);
+      controls.right=limit(manual+idle*rightIdle-follow);
     }
     return controls;
   }
@@ -196,18 +233,34 @@ function groundMatrix(bodyControl=0) {
 }
 function drawEyes(g){
   const erisBlend=rigCurrent.eyeRig?.blinkMode==='layer-crossfade';
+  const semanticLayers=eyeAssets.semanticLayers;
+  const semanticVisible=name=>!semanticLayers||layers.find(layer=>layer.name===semanticLayers[name])?.visible!==false;
   for(const eye of Object.values(eyeAssets.eyes)){
     const [x0,y0,x1,y1]=eye.bounds,w=x1-x0,h=y1-y0;
     g.drawImage(eye.base,x0,y0,w,h,x0,y0,w,h);
     if(eyeBlink>=.995&&!erisBlend){
-      g.drawImage(eye.closed,x0,y0,w,h,x0,y0,w,h);continue;
+      if(semanticVisible('lash'))g.drawImage(eye.closed,x0,y0,w,h,x0,y0,w,h);continue;
     }
-    if(eyeBlink<.005 && Math.abs(eyeGazeX)+Math.abs(eyeGazeY)<.005){
+    if(!semanticLayers&&eyeBlink<.005 && Math.abs(eyeGazeX)+Math.abs(eyeGazeY)<.005){
       g.drawImage(eye.open,x0,y0,w,h,x0,y0,w,h);continue;
     }
     const stage=eye.stage,sg=stage.getContext('2d');
     sg.setTransform(1,0,0,1,0,0);sg.clearRect(0,0,w,h);
-    if(Math.abs(eyeGazeX)+Math.abs(eyeGazeY)<.005){
+    if(semanticLayers){
+      if(semanticVisible('white'))sg.drawImage(eye.white,x0,y0,w,h,0,0,w,h);
+      if(semanticVisible('iris')){
+        const iris=eye.irisStage,ig=iris.getContext('2d');
+        ig.setTransform(1,0,0,1,0,0);ig.clearRect(0,0,w,h);
+        ig.drawImage(eye.iris,x0-eyeGazeX,y0-eyeGazeY,w,h,0,0,w,h);
+        if(Math.abs(eyeGazeX)+Math.abs(eyeGazeY)>=.005){
+          ig.globalCompositeOperation='destination-in';
+          ig.drawImage(eye.mask,x0,y0,w,h,0,0,w,h);
+          ig.globalCompositeOperation='source-over';
+        }
+        sg.drawImage(iris,0,0);
+      }
+      if(semanticVisible('lash'))sg.drawImage(eye.lash,x0,y0,w,h,0,0,w,h);
+    }else if(Math.abs(eyeGazeX)+Math.abs(eyeGazeY)<.005){
       sg.drawImage(eye.openMotion||eye.open,x0,y0,w,h,0,0,w,h);
     }else{
       sg.drawImage(eye.white,x0,y0,w,h,0,0,w,h);
@@ -245,11 +298,39 @@ function drawEyes(g){
     }
     const scale=Math.max(.03,1-eyeBlink*.97);
     g.drawImage(stage,x0,eye.center[1]+(y0-eye.center[1])*scale,w,h*scale);
-    if(eyeBlink>.65){
+    if(eyeBlink>.65&&semanticVisible('lash')){
       g.save();g.globalAlpha=(eyeBlink-.65)/.35;
       g.drawImage(eye.closed,x0,y0,w,h,x0,y0,w,h);g.restore();
     }
   }
+}
+function sharedSceneEyeSource(layer){
+  if(layer.name==='mouth'&&rigCurrent?.faceMorph&&!expressionSuppressed)
+    return {source:morphedMouthEmpty,revision:'owned-by-face-morph'};
+  if(layer.name==='mouth'&&!expressionSuppressed&&expressionPart()){
+    const source=activeMouthMode==='original'
+      ? expressionPart().parts.mouth : mouthAssets?.images[activeMouthMode];
+    if(source)return {source,revision:activeExpression+'|'+activeMouthMode};
+  }
+  if(!eyeAssets?.semanticLayers)return null;
+  const semantic=eyeAssets.semanticLayers;
+  const component=Object.entries(semantic).find(([,name])=>name===layer.name)?.[0];
+  if(!component)return null;
+  const closure=eyeBlink*eyeBlink;
+  if(closure<1e-8)return null;
+  let cached=sharedSceneEyeLayers.get(layer.name);
+  if(!cached){cached=document.createElement('canvas');cached.width=cached.height=1280;
+    sharedSceneEyeLayers.set(layer.name,cached)}
+  const g=cached.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,1280,1280);
+  g.globalAlpha=1-closure;g.drawImage(layer.image,0,0);g.globalAlpha=1;
+  if(component==='white'&&layers.find(item=>item.name===semantic.lash)?.visible!==false){
+    for(const eye of Object.values(eyeAssets.eyes)){
+      const [x0,y0,x1,y1]=eye.bounds;g.globalAlpha=closure;
+      g.drawImage(eye.closed,x0,y0,x1-x0,y1-y0,x0,y0,x1-x0,y1-y0);
+    }
+  }
+  g.globalAlpha=1;
+  return {source:cached,revision:closure};
 }
 function paintPitchPart(g,source,stage,control,config,key){
   const show=$('show-head-pitch').checked;
@@ -311,17 +392,27 @@ function preparedHead(layer,controls){
   }
   return gpu?headSurfaceSource:headSurfaceCanvas;
 }
+function armFieldForLayer(name){
+  const field=rigCurrent.armSway;
+  let sides=name==='topwear'&&field?.followersByLayer?.topwear?
+    field.sides.filter(side=>field.followersByLayer.topwear.includes(side.name)):field?.sides;
+  if(name==='topwear'&&field?.followerRegionsByLayer?.topwear)
+    sides=sides.map(side=>field.followerRegionsByLayer.topwear[side.name]?.allX?{...side,x0:0,x1:1280}:side);
+  return field&&sides!==field.sides?{...field,sides}:field;
+}
 function sharedGuide(layer,matrix){
   const name=layer.name;
   let image=null;
-  if(name==='bottomwear'&&rigCurrent.skirtSway&&$('show-skirt-field').checked){drawSkirtGuide(skirtGuide,layer.image,rigCurrent.skirtSway);return skirtGuide;}
+  if(name===(rigCurrent.skirtSway?.owner||'bottomwear')&&rigCurrent.skirtSway&&$('show-skirt-field').checked){drawSkirtGuide(skirtGuide,layer.image,rigCurrent.skirtSway);return skirtGuide;}
   if(name==='face'&&rigCurrent.renderer?.gpuHead&&($('show-head-surface').checked||$('show-head-pitch').checked)){
     image=headSurfaceGuideCanvas;const g=image.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,1280,1280);
     drawHeadSurfaceGuide(g,rigCurrent.headSurface,0,p=>p,0,rigCurrent.headPitchProfile);
   }else if(name==='topwear'&&$('show-bust-field').checked){
     drawBustFieldGuide(bustGuideCanvas,layer.image,rigCurrent.bustField);image=bustGuideCanvas;
-  }else if(name==='handwear'&&$('show-arm-field').checked){
-    drawArmSwayGuide(armGuideCanvas,layer.image,{left:0,right:0},rigCurrent.armSway);image=armGuideCanvas;
+  }else if((name==='handwear'||rigCurrent.armSway?.followers?.includes(name+'.png')||rigCurrent.armSway?.followersByLayer?.[name]?.length)&&$('show-arm-field').checked){
+    const field=armFieldForLayer(name);
+    const guideDrives=field.driveMode==='directed-reach'?{left:1,right:1}:{left:0,right:0};
+    drawArmSwayGuide(armGuideCanvas,layer.image,guideDrives,field);image=armGuideCanvas;
   }else if(['fronthair','backhair'].includes(name)&&$('show-hair-follow').checked){
     image=hairFollowStages[name].guide;const g=image.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,1280,1280);
     drawHairFollowGuide(g,rigCurrent.hairFollow.parts[name],0);
@@ -352,7 +443,7 @@ function sharedGuide(layer,matrix){
 function paint(target, transforms, controls={}) {
   gpuPresented=false;
   const active=['body','torso','head','left','right','yaw','pitch','headRoll','expressionPose','shoulderLeft','shoulderRight'].some(id=>Math.abs(controls[id]||0)>1e-8)||
-    Boolean(rigCurrent.skirtSway&&($('show-skirt-field').checked||Math.abs(skirtState.offset)>1e-8))||
+    Boolean(rigCurrent.skirtSway&&($('show-skirt-field').checked||Math.abs(skirtOffset())>1e-8))||
     Boolean((rigCurrent.expressionPose||rigCurrent.shoulderCompensation)&&$('show-shoulder-field').checked)||
     Boolean(rigCurrent.faceMorph&&$('show-expression-field').checked)||
     Math.abs(bustAmplitude)+Math.abs(bustFollowPx)>1e-8||Object.values(hairFollowDrive).some(v=>Math.abs(v)>1e-8);
@@ -360,11 +451,11 @@ function paint(target, transforms, controls={}) {
     sharedFields.scene(target,layers,transforms,controls,rigCurrent,
       {hair:$('paused').checked?{fronthair:controls.yaw||0,backhair:controls.yaw||0}:hairFollowDrive,
        roll:(controls.headRoll||0)*(rigCurrent.headRoll?.maxDegrees||0),
-       yaw:(controls.yaw||0)*(rigCurrent.headSurface?.maxDegrees||0),bustX:bustFollowPx,bustY:bustAmplitude,skirtX:skirtState.offset},
+       yaw:(controls.yaw||0)*(rigCurrent.headSurface?.maxDegrees||0),bustX:bustFollowPx,bustY:bustAmplitude,skirtX:skirtOffset()},
       ()=>rigCurrent.headSurface?preparedHead(layers.find(l=>l.name==='face'),controls):faceImage(layers.find(l=>l.name==='face')),()=>headSurfaceCacheKey,sharedGuide,
       $('face-light').checked?{surface:rigCurrent.headSurface,config:rigCurrent.faceLighting,pitchConfig:rigCurrent.facePitchLighting,
         strength:Number($('face-light-strength').value)/100,yaw:(controls.yaw||0)*rigCurrent.headSurface.maxDegrees,
-        pitch:(controls.pitch||0)*rigCurrent.headPitch.maxDegrees}:null);
+        pitch:(controls.pitch||0)*rigCurrent.headPitch.maxDegrees}:null,sharedSceneEyeSource);
     gpuPresented=rigCurrent.renderer.presentation==='direct-webgl';
     if(gpuPresented){ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,1280,1280);}
     return;
@@ -376,6 +467,8 @@ function paint(target, transforms, controls={}) {
   const ground=groundMatrix(bodyControl);
   g.setTransform(1,0,0,1,0,0);
   g.clearRect(0,0,surface.width,surface.height);
+  const skirtOwnerVisible=!rigCurrent.skirtSway||
+    layers.find(layer=>layer.name===rigCurrent.skirtSway.owner)?.visible!==false;
   for (const layer of layers) {
     if (!layer.visible || layer.blank) continue;
     if (transforms) {
@@ -383,15 +476,44 @@ function paint(target, transforms, controls={}) {
       if (!matrix) throw Error('缺少運動綁定：' + layer.name);
       g.setTransform(...multiply(ground,matrix));
     }
-    if(layer.name==='handwear'&&transforms&&rigCurrent.armSway){
+    if(layer.name==='mouth'&&!expressionSuppressed&&expressionPart()){
+      if(rigCurrent.faceMorph)continue;
+      const replacement=activeMouthMode==='original'
+        ? expressionPart().parts.mouth : mouthAssets?.images[activeMouthMode];
+      if(replacement)g.drawImage(replacement,0,0);
+      continue;
+    }
+    if(eyeAssets?.semanticLayers){
+      const semantic=eyeAssets.semanticLayers;
+      const component=Object.entries(semantic).find(([,name])=>name===layer.name)?.[0];
+      if(component){
+        const closure=eyeBlink*eyeBlink,openOpacity=1-closure;
+        g.save();g.globalAlpha=openOpacity;g.drawImage(layer.image,0,0);g.restore();
+        // The original eye-white slot is immediately behind the glasses in
+        // Natasha's PSD order, so the reference-derived lids retain that occlusion.
+        if(component==='white'&&eyeBlink>0&&
+           layers.find(item=>item.name===semantic.lash)?.visible!==false){
+          for(const eye of Object.values(eyeAssets.eyes)){
+            const [x0,y0,x1,y1]=eye.bounds,w=x1-x0,h=y1-y0;
+            g.save();g.globalAlpha=closure;
+            g.drawImage(eye.closed,x0,y0,w,h,x0,y0,w,h);
+            g.restore();
+          }
+        }
+        continue;
+      }
+    }
+    if(!skirtOwnerVisible&&rigCurrent.skirtSway?.followers?.includes(layer.name))continue;
+    if((layer.name==='handwear'||rigCurrent.armSway?.followers?.includes(layer.name+'.png')||rigCurrent.armSway?.followersByLayer?.[layer.name]?.length)&&transforms&&rigCurrent.armSway){
+      const layerArmField=armFieldForLayer(layer.name);
       const armControls={left:controls.left||0,right:controls.right||0};
       const guide=$('show-arm-field').checked;
       if(Math.abs(armControls.left)+Math.abs(armControls.right)>1e-7||guide){
-        if(sharedFields)sharedFields.arm(armCanvas,layer.image,armControls,rigCurrent.armSway);
-        else drawArmSway(armCanvas,layer.image,armControls,rigCurrent.armSway);
+        if(sharedFields)sharedFields.arm(armCanvas,layer.image,armControls,layerArmField);
+        else drawArmSway(armCanvas,layer.image,armControls,layerArmField);
         g.drawImage(armCanvas,0,0);
         if(guide){
-          drawArmSwayGuide(armGuideCanvas,armCanvas,armControls,rigCurrent.armSway);
+          drawArmSwayGuide(armGuideCanvas,armCanvas,armControls,layerArmField);
           g.drawImage(armGuideCanvas,0,0);
         }
       }else g.drawImage(layer.image,0,0);
@@ -484,6 +606,24 @@ function paint(target, transforms, controls={}) {
       if(sharedFields)sharedFields.bust(bustCanvas,layer.image,displacement,rigCurrent.bustField);
       else drawBustField(bustCanvas,layer.image,displacement,rigCurrent.bustField);
       g.drawImage(bustCanvas,0,0);
+    }else if(transforms&&rigCurrent.skirtSway&&
+       (rigCurrent.skirtSway.owner===layer.name||
+        rigCurrent.skirtSway.followers?.includes(layer.name))){
+      const skirtStarted=rigCurrent.nonProduction?performance.now():0;
+      drawSkirtSway(skirtCanvas,layer.image,skirtOffset(),rigCurrent.skirtSway);
+      if(rigCurrent.nonProduction){
+        const stage=$('stage');
+        const elapsedSkirt=performance.now()-skirtStarted;
+        stage.dataset.skirtCalls=String(Number(stage.dataset.skirtCalls||0)+1);
+        stage.dataset.skirtTotalMs=String(Number(stage.dataset.skirtTotalMs||0)+elapsedSkirt);
+        const key=layer.name===rigCurrent.skirtSway.owner?'skirtOwnerMs':'skirtFollowerMs';
+        stage.dataset[key]=String(Number(stage.dataset[key]||0)+elapsedSkirt);
+      }
+      g.drawImage(skirtCanvas,0,0);
+      if(rigCurrent.skirtSway.owner===layer.name&&$('show-skirt-field').checked){
+        drawSkirtGuide(skirtGuide,layer.image,rigCurrent.skirtSway);
+        g.drawImage(skirtGuide,0,0);
+      }
     }else if(layer.name==='face'&&transforms&&rigCurrent.headSurface){
       const angle=(controls.yaw||0)*rigCurrent.headSurface.maxDegrees;
       const pitch=(controls.pitch||0)*(rigCurrent.headPitch?.maxDegrees||0);
@@ -503,7 +643,7 @@ function paint(target, transforms, controls={}) {
         sourceContext.clearRect(0,0,canvas.width,canvas.height);
         sourceContext.drawImage(faceImage(layer),0,0);
         drawMouth(sourceContext);
-        if(eyeAssets&&layer.visible)drawEyes(sourceContext);
+        if(eyeAssets&&layer.visible&&!eyeAssets.semanticLayers)drawEyes(sourceContext);
         drawExpressionDetails(sourceContext);
         drawHeadSurface(headSurfaceCanvas,headSurfaceSource,angle,
           rigCurrent.headSurface,lighting,
@@ -536,7 +676,7 @@ function paint(target, transforms, controls={}) {
       }
       g.drawImage(bustGuideCanvas,0,0);
     }
-    if(layer.name==='face'&&eyeAssets&&layer.visible&&
+    if(layer.name==='face'&&eyeAssets&&!eyeAssets.semanticLayers&&layer.visible&&
        !(transforms&&rigCurrent.headSurface))drawEyes(g);
     if(layer.name==='face'&&!(transforms&&rigCurrent.headSurface))drawExpressionDetails(g);
   }
@@ -641,6 +781,8 @@ function drawGuides(transforms,controls={}) {
   ctx.restore();
 }
 function draw(time=elapsed) {
+  const renderStarted=rigCurrent?.nonProduction?performance.now():0;
+  try {
   activeExpression=expressionAssets?$('expression-shape').value:'neutral';
   if(rigCurrent?.faceMorph)activeExpression=expressionPoseState.position>0?'anxious':'neutral';
   if(rigCurrent?.faceMorph?.pointsByExpression)activeExpression=expressionNames()[expressionWeights.indexOf(Math.max(...expressionWeights))];
@@ -662,7 +804,7 @@ function draw(time=elapsed) {
   const controls=controlsAt(time);
   review.shoulders={left:controls.shoulderLeft,right:controls.shoulderRight,maxPixels:rigCurrent.shoulderControls?.maxPixels||rigCurrent.shoulderCompensation?.maxPixels||0};
   review.shoulderCompensation={...shoulderCompensation,enabled:Boolean(rigCurrent.shoulderCompensation)};
-  review.skirtSway={...skirtState,enabled:Boolean(rigCurrent.skirtSway)};
+  review.skirtSway={...skirtState,offset:skirtOffset(),enabled:Boolean(rigCurrent.skirtSway)};
   review.pointer={desired:pointerDesired,eased:pointerEased,mix:followMix};
   review.coordinatedFollow={...coordinatedFollow,enabled:Boolean(rigCurrent.pointerFollow?.coordination),
     controls:{body:controls.body,torso:controls.torso,head:controls.head}};
@@ -709,8 +851,9 @@ function draw(time=elapsed) {
     }
     const pulse=blinkPulse(time,$('auto-blink').checked,
       rigCurrent.eyeRig.autoBlinkIntervalSeconds);
-    eyeBlink=Math.max(Number($('blink').value)/100,pulse);
-    review.eye={blink:eyeBlink,gazeX:eyeGazeX,gazeY:eyeGazeY,expressionGazeSuppressed,effectiveGazeFollow};
+    const expressionEyesClosed=expressionPart()?.manifest.eyeState==='closed';
+    eyeBlink=expressionEyesClosed?1:Math.max(Number($('blink').value)/100,pulse);
+    review.eye={blink:eyeBlink,expressionEyesClosed,gazeX:eyeGazeX,gazeY:eyeGazeY,expressionGazeSuppressed,effectiveGazeFollow};
   }
   if ($('reference').checked){
     const active=eyeAssets;eyeAssets=null;expressionSuppressed=true;paint(canvas,null);expressionSuppressed=false;eyeAssets=active;
@@ -719,6 +862,7 @@ function draw(time=elapsed) {
     paintHeadYaw(canvas,controls.yaw);
   }
   if ($('show-guides').checked) drawGuides(transforms,controls);
+
   review.headGeometry=null;
   if(rigCurrent.headGeometry && $('show-head-geometry').checked &&
      !$('reference').checked){
@@ -731,6 +875,18 @@ function draw(time=elapsed) {
     };
     review.headGeometry=drawHeadGeometry(ctx,rigCurrent.headGeometry,
       review.headGeometryDegrees,mapPoint);
+  }
+  const sinkSpec=rigCurrent.bodySink&&!$('reference').checked?rigCurrent.bodySink:null;
+  const sinkProgress=sinkSpec?Math.max(0,Math.min(1,
+    (Math.abs(controls.body)-sinkSpec.triggerStart)/(1-sinkSpec.triggerStart))):0;
+  const sink=sinkSpec?sinkSpec.maxPixels*sinkProgress*sinkProgress*(3-2*sinkProgress):0;
+  review.bodySinkPixels=sink;
+  if(sink>0){
+    const source=bodySinkSource.getContext('2d');
+    source.setTransform(1,0,0,1,0,0);source.clearRect(0,0,canvas.width,canvas.height);
+    source.drawImage(canvas,0,0);
+    ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(bodySinkSource,0,sink);
   }
   if(sharedFields&&rigCurrent.renderer?.presentation==='direct-webgl'){
     const gpu=sharedFields.mesh.canvas;
@@ -745,14 +901,15 @@ function draw(time=elapsed) {
     const hip=stanceOffset(565,controls,rigCurrent.grounding);
     const face=stanceOffset(125,controls,rigCurrent.grounding);
     const arm=rigCurrent.armSway;
-    const leftWrist=arm?armOffset(635,controls.left||0,arm.sides[0],arm):0;
-    const rightWrist=arm?armOffset(635,controls.right||0,arm.sides[1],arm):0;
+    const leftTip=arm?armVector(arm.sides[0].bands?.at(-1).y??635,controls.left||0,arm.sides[0],arm):[0,0];
+    const rightTip=arm?armVector(arm.sides[1].bands?.at(-1).y??635,controls.right||0,arm.sides[1],arm):[0,0];
+    const leftWrist=leftTip[0],rightWrist=rightTip[0];
     review.currentPose={...controls,time,hipPx:hip,headPx:face,
-      leftWristPx:leftWrist,rightWristPx:rightWrist};
+      leftWristPx:leftWrist,rightWristPx:rightWrist,leftWristVectorPx:leftTip,rightWristVectorPx:rightTip};
     $('motion-readout').textContent=$('reference').checked
       ? '顯示靜態基準（動態仍可在背景播放）'
       : '目前：腰部 '+hip.toFixed(1)+' px、頭部 '+face.toFixed(1)+
-        ' px'+(arm?'、左右腕 '+leftWrist.toFixed(1)+' / '+rightWrist.toFixed(1)+' px':'')+
+        ' px'+(arm?'、左右手位移 ('+leftTip.map(v=>v.toFixed(1)).join(', ')+') / ('+rightTip.map(v=>v.toFixed(1)).join(', ')+') px':'')+
         (rigCurrent.headRoll?'、頭部傾斜 '+review.headRollDegrees.toFixed(2)+'°':'')+
         (rigCurrent.headYaw?'、頭部微轉 '+Math.round(controls.yaw*100)+'%':'')+
         (rigCurrent.headGeometry?'、曲面推算 '+review.headGeometryDegrees.toFixed(1)+'°（僅線框）':'')+
@@ -772,6 +929,16 @@ function draw(time=elapsed) {
     : '目前：'+(rigCurrent.grounding?'接地側傾 ':'全身 ')+
       review.currentPose.bodyDegrees.toFixed(2)+'°、頭部 '+
       review.currentPose.headDegrees.toFixed(2)+'° · '+($('paused').checked?'已暫停':'播放中');
+  } finally {
+    if(rigCurrent?.nonProduction){
+      const stage=$('stage'),elapsedRender=performance.now()-renderStarted;
+      stage.dataset.drawCount=String(Number(stage.dataset.drawCount||0)+1);
+      stage.dataset.drawTotalMs=String(Number(stage.dataset.drawTotalMs||0)+elapsedRender);
+      stage.dataset.drawMaxMs=String(Math.max(Number(stage.dataset.drawMaxMs||0),elapsedRender));
+      if(elapsedRender>50)stage.dataset.drawOver50=String(Number(stage.dataset.drawOver50||0)+1);
+      if(elapsedRender>100)stage.dataset.drawOver100=String(Number(stage.dataset.drawOver100||0)+1);
+    }
+  }
 }
 function verifyNeutral() {
   const reference = document.createElement('canvas');
@@ -780,9 +947,14 @@ function verifyNeutral() {
   paint(canvas,evaluate({body:0,torso:0,head:0,hair:0},0));
   const a = reference.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data;
   const b = ctx.getImageData(0,0,canvas.width,canvas.height).data;
-  let differences = 0;
-  for (let i=0;i<a.length;i++) if (a[i] !== b[i]) differences++;
+  let differences = 0,minX=canvas.width,minY=canvas.height,maxX=-1,maxY=-1;
+  for (let i=0;i<a.length;i++) if (a[i] !== b[i]) {
+    differences++;
+    const pixel=(i>>2),x=pixel%canvas.width,y=Math.floor(pixel/canvas.width);
+    minX=Math.min(minX,x);minY=Math.min(minY,y);maxX=Math.max(maxX,x);maxY=Math.max(maxY,y);
+  }
   review.neutralMatches = differences === 0;
+  review.neutralDiff={channels:differences,bounds:differences?[minX,minY,maxX+1,maxY+1]:null};
   if (differences) throw Error('歸零畫面與組裝基準不一致：' + differences + ' 個通道值');
 }
 async function sha256(buffer) {
@@ -819,10 +991,18 @@ async function loadEyeRig(config){
      !manifest.eyes?.left || !manifest.eyes?.right)
     throw Error('眼部素材清單無效');
   const dir=config.manifest.slice(0,config.manifest.lastIndexOf('/'));
-  const eyeSet={gazeLimit:manifest.gazeLimit,eyes:{}};
-  const headResponse=await fetch(base+'_review/full_head_v8/head.png');
+  const sourceHeadAsset=manifest.sourceHeadAsset||'_review/full_head_v8/head.png';
+  if(!/^_review\/[A-Za-z0-9_-]+\/[A-Za-z0-9_.-]+\.png$/.test(sourceHeadAsset))
+    throw Error('眼部素材來源圖路徑無效');
+  const headResponse=await fetch(base+sourceHeadAsset);
   if(!headResponse.ok || await sha256(await headResponse.arrayBuffer())!==manifest.sourceHeadSha256)
     throw Error('眼部素材所依據的光頭原畫已變動');
+  if(config.semanticLayers&&(!['white','iris','lash'].every(key=>
+      /^[A-Za-z][A-Za-z0-9_-]*$/.test(config.semanticLayers[key]||''))||
+      new Set(Object.values(config.semanticLayers)).size!==3))
+    throw Error('語意眼部圖層對應無效');
+  const eyeSet={gazeLimit:manifest.gazeLimit,eyes:{},
+    semanticLayers:config.semanticLayers||null};
   for(const side of ['left','right']){
     const spec=manifest.eyes[side];
     if(!Array.isArray(spec.bounds)||spec.bounds.length!==4 ||
@@ -901,6 +1081,7 @@ function applyRig(candidate) {
     }
   }
   rigCurrent=next;
+  resetExpressionBlend();
   evaluate=createRig(next);
   $('head-limit').value=String(next.nodes.find(node=>node.id==='head').maxDegrees);
   $('head-limit-value').textContent=$('head-limit').value+'°';
@@ -1094,8 +1275,19 @@ async function start() {
     if(!Number.isFinite(gain)||gain>0||Math.abs(gain)>Math.abs(rig.pointerFollow.head))
       throw Error('頭部補償不得放大原本跟隨幅度');
   }
+  if(rig.skirtSway){validateSkirt(rig.skirtSway);skirtControl.hidden=false;}
+  if(rig.bodySink&&(!Number.isFinite(rig.bodySink.maxPixels)||
+      rig.bodySink.maxPixels<0||rig.bodySink.maxPixels>5||
+      !Number.isFinite(rig.bodySink.triggerStart)||
+      rig.bodySink.triggerStart<0||rig.bodySink.triggerStart>.95||
+      rig.renderer?.presentation==='direct-webgl'))
+    throw Error('整體下沉參數無效');
+
+  const inspectSkirt=Boolean(rig.nonProduction&&rig.skirtSway?.pinnedX);
+  skirtInspect.hidden=!inspectSkirt;
+  $('skirt-inspect-enable').disabled=!inspectSkirt;
+  $('skirt-inspect').disabled=!inspectSkirt;
   if(rig.shoulderCompensation){
-    if(rig.skirtSway){validateSkirt(rig.skirtSway);skirtControl.hidden=false;}
     validateShoulderCompensation(rig.shoulderCompensation);
     if(rig.renderer?.mode!=='shared-webgl-scene-stage1'||!rig.pointerFollow||rig.expressionPose)
       throw Error('肩膀代償需要共用場景與滑鼠跟隨，不能與表情肩膀場同時啟用');
@@ -1158,10 +1350,11 @@ async function start() {
     validateHairFollow(rig.hairFollow);
     if(rig.hairFollow.idleAroundYaw)
       validateHairIdle(rig.hairFollow.idleAroundYaw);
-    if(!rig.headSurface||rig.hairFollow.maxYaw!==rig.headSurface.maxDegrees||
+    const tipSway=rig.hairFollow.mode==='idle-pointer-tip-sway-review';
+    if((!tipSway&&(!rig.headSurface||rig.hairFollow.maxYaw!==rig.headSurface.maxDegrees))||
        rig.bindings?.fronthair!=='frontHair'||
        rig.bindings?.backhair!=='backHair')
-      throw Error('頭髮連動需要已驗證的前後髮綁定與頭部微轉');
+      throw Error('頭髮局部動態需要已驗證的前後髮綁定與對應控制');
   }
   if(rig.runtimeOptimization?.mode&&
      rig.runtimeOptimization.mode!=='native-pixel-cache-review')
@@ -1169,6 +1362,10 @@ async function start() {
   if(rig.bustField)validateBustField(rig.bustField);
   if(rig.armSway){
     validateArmSway(rig.armSway);
+    if(rig.armSway.followersByLayer&&Object.entries(rig.armSway.followersByLayer).some(([name,sides])=>
+      !['topwear','neck','hand_back'].includes(name)||!Array.isArray(sides)||
+      sides.some(side=>!rig.armSway.sides.some(candidate=>candidate.name===side))))
+      throw Error('雙臂跟隨圖層設定無效');
     if(rig.armSway.owner!=='handwear.png'||
        !Number.isFinite(rig.armSway.idleGain)||
        rig.armSway.idleGain<0||rig.armSway.idleGain>1||
@@ -1211,6 +1408,13 @@ async function start() {
   canvas.width = rig.canvas[0]; canvas.height = rig.canvas[1];
   composite.width=canvas.width;composite.height=canvas.height;
   bustCanvas.width=canvas.width;bustCanvas.height=canvas.height;
+  skirtCanvas.width=canvas.width;skirtCanvas.height=canvas.height;
+  if(rig.skirtSway){
+    const moving=layers.filter(layer=>layer.name===rig.skirtSway.owner||rig.skirtSway.followers?.includes(layer.name));
+    prepareSkirtSway(moving.map(layer=>layer.image),rig.skirtSway,canvas.width,canvas.height);
+    if(rig.nonProduction&&(rig.skirtSway.pinnedX||rig.skirtSway.freeBands?.length))
+      for(const layer of moving)drawSkirtSway(skirtCanvas,layer.image,rig.skirtSway.maxPixels/2,rig.skirtSway);
+  }
   bustGuideCanvas.width=canvas.width;bustGuideCanvas.height=canvas.height;
   armCanvas.width=canvas.width;armCanvas.height=canvas.height;
   armGuideCanvas.width=canvas.width;armGuideCanvas.height=canvas.height;
@@ -1259,7 +1463,12 @@ async function start() {
     if(rig.expressionRig){
       expressionAssets=await loadExpressionTransplant(base,rig.expressionRig,getImage,sha256,
         config=>loadEyeRig({...rig.eyeRig,...config}));
-      expressionLibrary={anxious:expressionAssets};
+      expressionLibrary={[expressionAssets.manifest.mode]:expressionAssets};
+      const primaryOption=[...$('expression-shape').options].find(option=>option.value==='anxious');
+      if(primaryOption&&expressionAssets.manifest.mode!=='anxious'){
+        primaryOption.value=expressionAssets.manifest.mode;
+        primaryOption.textContent=expressionAssets.manifest.label;
+      }
       for(const [name,config] of Object.entries(rig.expressionLibrary||{})){
         if(!/^[a-z][a-z0-9_-]*$/.test(name)||['neutral','anxious'].includes(name))throw Error('表情名稱無效');
         expressionLibrary[name]=await loadExpressionTransplant(base,config,getImage,sha256,c=>loadEyeRig({...rig.eyeRig,...c}));
@@ -1267,6 +1476,8 @@ async function start() {
         const option=document.createElement('option');option.value=name;option.textContent=expressionLibrary[name].manifest.label;$('expression-shape').appendChild(option);
       }
       $('expression-controls').hidden=false;$('expression-shape').disabled=false;
+      $('mouth-title').hidden=false;
+      $('mouth-controls').hidden=false;
       if(rig.faceMorph){faceMorphRenderer=createRegisteredMorphRenderer(rig.faceMorph);
         const nativeCanvas=()=>{const c=document.createElement('canvas');c.width=c.height=1280;return c};
         faceMorphGuide=nativeCanvas();faceMorphSources=(rig.faceMorph.expressionNames||['neutral','anxious']).map(()=>nativeCanvas());
@@ -1274,11 +1485,15 @@ async function start() {
       $('mouth-title').textContent='表情與口形';
       $('mouth-shape').options[0].textContent='表情預設／原始嘴巴';
     }
+    const gazeEnabled=rig.eyeRig.gazeEnabled!==false;
     for(const id of ['gaze-x','gaze-y','blink']){
-      $(id).disabled=false;$(id).parentElement.classList.remove('disabled');
+      $(id).disabled=id!=='blink'&&!gazeEnabled;
+      $(id).parentElement.classList.toggle('disabled',$(id).disabled);
     }
-    for(const id of ['gaze-follow','auto-blink'])$(id).disabled=false;
-    $('gaze-follow').checked=true;$('auto-blink').checked=true;
+    $('blink-value').textContent=$('blink').value;
+    $('gaze-follow').disabled=!gazeEnabled;
+    $('gaze-follow').checked=gazeEnabled;
+    $('auto-blink').disabled=false;$('auto-blink').checked=true;
     $('face-note').textContent=['motion_v14','motion_v16','motion_v17',
       'motion_v18','motion_v19','motion_v20','motion_v21'].includes(rig.candidate)
       ? '此版依原始眼白、眼珠、睫毛圖層量測視線範圍，再將其 alpha 對位到高解析頭像；請檢查九方向、細微移動與閉眼畫素。'
@@ -1347,6 +1562,9 @@ async function start() {
     if(rig.candidate==='motion_v26'){
       $('face-note').textContent='v26 只把臉部曲面的深度重心下移 13 畫素；請和 v25 用相同角度比較眼睛、鼻子、嘴巴及下巴。光影尚未改動。';
       $('limits-note').textContent+=' v26 是單一參數 A/B，並非已核准的轉頭或光影版本。';
+    }else if(['motion_v27','motion_v28','motion_v29','motion_v30','motion_v31','motion_v32','motion_v33'].includes(rig.candidate)&&rig.characterName==='Natasha'){
+      $('face-note').textContent='沿用 Natasha motion_v26 的臉部設定；此候選新增以原始眼睛圖層順序合成的眨眼。';
+      $('limits-note').textContent+=' 眨眼素材仍待視覺驗收，v26 保留作失敗遮罩回看，motion_v25 為眨眼前回退版。';
     }
   }
   if(rig.faceLighting){
@@ -1374,8 +1592,13 @@ async function start() {
   if(rig.hairFollow){
     $('show-hair-follow').disabled=false;
     $('show-hair-follow').checked=false;
-    $('face-note').textContent='v30 保留 v29 頭部；脖子分段連動，前髮順著微轉、後髮反向，以小幅慣性跑過頭再回穩。';
-    $('limits-note').textContent+=' 前後髮只由「頭部左右微轉」觸發額外慣性；原本附著頭部的傾斜保留。請檢查頭皮、耳邊與肩部遮擋。';
+    if(rig.hairFollow.mode==='idle-pointer-tip-sway-review'){
+      $('face-note').textContent=rig.candidate+' 髮梢局部左右飄動；髮根固定，前後髮由待機和滑鼠跟隨共同驅動。';
+      $('limits-note').textContent+=' 髮梢候選只改變前後髮的下段，髮根與臉不參與；滑鼠往左／右，髮梢最後往同側移動並有輕微跟隨延遲，待機時則小幅交錯擺動。影響範圍導引預設關閉。';
+    }else{
+      $('face-note').textContent='v30 保留 v29 頭部；脖子分段連動，前髮順著微轉、後髮反向，以小幅慣性跑過頭再回穩。';
+      $('limits-note').textContent+=' 前後髮只由「頭部左右微轉」觸發額外慣性；原本附著頭部的傾斜保留。請檢查頭皮、耳邊與肩部遮擋。';
+    }
   }
   if(rig.hairFollow?.idleAroundYaw){
     $('face-note').textContent=rig.candidate+' 前髮微轉上限 '+
@@ -1401,6 +1624,7 @@ async function start() {
   if(rig.bustField){
     $('bust').disabled=false;
     $('bust').parentElement.classList.remove('disabled');
+    if(rig.bustField.label)document.querySelector('label[for="bust"]').textContent=rig.bustField.label;
     $('bust').value=String(rig.bustField.defaultStrength);
     $('bust-value').textContent=$('bust').value;
     if(!rig.eyeRig){
@@ -1411,10 +1635,14 @@ async function start() {
   if(rig.armSway){
     $('arm-sway').disabled=false;
     $('arm-sway').parentElement.classList.remove('disabled');
+    if(rig.armSway.driveMode==='directed-reach'){
+      $('arm-sway').min='0';$('arm-sway').max='100';$('arm-sway').value='0';
+      document.querySelector('label[for="arm-sway"]').textContent='雙手朝安全方向';
+    }
     $('arm-sway-value').textContent=$('arm-sway').value;
     $('show-arm-field').disabled=false;
     $('show-arm-field').checked=false;
-    $('limits-note').textContent+=' 雙手是同圖層的分側畫素擺動；上臂較小、前臂與手腕較大，並非獨立手肘骨架。請檢查肩膀及手部遮擋。';
+    $('limits-note').textContent+=' 雙手是同圖層的分側向量畫素擺動；肩根固定、位移沿手臂增加，並非獨立手肘骨架。右側藏於衣服後的延伸段同步跟隨。';
   }
   const hasLocalBustField=['topwear-local-bilateral',
     'topwear-local-bilateral-pixel','topwear-local-bilateral-pixel-xy']
@@ -1429,11 +1657,43 @@ async function start() {
     $('latest').textContent='開啟 v19 下緣收窄與加強乳搖候選';
     $('latest').hidden=false;
   }
-  if(rig.candidate==='motion_v25'){
-    $('latest').href='?local='+encodeURIComponent(task)+'&rig=_review/motion_v26/rig.json';
-    $('latest').textContent='對照 v26 曲面重心下移';
+  if(rig.candidate==='motion_v25'&&rig.characterName==='Natasha'){
+    $('latest').href='?local='+encodeURIComponent(task)+'&rig=_review/motion_v32/rig.json';
+    $('latest').textContent='試看 Natasha 眨眼候選';
     $('latest').hidden=false;
-  }else if(rig.candidate==='motion_v26'){
+  }else if(rig.candidate==='motion_v26'&&rig.characterName==='Natasha'){
+    $('latest').href='?local='+encodeURIComponent(task)+'&rig=_review/motion_v32/rig.json';
+    $('latest').textContent='試看修正透明眼底的眨眼候選';
+    $('latest').hidden=false;
+  }else if(rig.candidate==='motion_v27'&&rig.characterName==='Natasha'){
+    $('latest').href='?local='+encodeURIComponent(task)+'&rig=_review/motion_v32/rig.json';
+    $('latest').textContent='試看依眼鏡／前髮圖層順序修正的眨眼';
+    $('latest').hidden=false;
+  }else if(rig.candidate==='motion_v28'&&rig.characterName==='Natasha'){
+    $('latest').href='?local='+encodeURIComponent(task)+'&rig=_review/motion_v32/rig.json';
+    $('latest').textContent='試看最終遮罩調整的眨眼候選';
+    $('latest').hidden=false;
+  }else if(rig.candidate==='motion_v30'&&rig.characterName==='Natasha'){
+    $('latest').href='?local='+encodeURIComponent(task)+'&rig=_review/motion_v31/rig.json';
+    $('latest').textContent='試看補齊眼部透明底的眨眼候選';
+    $('latest').hidden=false;
+  }else if(rig.candidate==='motion_v31'&&rig.characterName==='Natasha'){
+    $('latest').href='?local='+encodeURIComponent(task)+'&rig=_review/motion_v32/rig.json';
+    $('latest').textContent='試看縮窄至眼部原畫像素的眨眼候選';
+    $('latest').hidden=false;
+  }else if(rig.candidate==='motion_v32'&&rig.characterName==='Natasha'){
+    $('latest').href='?local='+encodeURIComponent(task)+'&rig=_review/motion_v33/rig.json';
+    $('latest').textContent='試看雙手動態候選（motion_v33）';
+    $('latest').hidden=false;
+  }else if(rig.candidate==='motion_v33'&&rig.characterName==='Natasha'){
+    $('latest').href='?local='+encodeURIComponent(task)+'&rig=_review/motion_v32/rig.json';
+    $('latest').textContent='回看眨眼與雙手前版本（motion_v32）';
+    $('latest').hidden=false;
+  }else if(rig.candidate==='motion_v29'&&rig.characterName==='Natasha'){
+    $('latest').href='?local='+encodeURIComponent(task)+'&rig=_review/motion_v25/rig.json';
+    $('latest').textContent='回看眨眼前基準（motion_v25）';
+    $('latest').hidden=false;
+  }else if(rig.candidate==='motion_v26'&&rig.characterName!=='Natasha'){
     $('latest').href='?local='+encodeURIComponent(task)+'&rig=_review/motion_v27/rig.json';
     $('latest').textContent='試看 v27 可關閉的轉向光影';
     $('latest').hidden=false;
@@ -1457,11 +1717,11 @@ async function start() {
     $('head-limit').disabled=true;
     $('head-limit').title='v4 不以頭部旋轉處理站姿；此項校正暫停使用';
   }
-  $('status').textContent='已載入 '+layers.length+' 層 · v62 階段展示';
+  $('status').textContent='已載入 '+layers.length+' 層 · v78 階段展示';
   document.querySelector('#panel-layers h2').textContent='圖層 '+layers.length+' 層';
   if(rig.characterName){
     document.title=rig.characterName+' 全身動態候選';
-    $('candidate-title').textContent=rig.characterName+' · v62 階段展示';
+    $('candidate-title').textContent=rig.characterName+' · v78 階段展示';
     canvas.setAttribute('aria-label',rig.characterName+' 動態預覽');
     $('limits-note').textContent=rig.limits.join(' ');
     $('face-note').textContent='眨眼停用：尚未提供閉眼替換素材。';
@@ -1607,7 +1867,7 @@ canvas.addEventListener('pointerleave',()=>{
   else{pointerX=0;draw();}
 });
 $('neutral').onclick = () => {
-  expressionPoseState={position:0,velocity:0};expressionWeights=[1,0,0];expressionVelocities=[0,0,0];$('show-shoulder-field').checked=false;
+  resetExpressionBlend();$('show-shoulder-field').checked=false;
   $('show-expression-field').checked=false;
   $('expression-shape').value='neutral';
   $('mouth-shape').value='original';$('auto-talk').checked=false;
@@ -1640,6 +1900,7 @@ $('neutral').onclick = () => {
   coordinatedFollow=initialCoordinatedFollow();
   shoulderCompensation=initialShoulderCompensation();
   skirtState={position:0,velocity:0,offset:0};$('show-skirt-field').checked=false;
+  $('skirt-inspect-enable').checked=false;$('skirt-inspect').value=0;$('skirt-inspect-value').textContent='0';
   eyePointerDesiredX=0;eyePointerDesiredY=0;eyePointerX=0;eyePointerY=0;
   eyeBlink=0;eyeGazeX=0;eyeGazeY=0;
   bustAmplitude=0;bustFollowPx=0;bustVelocity=0;
@@ -1653,7 +1914,7 @@ $('neutral').onclick = () => {
   draw(0);
 };
 $('defaults').onclick=()=>{
-  expressionPoseState={position:0,velocity:0};expressionWeights=[1,0,0];expressionVelocities=[0,0,0];$('show-shoulder-field').checked=false;
+  resetExpressionBlend();$('show-shoulder-field').checked=false;
   $('show-expression-field').checked=false;
   $('expression-shape').value='neutral';
   $('mouth-shape').value='original';$('auto-talk').checked=false;
@@ -1687,6 +1948,7 @@ $('defaults').onclick=()=>{
   coordinatedFollow=initialCoordinatedFollow();
   shoulderCompensation=initialShoulderCompensation();
   skirtState={position:0,velocity:0,offset:0};$('show-skirt-field').checked=false;
+  $('skirt-inspect-enable').checked=false;$('skirt-inspect').value=0;$('skirt-inspect-value').textContent='0';
   eyePointerDesiredX=0;eyePointerDesiredY=0;eyePointerX=0;eyePointerY=0;
   eyeBlink=0;eyeGazeX=0;eyeGazeY=0;
   bustAmplitude=0;bustFollowPx=0;bustVelocity=0;
@@ -1769,7 +2031,8 @@ function frame(now) {
   const delta = Math.max(0,(now-lastFrame)/1000);
   lastFrame = now;
   const beforeShoulder=shoulderCompensation.position;
-  if(loaded&&rigCurrent?.skirtSway&&!$('paused').checked)skirtState=advanceSkirt(skirtState,controlsAt(elapsed).body,delta,rigCurrent.skirtSway);
+  if(loaded&&rigCurrent?.skirtSway&&!$('paused').checked&&!$('skirt-inspect-enable').checked)
+    skirtState=advanceSkirt(skirtState,controlsAt(elapsed).body,delta,rigCurrent.skirtSway);
   if(loaded && rigCurrent?.pointerFollow && !$('paused').checked){
     const rate=rigCurrent.pointerFollow.responseRate;
     pointerEased=approachPointer(pointerEased,pointerDesired,delta,rate);
@@ -1801,18 +2064,20 @@ function frame(now) {
   const beforeHair={...hairFollowDrive};
   const beforeIdleMix=hairIdleState.idleMix;
   if(loaded&&rigCurrent?.hairFollow&&!$('paused').checked){
-    const yaw=Number($('yaw').value)/100;
+    const tipSway=rigCurrent.hairFollow.mode==='idle-pointer-tip-sway-review';
+    const yaw=tipSway?0:Number($('yaw').value)/100;
     if(rigCurrent.hairFollow.idleAroundYaw){
       const result=advanceHairIdle(hairIdleState,yaw,delta,elapsed,
-        $('auto').checked,Number($('hair').value)/100,
+        $('auto').checked,tipSway?Number($('energy').value)/100:Number($('hair').value)/100,
         rigCurrent.hairFollow.idleAroundYaw);
       hairIdleState=result.state;
       hairIdleTargets=result.targets;
     }else hairIdleTargets={fronthair:yaw,backhair:yaw};
     for(const name of ['fronthair','backhair']){
       const part=rigCurrent.hairFollow.parts[name];
+      const target=tipSway?hairIdleTargets[name]+pointerEased*followMix*part.pointerGain:hairIdleTargets[name];
       hairFollowStates[name]=advanceSpring(hairFollowStates[name],
-        hairIdleTargets[name],delta,{
+        Math.max(-1.15,Math.min(1.15,target)),delta,{
         frequency:part.frequency,damping:part.damping,maxPosition:1.15});
       hairFollowDrive[name]=hairFollowStates[name].position;
     }

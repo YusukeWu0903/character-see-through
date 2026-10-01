@@ -4,6 +4,7 @@ import {drawStanceField,stanceOffset} from './stance-field.mjs';
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
 const smooth=value=>{const t=clamp(value,0,1);return t*t*(3-2*t)};
 const sourcePixels=new WeakMap();
+const lobeRadiusX=(field,index)=>field.radiiX?.[index]??field.radiusX;
 const bilateralMode=mode=>['topwear-local-bilateral',
   'topwear-local-bilateral-pixel','topwear-local-bilateral-pixel-xy'].includes(mode);
 
@@ -30,6 +31,9 @@ export function validateBustField(field){
       !field.centers.every(center=>Array.isArray(center)&&center.length===2&&
         center.every(Number.isFinite)&&center[0]>0&&center[0]<1280&&
         center[1]>0&&center[1]<1280)||
+      (field.radiiX!==undefined&&(!Array.isArray(field.radiiX)||
+        field.radiiX.length!==2||!field.radiiX.every(radius=>
+          Number.isFinite(radius)&&radius>=50&&radius<=170)))||
       !Number.isFinite(field.springFrequency)||field.springFrequency<4||
       field.springFrequency>12||!Number.isFinite(field.springDamping)||
       field.springDamping<.3||field.springDamping>1.2))
@@ -54,13 +58,13 @@ export function bustWeight(x,y,field){
   const yy=Math.abs((y-field.centerY)/radiusY);
   if(yy>=1)return 0;
   if(bilateralMode(field.mode)){
-    const lateral=field.centers.reduce((weight,center)=>{
-      const xx=Math.abs((x-center[0])/field.radiusX);
+    const lateral=field.centers.reduce((weight,center,index)=>{
+      const xx=Math.abs((x-center[0])/lobeRadiusX(field,index));
       return weight+(xx>=1?0:1-smooth(xx));
     },0);
     if(field.separateLobes){
-      const peak=Math.max(...field.centers.map(center=>{
-        const xx=Math.abs((x-center[0])/field.radiusX);
+    const peak=Math.max(...field.centers.map((center,index)=>{
+        const xx=Math.abs((x-center[0])/lobeRadiusX(field,index));
         return xx>=1?0:1-smooth(xx);
       }));
       return peak*(1-smooth(yy));
@@ -78,7 +82,7 @@ export function bustHorizontalWeight(x,y,h,field){
   const yy=Math.abs((y-field.centerY)/radiusY);if(yy>=1)return 0;
   const direction=Math.tanh(h/3);
   const weights=field.centers.map((center,i)=>{
-    const xx=Math.abs((x-center[0])/field.radiusX);
+    const xx=Math.abs((x-center[0])/lobeRadiusX(field,i));
     const gain=.85+(i===0?-direction:direction)*.15;
     return (xx>=1?0:1-smooth(xx))*gain;
   });
@@ -93,9 +97,9 @@ export function drawBustFieldGuide(target,source,field){
   g.setTransform(1,0,0,1,0,0);
   g.clearRect(0,0,target.width,target.height);
   const left=Math.max(0,Math.floor(
-    Math.min(...field.centers.map(center=>center[0]))-field.radiusX));
+    Math.min(...field.centers.map((center,i)=>center[0]-lobeRadiusX(field,i)))));
   const right=Math.min(target.width,Math.ceil(
-    Math.max(...field.centers.map(center=>center[0]))+field.radiusX));
+    Math.max(...field.centers.map((center,i)=>center[0]+lobeRadiusX(field,i)))));
   const top=Math.max(0,Math.floor(field.centerY-field.radiusY));
   const bottom=Math.min(target.height,Math.ceil(
     field.centerY+(field.lowerRadiusY??field.radiusY)));
@@ -152,9 +156,9 @@ function drawBustPixelField(g,source,amplitude,field,width,height){
     sourcePixels.set(source,cached);
   }
   const left=Math.max(0,Math.floor(
-    Math.min(...field.centers.map(center=>center[0]))-field.radiusX));
+    Math.min(...field.centers.map((center,i)=>center[0]-lobeRadiusX(field,i)))));
   const right=Math.min(width,Math.ceil(
-    Math.max(...field.centers.map(center=>center[0]))+field.radiusX));
+    Math.max(...field.centers.map((center,i)=>center[0]+lobeRadiusX(field,i)))));
   const top=Math.max(0,Math.floor(field.centerY-field.radiusY));
   const bottom=Math.min(height,Math.ceil(
     field.centerY+(field.lowerRadiusY??field.radiusY)));
@@ -216,10 +220,10 @@ export function drawBustField(target,source,amplitude,field){
     return;
   }
   const xMin=bilateralMode(field.mode)
-    ? Math.min(...field.centers.map(center=>center[0]))-field.radiusX
+    ? Math.min(...field.centers.map((center,i)=>center[0]-lobeRadiusX(field,i)))
     : field.centerX-field.radiusX;
   const xMax=bilateralMode(field.mode)
-    ? Math.max(...field.centers.map(center=>center[0]))+field.radiusX
+    ? Math.max(...field.centers.map((center,i)=>center[0]+lobeRadiusX(field,i)))
     : field.centerX+field.radiusX;
   const left=Math.max(0,Math.floor(xMin/field.tileWidth)*field.tileWidth);
   const right=Math.min(target.width,Math.ceil(xMax/field.tileWidth)*field.tileWidth);

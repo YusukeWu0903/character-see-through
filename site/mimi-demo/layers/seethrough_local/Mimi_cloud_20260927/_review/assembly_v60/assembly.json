@@ -81,8 +81,8 @@
     {
       "name": "backhair",
       "file": "backhair.png",
-      "asset": "_review/assembly_v52/backhair.png",
-      "assetSha256": "15E4561D3D007F5C7B5B98BA4693223254541827B59E6BE60B37DCDF3E23C8E4",
+      "asset": "_review/assembly_v54/backhair.png",
+      "assetSha256": "9195C2623567CDD174B5F9A2FFA42236AA671332462000D986CD34DF77757187",
       "label": "頭髮／遠深度片",
       "group": "character",
       "parent": "head"
@@ -110,7 +110,7 @@
       "file": "front_hair_shadow.png",
       "asset": "_review/assembly_v49/front_hair_shadow.png",
       "assetSha256": "810377C201210979618427895203501FD5F5AAD7EE579139C4C25316A6E0B457",
-      "label": "髮影／前髮下填色餘量（可見髮影仍在原 FACE）",
+      "label": "前髮投影／獨立整片陰影層",
       "group": "character",
       "parent": "frontHair",
       "linkedShadow": {
@@ -178,8 +178,8 @@
     {
       "name": "fronthair",
       "file": "fronthair.png",
-      "asset": "_review/assembly_v52/fronthair.png",
-      "assetSha256": "DA100627B869D1DE68A8D6E7C084C98F9BD7F138445605F0B4943E7BFE6C058A",
+      "asset": "_review/assembly_v60/fronthair.png",
+      "assetSha256": "02993A8347953933706A6050A8C8F4137B8025DBC4795F21E8B05BAEFBB6DA10",
       "label": "頭髮／近深度片",
       "group": "character",
       "parent": "head"
@@ -196,10 +196,9 @@
     {
       "file": "front_hair_shadow.png",
       "sourceFiles": [
-        "face.png",
-        "fronthair.png"
+        "face.png"
       ],
-      "method": "one-colour filled concealed overlap; original visible FACE shadow deliberately retained to prevent double shadow"
+      "method": "restore the existing one-piece shadow overlay from assembly_v49; use its clean backing FACE from assembly_v51, which recomposes to the original FACE exactly across RGBA"
     }
   ],
   "constraints": [
@@ -289,12 +288,22 @@
       "reason": "source feature ownership / depth stratum order"
     },
     {
+      "behind": "face.png",
+      "inFrontOf": "front_hair_shadow.png",
+      "reason": "independent front-hair cast shadow overlays the clean FACE backing"
+    },
+    {
+      "behind": "front_hair_shadow.png",
+      "inFrontOf": "nose.png",
+      "reason": "shadow tint stays under detached facial features"
+    },
+    {
       "behind": "front_hair_shadow.png",
       "inFrontOf": "fronthair.png",
-      "reason": "Filled overlap remains beneath casting hair"
+      "reason": "the casting front hair conceals the fill edge"
     }
   ],
-  "rollback": "_review/assembly_v51/assembly.json",
+  "rollback": "_review/assembly_v55/assembly.json",
   "appearanceReferencesOnly": [
     "Character/003_Mimi/Mimi_hair.png",
     "Character/003_Mimi/Mimi_breast_bd.png"
@@ -361,23 +370,6 @@
     "hiddenUnderfill": "old PSD only inside eroded opaque unchanged face and outside visible source hair",
     "motion": "shared head field; no independent animation acceptance"
   },
-  "shadowOwnership": {
-    "owner": "fronthair",
-    "receivers": [
-      "face"
-    ],
-    "method": "one-colour filled overlap; remove exactly that chosen fill from original FACE backing, recomposition checked before use",
-    "colourRGB": [
-      151,
-      103,
-      99
-    ],
-    "faceAlphaUnchanged": true,
-    "visibleShadowDetachedWithinFilledRegion": true,
-    "outsideFilledRegion": "original FACE unchanged; other shading not detached",
-    "motionIntegration": "shared head field only; independent owner clipping unchanged",
-    "reviewStatus": "pending"
-  },
   "earEdgeRepair": {
     "sourceAsset": "_review/assembly_v31/ears_source_visible.png",
     "method": "local one-pixel alpha inset with soft antialias; RGB unchanged",
@@ -437,6 +429,111 @@
     "unionExact": true,
     "neutralRgbaMaxDifference": 0,
     "noRepainting": true,
+    "visualAcceptance": "pending"
+  },
+  "candidate": "assembly_v60",
+  "candidateDecision": {
+    "restoredLayer": "front_hair_shadow",
+    "reason": "v53/v54 removed the required separate layer due to an invalid RGBA comparison that failed to detect RGB-only FACE changes; direct all-channel compositing verifies the existing backing plus overlay restores source FACE exactly.",
+    "rollback": "_review/assembly_v54/assembly.json",
+    "visualAcceptance": "pending"
+  },
+  "hairOutlineRepair": {
+    "goal": "Keep the complete FACE cheek/jaw outline; remove the duplicated reddish contour pixels from front and back hair.",
+    "faceAsset": "_review/assembly_v51/face.png",
+    "faceAssetSha256": "D9980DD756455D948980EEF992B01F0C16F0FFE3981037B2C95FF3B40A68C7DF",
+    "facePixelsChanged": 0,
+    "layers": {
+      "backhair": {
+        "source": "_review/assembly_v52/backhair.png",
+        "replacement": "_review/assembly_v54/backhair.png",
+        "sourceSha256": "15E4561D3D007F5C7B5B98BA4693223254541827B59E6BE60B37DCDF3E23C8E4",
+        "replacementSha256": "9195C2623567CDD174B5F9A2FFA42236AA671332462000D986CD34DF77757187",
+        "method": "set alpha to zero only for reddish duplicate contour pixels inside the face-edge review window; RGB and all other pixels unchanged",
+        "window": [
+          548,
+          262,
+          615,
+          295
+        ],
+        "changedAlphaPixels": 108,
+        "changedBounds": [
+          552,
+          266,
+          603,
+          295
+        ],
+        "alphaIncreases": 0,
+        "rgbChangedPixels": 0
+      },
+      "fronthair": {
+        "source": "_review/assembly_v52/fronthair.png",
+        "replacement": "_review/assembly_v54/fronthair.png",
+        "sourceSha256": "DA100627B869D1DE68A8D6E7C084C98F9BD7F138445605F0B4943E7BFE6C058A",
+        "replacementSha256": "894563BC80D040F53E5A332785783F81CB3AF6EF098C16836014A72F73B850ED",
+        "method": "set alpha to zero only for reddish duplicate contour pixels inside the face-edge review window; RGB and all other pixels unchanged",
+        "window": [
+          550,
+          242,
+          606,
+          287
+        ],
+        "changedAlphaPixels": 50,
+        "changedBounds": [
+          554,
+          247,
+          602,
+          284
+        ],
+        "alphaIncreases": 0,
+        "rgbChangedPixels": 0
+      }
+    },
+    "visualAcceptance": "pending"
+  },
+  "shadowOwnership": {
+    "owner": "fronthair",
+    "receivers": [
+      "face"
+    ],
+    "asset": "_review/assembly_v49/front_hair_shadow.png",
+    "backingFace": "_review/assembly_v51/face.png",
+    "method": "independent full-region overlay retained as its own layer; clean FACE backing has the prior uniform fill removed",
+    "reconstructionCheck": {
+      "sourceFace": "face.png",
+      "backingFace": "_review/assembly_v51/face.png",
+      "overlay": "_review/assembly_v49/front_hair_shadow.png",
+      "rgbaChangedPixels": 0,
+      "maxChannelDifference": 0,
+      "comparison": "complete canvas, all RGBA channels; backing FACE alpha-composited with independent shadow equals original FACE exactly"
+    },
+    "motionIntegration": "same frontHair transform as fronthair; restored in motion_v70",
+    "reviewStatus": "pending"
+  },
+  "hairStrandRepair": {
+    "sourceSha256": "C32F2E0B4FDAA9FFB71904C82D6C44B726E0F76E8DAFB3921CB241524EBE2568",
+    "pixelCount": 1208,
+    "bounds": [
+      435,
+      116,
+      503,
+      248
+    ],
+    "alpha20Components": [
+      933
+    ],
+    "sourceCrossingBridge": [
+      [
+        455,
+        185
+      ],
+      [
+        456,
+        185
+      ]
+    ],
+    "method": "registered original RGB target solved source-over against v55 composite within the source-measured v45 wisp corridor; antialiased corridor edge",
+    "owner": "frontHair",
     "visualAcceptance": "pending"
   }
 }

@@ -35,34 +35,37 @@ export function createRegisteredMorphRenderer(spec){
 }
 function createExpressionLibraryMorph(spec){
   const names=spec.expressionNames,sets=names.map(n=>spec.pointsByExpression[n]);
-  if(names.length!==3||sets.some(p=>p.length!==sets[0].length)||spec.mode!=='registered-shared-topology')throw Error('Invalid expression library topology');
+  if(names.length<2||names.length>4||new Set(names).size!==names.length||
+     sets.some(p=>!Array.isArray(p)||p.length!==sets[0].length)||
+     sets.some(p=>p.some(q=>!Array.isArray(q)||q.length!==2||!q.every(Number.isFinite)))||
+     spec.mode!=='registered-shared-topology')throw Error('Invalid expression library topology');
   const canvas=document.createElement('canvas');canvas.width=canvas.height=1280;
-  const gl=meshContext(canvas),program=meshProgram(gl,
-    `attribute vec2 position;attribute vec2 sourceA;attribute vec2 sourceB;attribute vec2 sourceC;
-     varying vec2 uvA;varying vec2 uvB;varying vec2 uvC;
-     void main(){gl_Position=vec4(position,0.,1.);uvA=sourceA;uvB=sourceB;uvC=sourceC;}`,
-    `precision mediump float;uniform sampler2D imageA;uniform sampler2D imageB;uniform sampler2D imageC;uniform vec3 weights;
-     varying vec2 uvA;varying vec2 uvB;varying vec2 uvC;
-     void main(){gl_FragColor=texture2D(imageA,uvA)*weights.x+texture2D(imageB,uvB)*weights.y+texture2D(imageC,uvC)*weights.z;}`);
+  const letters=['A','B','C','D'].slice(0,names.length),components=['x','y','z','w'];
+  const vertex=`attribute vec2 position;${letters.map(n=>`attribute vec2 source${n};varying vec2 uv${n};`).join('')}
+    void main(){gl_Position=vec4(position,0.,1.);${letters.map(n=>`uv${n}=source${n};`).join('')}}`;
+  const fragment=`precision mediump float;${letters.map(n=>`uniform sampler2D image${n};varying vec2 uv${n};`).join('')}
+    uniform vec4 weights;void main(){gl_FragColor=${letters.map((n,i)=>`texture2D(image${n},uv${n})*weights.${components[i]}`).join('+')};}`;
+  const gl=meshContext(canvas),program=meshProgram(gl,vertex,fragment);
   gl.useProgram(program);gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL,true);
   const buffer=gl.createBuffer(),indices=gl.createBuffer(),textures=sets.map(()=>gl.createTexture());
   gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
-  for(const [i,n] of ['position','sourceA','sourceB','sourceC'].entries()){
-    const at=gl.getAttribLocation(program,n);gl.enableVertexAttribArray(at);gl.vertexAttribPointer(at,2,gl.FLOAT,false,32,i*8);
+  const stride=(1+names.length)*8;
+  for(const [i,n] of ['position',...letters.map(n=>`source${n}`)].entries()){
+    const at=gl.getAttribLocation(program,n);gl.enableVertexAttribArray(at);gl.vertexAttribPointer(at,2,gl.FLOAT,false,stride,i*8);
   }
   const topology=new Uint16Array(spec.triangles.flat());gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,indices);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,topology,gl.STATIC_DRAW);
-  for(const [i,n] of ['imageA','imageB','imageC'].entries())gl.uniform1i(gl.getUniformLocation(program,n),i);
+  for(const [i,n] of letters.entries())gl.uniform1i(gl.getUniformLocation(program,`image${n}`),i);
   const uniform=gl.getUniformLocation(program,'weights');let revision=null;
   return {canvas,drawBlend(sources,weights,key){
-    if(weights.length!==3||weights.some(w=>!Number.isFinite(w)||w<0)||Math.abs(weights.reduce((a,b)=>a+b,0)-1)>1e-6)throw Error('Invalid expression weights');
-    const data=new Float32Array(sets[0].length*8);
+    if(sources.length!==names.length||weights.length!==names.length||weights.some(w=>!Number.isFinite(w)||w<0)||Math.abs(weights.reduce((a,b)=>a+b,0)-1)>1e-6)throw Error('Invalid expression weights');
+    const data=new Float32Array(sets[0].length*2*(1+names.length));
     for(let i=0;i<sets[0].length;i++){
-      let x=0,y=0;for(let s=0;s<3;s++){x+=sets[s][i][0]*weights[s];y+=sets[s][i][1]*weights[s]}
-      data.set([x/640-1,1-y/640,...sets.flatMap(p=>[p[i][0]/1280,p[i][1]/1280])],i*8);
+      let x=0,y=0;for(let s=0;s<sets.length;s++){x+=sets[s][i][0]*weights[s];y+=sets[s][i][1]*weights[s]}
+      data.set([x/640-1,1-y/640,...sets.flatMap(p=>[p[i][0]/1280,p[i][1]/1280])],i*2*(1+names.length));
     }
     gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,data,gl.DYNAMIC_DRAW);
-    for(let i=0;i<3;i++){gl.activeTexture(gl.TEXTURE0+i);if(key!==revision)uploadMeshTexture(gl,textures[i],sources[i]);else gl.bindTexture(gl.TEXTURE_2D,textures[i])}
-    revision=key;gl.uniform3fv(uniform,weights);gl.viewport(0,0,1280,1280);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
+    for(let i=0;i<sets.length;i++){gl.activeTexture(gl.TEXTURE0+i);if(key!==revision)uploadMeshTexture(gl,textures[i],sources[i]);else gl.bindTexture(gl.TEXTURE_2D,textures[i])}
+    revision=key;gl.uniform4fv(uniform,[...weights,...Array(4-weights.length).fill(0)]);gl.viewport(0,0,1280,1280);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
     gl.drawElements(gl.TRIANGLES,topology.length,gl.UNSIGNED_SHORT,0);
     if(gl.getError()!==gl.NO_ERROR)throw Error('Expression library GPU error');return canvas;
   }};

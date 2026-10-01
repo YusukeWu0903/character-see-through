@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "task": "Mimi_cloud_20260927",
-  "candidate": "motion_v62",
+  "candidate": "motion_v78",
   "characterName": "Mimi",
-  "name": "Mimi anchored skirt follow-through A",
+  "name": "Mimi lower and breast-contour chest influence",
   "reviewStatus": "pending",
   "nonProduction": true,
   "coordinateSpace": "canvas-pixels",
@@ -13,9 +13,9 @@
   ],
   "layerCount": 19,
   "sourceSha256": "8C026841B1563D07F41353B19CFE8EB68342ACF422F6A15DA0375E105D622432",
-  "assembly": "_review/assembly_v52/assembly.json",
-  "assemblySha256": "D7D553734FEA9590F76492FC4C5ADAF6FBD6D0108E9B3339C55284859B445318",
-  "rollbackManifest": "_review/motion_v61/rig.json",
+  "assembly": "_review/assembly_v60/assembly.json",
+  "assemblySha256": "9C712447A6A44FA5CAA0A8803F4CC60310393A4A8264E541CA28A9292B9F2DA5",
+  "rollbackManifest": "_review/motion_v77/rig.json",
   "staticLayers": [
     "shadow"
   ],
@@ -178,32 +178,32 @@
     "backhair": "backHair",
     "ears": "head",
     "face": "head",
-    "front_hair_shadow": "frontHair",
     "nose": "head",
     "mouth": "head",
     "eyebrow": "head",
     "eyewhite": "head",
     "irides": "head",
     "eyelash": "head",
-    "fronthair": "frontHair"
+    "fronthair": "frontHair",
+    "front_hair_shadow": "frontHair"
   },
   "bustField": {
     "mode": "topwear-local-bilateral-pixel-xy",
     "centerX": 520,
-    "centerY": 510,
+    "centerY": 535,
     "centers": [
       [
         495,
-        510
+        535
       ],
       [
         625,
-        510
+        535
       ]
     ],
     "radiusX": 90,
-    "radiusY": 140,
-    "lowerRadiusY": 90,
+    "radiusY": 120,
+    "lowerRadiusY": 55,
     "maxPixels": 12,
     "followMaxPixels": 12,
     "tileWidth": 16,
@@ -215,7 +215,11 @@
     "defaultStrength": 50,
     "separateLobes": true,
     "horizontalOnly": true,
-    "horizontalGain": 2
+    "horizontalGain": 2,
+    "radiiX": [
+      90,
+      55
+    ]
   },
   "renderer": {
     "mode": "shared-webgl-scene-stage1",
@@ -227,13 +231,18 @@
     "reuseGpuBuffers": false
   },
   "limits": [
+    "Blink, closed-eye kiss, and source-drawn bilateral cheek blush/hatching are pending visual review; motion_v66 is unchanged rollback.",
+    "Gaze remains disabled: measured semantic-eye displacement is only 1.75 by 1.5 native pixels and was not requested.",
     "Latest v51 single-face assembly is pending user review; ear repair not accepted.",
     "Existing Mimi idle/pointer chest evaluator unchanged; no new head transplant.",
     "All head fragments share the head motion field; independent hair remains disabled.",
-    "Hair shadow is a separate layer; FACE retains residual baked shadow; owner-toggle clipping not integrated.",
-    "No blink assets; blink remains disabled. No production default changed.",
     "face_far removed by user request; full FACE sampled once; other controls unchanged.",
-    "Horizontal inertia only, no vertical local motion or inward squeeze; separate non-additive weights, leading side1/trailing0.7."
+    "Horizontal inertia only, no vertical local motion or inward squeeze; separate non-additive weights, leading side1/trailing0.7.",
+    "assembly_v54 removes only reddish duplicate cheek/jaw contour pixels from fronthair and backhair; the complete FACE asset is byte-identical. Hair motion review is pending.",
+    "assembly_v55 restores the independent one-piece front-hair shadow overlay above clean FACE; FACE plus overlay reconstructs the original FACE exactly. Visual acceptance pending.",
+    "assembly_v60 restores the source-visible eye-corner wisp along a full corridor; user review pending.",
+    "motion_v77 adds a task-local, root-anchored front/back hair-tip field only; no face/head deformation and no source artwork edits. Candidate awaits visual review.",
+    "motion_v78 changes only chest-field geometry: separate horizontal lobe radii, lowered bilateral peak, and upper/bottom support. Chest movement amplitudes, springs, strengths, other body motion, and source art remain unchanged; awaits visual review."
   ],
   "rangeReview": {
     "scope": "geometry only; no increased amplitude or bilateral phase",
@@ -343,7 +352,7 @@
   },
   "skirtSway": {
     "mode": "anchored-horizontal-lag",
-    "anchorY": 480,
+    "anchorY": 440,
     "hemY": 620,
     "frequency": 4.5,
     "damping": 0.55,
@@ -359,6 +368,135 @@
     "return": "small follow-through then settle",
     "verticalOffset": 0,
     "sourceArtUnchanged": true,
+    "visualAcceptance": "pending",
+    "weightChange": "anchorY 480→440; preserve the existing hem maximum and sway amplitude; extend the smooth falloff upward into the upper skirt"
+  },
+  "eyeRig": {
+    "manifest": "_review/eyes_v67/manifest.json",
+    "manifestSha256": "CB464EAA5AFD723235A6B83D8B18928DC05AF8F98C0329A5F7577E61FBD8844B",
+    "gazeResponseRate": 9,
+    "gazeMode": "shared-unit-circle",
+    "gazeEnabled": false,
+    "autoBlinkIntervalSeconds": 4.6,
+    "blinkMode": "layer-crossfade",
+    "semanticLayers": {
+      "white": "eyewhite",
+      "iris": "irides",
+      "lash": "eyelash"
+    },
+    "note": "Blink enabled from source eyelid art; gaze remains disabled because this task requests blink only and measured movement is sub-visible."
+  },
+  "expressionRig": {
+    "manifest": "_review/expression_kiss_v6/manifest.json",
+    "manifestSha256": "986FE3B1A4AB0747432A1E8DAF70B53365917D268D429A6DD64996EC36C50C94"
+  },
+  "hairFollow": {
+    "mode": "idle-pointer-tip-sway-review",
+    "sampling": "analytic-inverse",
+    "idleAroundYaw": {
+      "mode": "yaw-centered-idle-state-review",
+      "settleSeconds": 0.28,
+      "resumeRate": 3.5,
+      "parts": {
+        "fronthair": {
+          "amplitude": 0.58,
+          "phase": 0.15
+        },
+        "backhair": {
+          "amplitude": 0.52,
+          "phase": 1.1
+        }
+      }
+    },
+    "parts": {
+      "fronthair": {
+        "bounds": [
+          360,
+          31,
+          667,
+          315
+        ],
+        "rootY": 178,
+        "tipY": 315,
+        "maxPixels": 6.5,
+        "pointerGain": 0.95,
+        "frequency": 6.5,
+        "damping": 0.68
+      },
+      "backhair": {
+        "bounds": [
+          359,
+          13,
+          665,
+          312
+        ],
+        "rootY": 178,
+        "tipY": 312,
+        "maxPixels": 5.5,
+        "pointerGain": 0.85,
+        "frequency": 5.8,
+        "damping": 0.72
+      }
+    }
+  },
+  "hairSwayAcceptance": {
+    "owner": [
+      "fronthair",
+      "backhair"
+    ],
+    "screenLeft": "pointer left; after spring lag, both hair tips move left; roots remain attached",
+    "screenRight": "mirrored; both tips move right; roots remain attached",
+    "idle": "alternating gentle sway with slightly staggered front/back phase",
+    "center": "pointer returns to center; pointer contribution settles to zero while idle remains",
+    "range": "rootY=178; front tipY=315 max 6.5 source pixels; back tipY=312 max 5.5 source pixels",
+    "checks": [
+      "neutral pixel identity with idle/follow off",
+      "idle only",
+      "pointer left/intermediate/center/right",
+      "rapid direction reversal",
+      "pointer leave/follow off",
+      "pause/resume/reset",
+      "default-off influence guide and alpha-edge continuity"
+    ],
+    "visualAcceptance": "pending"
+  },
+  "bustFieldReview": {
+    "owner": "topwear",
+    "mode": "topwear-local-bilateral-pixel-xy",
+    "rollback": "_review/motion_v77/rig.json",
+    "extentPixels": {
+      "left": 405,
+      "top": 415,
+      "right": 680,
+      "bottom": 590
+    },
+    "lobeCenters": [
+      [
+        495,
+        535
+      ],
+      [
+        625,
+        535
+      ]
+    ],
+    "lobeHorizontalRadii": [
+      90,
+      55
+    ],
+    "peakWeightY": 535,
+    "changes": [
+      "Only screen-right lobe narrows from 90px to 55px radius; screen-left lobe remains 90px.",
+      "Both lobe peaks move down 25 native px from y=510 to y=535.",
+      "Upper support starts at y=415 and bottom zero-weight boundary stays above y=590; no lower-body layer is affected.",
+      "Motion amplitudes, spring frequency/damping, default strength, and idle/follow driver are unchanged."
+    ],
+    "acceptance": [
+      "guide contour stays on breast/topwear region and excludes abdomen-side panel",
+      "screen-right field ends at breast outer contour without cutting the breast",
+      "lower breast region has the largest weight rather than inter-breast center",
+      "neutral, left, center, right, intermediate, reversal, pause, reset, and guide-off match source outside field"
+    ],
     "visualAcceptance": "pending"
   }
 }

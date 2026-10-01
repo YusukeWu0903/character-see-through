@@ -4,7 +4,7 @@ export async function loadExpressionTransplant(base,config,getImage,sha256,loadE
   const response=await fetch(base+config.manifest),bytes=await response.arrayBuffer();
   if(!response.ok||await sha256(bytes)!==config.manifestSha256)throw Error('表情清單指紋不符');
   const manifest=JSON.parse(new TextDecoder().decode(bytes));
-  if(!['anxious','displeased'].includes(manifest.mode)||manifest.reviewStatus!=='pending'||manifest.nonProduction!==true||
+  if(!['anxious','displeased','kiss','happy'].includes(manifest.mode)||manifest.reviewStatus!=='pending'||manifest.nonProduction!==true||
      JSON.stringify(manifest.canvas)!=='[1280,1280]')throw Error('表情清單規格無效');
   const dir=config.manifest.slice(0,config.manifest.lastIndexOf('/'));
   const asset=async spec=>{

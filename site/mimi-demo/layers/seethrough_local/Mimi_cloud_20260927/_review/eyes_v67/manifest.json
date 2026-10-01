@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "task": "Mimi_cloud_20260927",
+  "candidate": "eyes_v67",
+  "nonProduction": true,
+  "reviewStatus": "pending",
+  "canvas": [
+    1280,
+    1280
+  ],
+  "sourceHeadAsset": "_review/eyes_v63/source_reference.png",
+  "sourceHeadSha256": "953D16FD67E97C8A05C31D9A85F11AE8BD4CDA22093FECF0FF3BD824C413CFAD",
+  "closedSource": "Character\\003_Mimi\\Mimi_eyeclose_bd.png",
+  "closedSourceSha256": "953D16FD67E97C8A05C31D9A85F11AE8BD4CDA22093FECF0FF3BD824C413CFAD",
+  "semanticSource": "_rig_assets/eye_assets.json",
+  "semanticSourceSha256": "3EAF2D4EF04E99F03450E321F1B7701BD8FB186830B8B40D29CAB755B97BB91D",
+  "registration": "_review/motion_v67/eye_registration_v5.json",
+  "registrationSha256": "7B970F7E259A3D84C8F63E1FD0BAAF47F3BF3BC3BA85C632782BA4AB3D779964",
+  "gazeLimit": [
+    0.002734,
+    0.002344
+  ],
+  "eyes": {
+    "left": {
+      "bounds": [
+        436,
+        180,
+        502,
+        215
+      ],
+      "center": [
+        468.9997,
+        196.0
+      ],
+      "white": {
+        "asset": "left_white.png",
+        "sha256": "22D7AD7C14D130600AB4CF373F06E5C74336B957C9E4C110F9939AD8A6E0C4BE"
+      },
+      "mask": {
+        "asset": "left_mask.png",
+        "sha256": "85ADCE020411F6B4E1D18FE6C0C5D1A96EDF0C2648EDC6BB0173F61FA186D533"
+      },
+      "iris": {
+        "asset": "left_iris.png",
+        "sha256": "6F67D50B835BF8BB23E306D4785B5CFA36298EF76868DE11A83C3D976CF253DF"
+      },
+      "lash": {
+        "asset": "left_lash.png",
+        "sha256": "28E5FF4DBCB07862FE9B11A187B24607B3BEB2FBF4EBE3D74E066A97473514A8"
+      },
+      "base": {
+        "asset": "left_base.png",
+        "sha256": "8248C2389E6B09907EAA4EFAB6B26B0B05D2C998CE5F379C892289A182576C9A"
+      },
+      "open": {
+        "asset": "left_open.png",
+        "sha256": "621E5FCCFB9E7BD80EC45ED0200BE3FC65A1118D64AA06A9EA494B54DA0D3B53"
+      },
+      "closed": {
+        "asset": "left_closed.png",
+        "sha256": "BD538380F0F129E201C891F12BD11AE6B029036A8CF87D79F70F3FA291E2A12A"
+      }
+    },
+    "right": {
+      "bounds": [
+        529,
+        196,
+        595,
+        227
+      ],
+      "center": [
+        555.5002,
+        211.0003
+      ],
+      "white": {
+        "asset": "right_white.png",
+        "sha256": "D74C6F8C79F88F11C00414EB3DDEDC56E24C9F6EEC15A039AD64AE1F2A7A08CC"
+      },
+      "mask": {
+        "asset": "right_mask.png",
+        "sha256": "B00DEA55B18E149EA169CE5BB9AACB32B8A954BBC22B0A16AEA0463AB3EDA77C"
+      },
+      "iris": {
+        "asset": "right_iris.png",
+        "sha256": "FDF9576E1A7AD4AC1FA7464EE45A20E470598601D94517C1DCEE0EB9BE732E98"
+      },
+      "lash": {
+        "asset": "right_lash.png",
+        "sha256": "67FA82DF6F2422B5A8EC3FD90F831A8BCFFCAEA9F7F25C39312DD65D22357835"
+      },
+      "base": {
+        "asset": "right_base.png",
+        "sha256": "8248C2389E6B09907EAA4EFAB6B26B0B05D2C998CE5F379C892289A182576C9A"
+      },
+      "open": {
+        "asset": "right_open.png",
+        "sha256": "714238530F0435CB77FD88967007C673DDA237A2E92A67B7317CB394E342FD33"
+      },
+      "closed": {
+        "asset": "right_closed.png",
+        "sha256": "E55FBE2A637BB5DC9912399A5BFB638B517C66F7E29648D4259C225DB24CFAF4"
+      }
+    }
+  },
+  "note": "Source eyelid pixels only from Mimi_eyeclose_bd.png, registered independently over current semantic eye layers; blink transition and likeness remain pending visual approval."
+}

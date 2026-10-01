@@ -1,13 +1,15 @@
-import {createFieldMeshRenderer} from './mesh-renderer.mjs?review-runtime=v60-shared-geometry';
+import {createFieldMeshRenderer} from './mesh-renderer.mjs?review-runtime=v61-skirt-owner-follower';
 import {headSurfacePoint} from './head-surface-warp.mjs?review-runtime=v37-pitch-light';
 import {stanceOffset,hipTiltOffset} from './stance-field.mjs';
-import {armOffset} from './arm-sway-field.mjs';
+import {armVector} from './arm-sway-field.mjs?review-runtime=v41-directed-arm-vector';
 import {skirtWeight} from './skirt-sway-field.mjs';
-import {hairFollowPoint} from './hair-follow-field.mjs';
+import {hairFollowPoint} from './hair-follow-field.mjs?review-runtime=mimi-hair-tips-v77';
 import {neckFollowPoint} from './neck-follow-field.mjs';
 import {pitchFollowPoint} from './pitch-follow-field.mjs';
-import {bustWeight,bustHorizontalWeight} from './bust-field.mjs?review-runtime=v55-lateral-lobes';
+import {bustWeight,bustHorizontalWeight} from './bust-field.mjs?review-runtime=mimi-chest-lobes-v78';
 import {shoulderPosePoint} from './expression-pose.mjs?review-runtime=v67-independent-shoulders';
+
+const smoothArmEdge=value=>{const t=Math.max(0,Math.min(1,value));return t*t*(3-2*t)};
 
 export function createSharedFieldAdapter(direct=false){
   const mesh=createFieldMeshRenderer(1280,1280,!direct);
@@ -37,26 +39,49 @@ export function createSharedFieldAdapter(direct=false){
     headDomain=[Math.max(0,l-2),Math.max(0,t-2),Math.min(1280,r+2),Math.min(1280,b+2)];return headDomain;
   }
   const axis=part=>({xs:[part.bounds[0],part.bounds[0]+5,part.bounds[2]-5,part.bounds[2]],
-    ys:[part.bounds[1],part.bounds[3]]});
+    ys:[part.bounds[1],...[part.rootY,part.tipY].filter(Number.isFinite),part.bounds[3]]});
   function copy(target,source,point,options,active=true){
     const g=target.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,target.width,target.height);
     g.drawImage(active?mesh.draw(source,point,options):source,0,0);
   }
   return {mesh,
     prepareDomains(layers){for(const layer of layers)if(layer.name!=='face'&&layer.visible&&!layer.blank)alphaDomain(layer.image)},
-    scene(target,layers,matrices,controls,rig,drivers,face,revision,guideFor,headLighting){
+    scene(target,layers,matrices,controls,rig,drivers,face,revision,guideFor,headLighting,layerSource){
       mesh.begin();
       // Tokens live for one scene only: never reuse a prior pose or stale guide geometry.
       const mappingGroups=new Map();
+      const skirtOwnerVisible=!rig.skirtSway||
+        layers.find(layer=>layer.name===(rig.skirtSway.owner||'bottomwear'))?.visible!==false;
       for(const layer of layers){
         if(!layer.visible||layer.blank)continue;
         const name=layer.name,matrix=matrices[name];
+        if(!skirtOwnerVisible&&rig.skirtSway?.followers?.includes(name))continue;
         const hair=rig.hairFollow?.parts[name],neck=name==='neck'?rig.neckFollow:null;
         const pitch=rig.headPitch?.parts[name];
-        const arm=name==='handwear'?rig.armSway:null;
-        const chest=name==='topwear'?rig.bustField:null;
-        const skirt=name==='bottomwear'?rig.skirtSway:null;
-        const source=name==='face'?face():layer.image;
+        const arm=rig.armSway&&(name==='handwear'||rig.armSway.followers?.includes(name+'.png')||
+          rig.armSway.followersByLayer?.[name]?.length)?rig.armSway:null;
+        const armSides=arm?(name==='topwear'&&rig.armSway.followersByLayer?.[name]?
+          arm.sides.filter(side=>rig.armSway.followersByLayer[name].includes(side.name)):arm.sides):[];
+        const armFollowerRegions=name==='topwear'?rig.armSway?.followerRegionsByLayer?.topwear:null;
+        const compositeChest=rig.bustField?.mode==='composite-chest-field';
+        const chestCandidate=compositeChest?rig.bustField:
+          name==='topwear'?rig.bustField:null;
+        let chest=null,chestDomain=null;
+        if(chestCandidate){
+          const centers=chestCandidate.centers||[[chestCandidate.centerX,chestCandidate.centerY]];
+          const bounds=alphaDomain(layer.image);
+          const left=Math.min(...centers.map((c,i)=>c[0]-(chestCandidate.radiiX?.[i]??chestCandidate.radiusX)));
+          const right=Math.max(...centers.map((c,i)=>c[0]+(chestCandidate.radiiX?.[i]??chestCandidate.radiusX)));
+          const top=chestCandidate.centerY-chestCandidate.radiusY;
+          const bottom=chestCandidate.centerY+(chestCandidate.lowerRadiusY??chestCandidate.radiusY);
+          if(bounds[0]<right&&bounds[2]>left&&bounds[1]<bottom&&bounds[3]>top){
+            chest=chestCandidate;chestDomain=bounds;
+          }
+        }
+        const skirt=rig.skirtSway&&
+          (name===(rig.skirtSway.owner||'bottomwear')||rig.skirtSway.followers?.includes(name))?rig.skirtSway:null;
+        const sourceOverride=name==='face'?null:layerSource?.(layer);
+        const source=name==='face'?face():(sourceOverride?.source||layer.image);
         const head=name==='face'&&rig.renderer.gpuHead?rig.headSurface:null;
         const headActive=head&&Math.abs(drivers.yaw)+Math.abs(controls.pitch||0)>1e-8;
         const boundaries=hair||neck||pitch;
@@ -70,10 +95,14 @@ export function createSharedFieldAdapter(direct=false){
         }
         if(headActive){for(let x=head.bounds[0];x<=head.bounds[2];x+=3)extra.xs.push(x);
           for(let y=head.bounds[1];y<=head.bounds[3];y+=3)extra.ys.push(y);}
-        if(arm){extra.xs.push(...arm.sides.flatMap(s=>[s.x0-1,s.x0,s.x1,s.x1+1]));extra.ys.push(...arm.bands.map(b=>b.y))}
+        if(arm){extra.xs.push(...armSides.flatMap(s=>[s.x0-1,s.x0,s.x1,s.x1+1]));
+          extra.ys.push(...armSides.flatMap(s=>(s.bands||arm.bands).map(b=>b.y)))}
+        if(armFollowerRegions)for(const region of Object.values(armFollowerRegions))
+          extra.xs.push(...(region.fadeX||[]),...(region.plateauX||[]));
         if(chest){
-          const left=Math.min(...chest.centers.map(c=>c[0]))-chest.radiusX;
-          const right=Math.max(...chest.centers.map(c=>c[0]))+chest.radiusX;
+          const centers=chest.centers||[[chest.centerX,chest.centerY]];
+          const left=Math.min(...centers.map((c,i)=>c[0]-(chest.radiiX?.[i]??chest.radiusX)));
+          const right=Math.max(...centers.map((c,i)=>c[0]+(chest.radiiX?.[i]??chest.radiusX)));
           for(let x=left;x<=right;x+=8)extra.xs.push(x);
           for(let y=chest.centerY-chest.radiusY;y<=chest.centerY+(chest.lowerRadiusY??chest.radiusY);y+=8)extra.ys.push(y);
         }
@@ -83,20 +112,30 @@ export function createSharedFieldAdapter(direct=false){
           if(rig.staticLayers?.includes(name))return [x,y];
           let p=[x,y];
           if(headActive)p=headSurfacePoint(x,y,drivers.yaw,head,(controls.pitch||0)*rig.headPitch.maxDegrees,rig.headPitchProfile);
-          if(arm){const side=arm.sides.find(s=>x>=s.x0&&x<=s.x1);if(side)p[0]+=armOffset(y,controls[side.name]||0,side,arm)}
+        if(arm){const side=armSides.find(s=>armFollowerRegions?.[s.name]?.allX||x>=s.x0&&x<=s.x1);if(side){
+          let weight=1;const region=armFollowerRegions?.[side.name];
+          if(region&&!region.allX){const [fade0,fade1]=region.fadeX,[full0,full1]=region.plateauX;
+            weight=x<full0?smoothArmEdge((x-fade0)/(full0-fade0)):
+              x>full1?smoothArmEdge((fade1-x)/(fade1-full1)):1;}
+          const [dx,dy]=armVector(y,controls[side.name]||0,side,arm);p[0]+=dx*weight;p[1]+=dy*weight}}
           if(hair)p=hairFollowPoint(...p,drivers.hair[name],hair);
           if(neck)p=neckFollowPoint(...p,drivers.roll,drivers.yaw,neck);
           if(pitch)p=pitchFollowPoint(...p,controls.pitch||0,pitch);
           if(skirt)p[0]+=(drivers.skirtX||0)*skirtWeight(...p,skirt);
-          if(chest){const w=bustWeight(...p,chest);p[0]+=drivers.bustX*bustHorizontalWeight(...p,drivers.bustX,chest);p[1]+=drivers.bustY*w}
-          const [xx,yy]=shoulderPosePoint(matrix[0]*p[0]+matrix[2]*p[1]+matrix[4],
-            matrix[1]*p[0]+matrix[3]*p[1]+matrix[5],controls.expressionPose,shoulderField,
+          if(chest&&!compositeChest){const w=bustWeight(...p,chest);p[0]+=drivers.bustX*bustHorizontalWeight(...p,drivers.bustX,chest);p[1]+=drivers.bustY*w}
+          let mx=matrix[0]*p[0]+matrix[2]*p[1]+matrix[4];
+          let my=matrix[1]*p[0]+matrix[3]*p[1]+matrix[5];
+          if(chest&&compositeChest){const w=bustWeight(mx,my,chest);mx-=drivers.bustX*bustHorizontalWeight(mx,my,drivers.bustX,chest);my+=drivers.bustY*w}
+          const [xx,yy]=shoulderPosePoint(mx,my,controls.expressionPose,shoulderField,
             controls.shoulderLeft,controls.shoulderRight,rig.shoulderControls?.maxPixels||rig.shoulderCompensation?.maxPixels||0);
           const dx=stanceOffset(yy,controls,rig.grounding);
           return [xx+dx,yy+hipTiltOffset(xx+dx,yy,controls,rig.grounding)];
         };
-        const options={...extra,clear:false,stepX:1280/24,stepY:16,revision:name==='face'?revision():undefined,
-          ...(head?{domain:sourceDomain(source)}:(skirt||rig.expressionPose?.cropTransparentMesh)?{domain:alphaDomain(source)}:{})};
+        const options={...extra,clear:false,stepX:1280/24,stepY:16,
+          revision:name==='face'?revision():sourceOverride?.revision,
+          ...(head?{domain:sourceDomain(source)}:
+            (hair||neck||pitch)?{domain:alphaDomain(source)}:
+            (chestDomain||skirt||rig.expressionPose?.cropTransparentMesh)?{domain:chestDomain||alphaDomain(source)}:{})};
         if(rig.renderer.reuseSharedGeometry){
           const key=rig.staticLayers?.includes(name)?'static':
             (hair||neck||pitch||arm||chest||skirt||headActive)?'part:'+name:'shared:'+matrix.join(',');
@@ -118,8 +157,9 @@ export function createSharedFieldAdapter(direct=false){
         {ys:[...field.bands.map(b=>b.y),field.groundY,...(field.hipTilt?[field.hipTilt.topY,field.hipTilt.bottomY]:[])]},active);
     },
     arm(target,source,controls,field){
-      copy(target,source,(x,y)=>{const side=field.sides.find(s=>x>=s.x0&&x<=s.x1);return [x+(side?armOffset(y,controls[side.name],side,field):0),y]},
-        {xs:field.sides.flatMap(s=>[s.x0-1,s.x0,s.x1,s.x1+1]),ys:field.bands.map(b=>b.y)},
+      copy(target,source,(x,y)=>{const side=field.sides.find(s=>x>=s.x0&&x<=s.x1);if(!side)return [x,y];
+          const [dx,dy]=armVector(y,controls[side.name]||0,side,field);return [x+dx,y+dy]},
+        {xs:field.sides.flatMap(s=>[s.x0-1,s.x0,s.x1,s.x1+1]),ys:field.sides.flatMap(s=>(s.bands||field.bands).map(b=>b.y))},
         field.sides.some(s=>Math.abs(controls[s.name]||0)>1e-8));
     },
     hair(target,source,drive,part){copy(target,source,(x,y)=>hairFollowPoint(x,y,drive,part),axis(part),Math.abs(drive)>1e-8)},

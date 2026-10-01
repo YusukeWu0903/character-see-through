@@ -3,8 +3,9 @@ const smooth=value=>{const t=clamp(value,0,1);return t*t*(3-2*t)};
 const fastSources=new WeakMap(),fastTargets=new WeakMap();
 
 export function validateHairFollow(config){
-  if(config?.mode!=='opposed-curved-yaw-spring-review'||
-     !Number.isFinite(config.maxYaw)||config.maxYaw<=0||config.maxYaw>12||
+  const tipSway=config?.mode==='idle-pointer-tip-sway-review';
+  if(!['opposed-curved-yaw-spring-review','idle-pointer-tip-sway-review'].includes(config?.mode)||
+     (!tipSway&&(!Number.isFinite(config.maxYaw)||config.maxYaw<=0||config.maxYaw>12))||
      !config.parts||!['fronthair','backhair'].every(name=>{
        const part=config.parts[name];
        return part&&Array.isArray(part.bounds)&&part.bounds.length===4&&
@@ -15,10 +16,13 @@ export function validateHairFollow(config){
          part.rootY<part.tipY&&part.tipY<=part.bounds[3]&&
          Number.isFinite(part.maxPixels)&&Math.abs(part.maxPixels)<=7.5&&
          Number.isFinite(part.frequency)&&part.frequency>=1&&part.frequency<=20&&
-         Number.isFinite(part.damping)&&part.damping>=.5&&part.damping<=1.2;
+         Number.isFinite(part.damping)&&part.damping>=.5&&part.damping<=1.2&&
+         (!tipSway||(Number.isFinite(part.pointerGain)&&part.pointerGain>=0&&part.pointerGain<=1));
      }))throw Error('前後髮慣性候選設定無效');
-  if(config.parts.fronthair.maxPixels<=0||config.parts.backhair.maxPixels>=0)
+  if(!tipSway&&(config.parts.fronthair.maxPixels<=0||config.parts.backhair.maxPixels>=0))
     throw Error('前髮與後髮必須朝相反方向');
+  if(tipSway&&(config.parts.fronthair.maxPixels<=0||config.parts.backhair.maxPixels<=0))
+    throw Error('髮梢左右飄動須使用畫面方向一致的位移');
   if(config.sampling!==undefined&&config.sampling!=='analytic-inverse')
     throw Error('頭髮取樣模式無效');
 }
@@ -81,12 +85,21 @@ function drawHairFollowFast(target,source,drive,part){
     g.setTransform(1,0,0,1,0,0);
     g.clearRect(0,0,target.width,target.height);
     g.drawImage(source,0,0);
-    fastTargets.set(target,{source,image:null});
+    fastTargets.set(target,{source,image:null,lastDrive:0});
   }
-  if(Math.abs(drive)<1e-8)return;
-  const [left,top,right,bottom]=part.bounds,w=right-left,h=bottom-top;
-  const pad=9,sourceX=left-pad,sourceY=Math.max(0,top-pad);
-  const sourceW=w+pad*2,sourceH=h+pad*2;
+  const targetState=fastTargets.get(target);
+  const [left,top,right,bottom]=part.bounds,w=right-left;
+  const startY=Math.max(top,Math.floor(part.rootY)),h=bottom-startY;
+  if(Math.abs(drive)<1e-8){
+    if(Math.abs(targetState.lastDrive)>1e-8){
+      g.clearRect(left,startY,w,h);
+      g.drawImage(source,left,startY,w,h,left,startY,w,h);
+      targetState.lastDrive=0;
+    }
+    return;
+  }
+  const pad=9,sourceX=left-pad,sourceY=Math.max(0,startY-pad);
+  const sourceW=w+pad*2,sourceH=bottom-sourceY+pad;
   let cached=fastSources.get(source);
   if(!cached||cached.part!==part){
     cached={part,pixels:source.getContext('2d',{willReadFrequently:true})
@@ -94,13 +107,13 @@ function drawHairFollowFast(target,source,drive,part){
     fastSources.set(source,cached);
   }
   const pixels=cached.pixels;
-  let out=fastTargets.get(target).image;
+  let out=targetState.image;
   if(!out||out.width!==w||out.height!==h){
     out=g.createImageData(w,h);
-    fastTargets.get(target).image=out;
+    targetState.image=out;
   }
   const dst=out.data;
-  for(let y=top;y<bottom;y++){
+  for(let y=startY;y<bottom;y++){
     // Across the occupied interior the horizontal taper is exactly one.
     // Solve that row once, leaving the narrow edge bands on the original
     // four-iteration inverse to keep the field boundary continuous.
@@ -121,7 +134,7 @@ function drawHairFollowFast(target,source,drive,part){
         sx=ex-sourceX;sy=ey-sourceY;
       }
       const x0=Math.floor(sx),y0=Math.floor(sy);
-      const di=((y-top)*w+x-left)*4;
+      const di=((y-startY)*w+x-left)*4;
       if(x0<0||y0<0||x0>=sourceW-1||y0>=sourceH-1){
         dst[di]=dst[di+1]=dst[di+2]=dst[di+3]=0;
         continue;
@@ -146,7 +159,8 @@ function drawHairFollowFast(target,source,drive,part){
       }else dst[di]=dst[di+1]=dst[di+2]=0;
     }
   }
-  g.putImageData(out,left,top);
+  g.putImageData(out,left,startY);
+  targetState.lastDrive=drive;
 }
 
 export function drawHairFollowGuide(g,part,drive){
