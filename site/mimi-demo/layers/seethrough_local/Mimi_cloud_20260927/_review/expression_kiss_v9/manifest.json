@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "task": "Mimi_cloud_20260927",
-  "candidate": "expression_kiss_v6",
+  "candidate": "expression_kiss_v9",
   "nonProduction": true,
   "reviewStatus": "pending",
   "canvas": [
@@ -12,8 +12,8 @@
   "sourceSha256": "F01A710B5F5D63758F3EB935A3518E6B882320C18787C725D39542AD4EE4EC2A",
   "registration": "_review/motion_v67/kiss_registration_v2.json",
   "registrationSha256": "AB3C6DD49237BD54DFDA0A61D98D698C9C8ADA54A4BA0F4445556A2BBCDEB68C",
-  "blushRegistration": "_review/motion_v67/kiss_blush_registration_v1.json",
-  "blushRegistrationSha256": "D158175717D342D7E28997034B9737B5809DA9D9BF3683BA395BD905B8F22636",
+  "blushRegistration": "_review/expression_kiss_v9/blush_registration.json",
+  "blushRegistrationSha256": "48A9335B2604662EA470032A16B6DB986C74DE035B3F31ECE659091816AF4E23",
   "mode": "kiss",
   "label": "閉眼嘟嘴",
   "eyeState": "closed",
@@ -36,11 +36,11 @@
     },
     "blush_left": {
       "asset": "blush_left.png",
-      "sha256": "98E28F9D0608176987719614F1C181375DF752E38C487F1B2EEA773FCB61ECCE"
+      "sha256": "841F85B238A5B05CC8F545D39CA152AC4FCF31545109632D24DC706D9BA85C5F"
     },
     "blush_right": {
       "asset": "blush_right.png",
-      "sha256": "53BF2667BED994D13B86F9CF828CB7D3496A48EF938AFC9B57D97EC93415B808"
+      "sha256": "2EF72EDE1EE0EF783E537F260548312D0880766370E20E36317AD27DDDAEF33E"
     },
     "sweat": {
       "asset": "sweat.png",
@@ -51,12 +51,12 @@
     "manifest": "_review/eyes_v67/manifest.json",
     "manifestSha256": "CB464EAA5AFD723235A6B83D8B18928DC05AF8F98C0329A5F7577E61FBD8844B"
   },
-  "rollback": "_review/expression_kiss_v5/manifest.json",
+  "rollback": "_review/expression_kiss_v8/manifest.json",
   "sourceMapping": {
     "closedEyelids": "Character\\003_Mimi\\Mimi_eyeclose_bd.png",
     "puckeredMouth": "Character\\003_Mimi\\Mimi_kiss_.png",
     "brows": "unchanged from neutral; source brow restyling is not transplanted",
     "blush": "left and right cheek pigment/hatching extracted independently from Mimi_kiss_.png using kiss_blush_registration_v1.json"
   },
-  "note": "The source-owned viewer-left blush alpha from v5 is increased by 1.75x (saturated at 255); RGB and footprint are unchanged. The viewer-right blush, mouth, backing, eyes and neutral mode are byte-identical to v5. Visual review pending."
+  "note": "Based on v88, both source-owned blush parts are translated an additional 5 target-canvas pixels left and 10 up. Masks, scale, color, source pixels, face base, and expression timing remain unchanged. Visual review pending."
 }

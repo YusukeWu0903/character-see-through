@@ -1,7 +1,7 @@
 import {createHash} from 'node:crypto';
-import {readFile,writeFile,mkdir,copyFile} from 'node:fs/promises';
+import {readFile,writeFile,mkdir,copyFile,readdir,rm,rmdir} from 'node:fs/promises';
 import path from 'node:path';
-const root=process.cwd(),task='Mimi_cloud_20260927',rigPath='_review/motion_v78/rig.json';
+const root=process.cwd(),task='Mimi_cloud_20260927',rigPath='_review/motion_v95/rig.json';
 const input=path.join(root,'outputs/seethrough_local',task),output=path.join(root,'site/mimi-demo');
 const assets=new Map(),modules=new Set();
 const sha=b=>createHash('sha256').update(b).digest('hex').toUpperCase();
@@ -35,14 +35,29 @@ async function module(name){
    ["const task = params.get('local') || '';",`const task = params.get('local') || '${task}';`],
    ["const rigFile = params.get('rig') || '_review/motion_v3/rig.json';",`const rigFile = params.get('rig') || '${rigPath}';`],
    ["const base = safeTask ? '/layers/seethrough_local/' + encodeURIComponent(task) + '/' : '';","const base = safeTask ? new URL('../layers/seethrough_local/' + encodeURIComponent(task) + '/', import.meta.url).pathname : '';"],
-   ["$('candidate-title').textContent=rig.candidateTitle||rig.characterName+' 待機與滑鼠動態 · 待驗收';","$('candidate-title').textContent=rig.characterName+' · v78 階段展示';"],
-   ["$('status').textContent='已載入 '+layers.length+' 層 · '+rig.candidate+' 待審';","$('status').textContent='已載入 '+layers.length+' 層 · v78 階段展示';"]
+   ["$('candidate-title').textContent=rig.candidateTitle||rig.characterName+' 待機與滑鼠動態 · 待驗收';","$('candidate-title').textContent=rig.characterName+' · v95 階段展示';"],
+   ["$('status').textContent='已載入 '+layers.length+' 層 · '+rig.candidate+' 待審';","$('status').textContent='已載入 '+layers.length+' 層 · v95 階段展示';"]
   ];for(const [before,after]of substitutions){if(!code.includes(before))throw Error('Template changed '+before);code=code.replace(before,after)}
  }
  await mkdir(path.join(output,'viewer-assets'),{recursive:true});await writeFile(path.join(output,'viewer-assets',name),code.trimEnd()+'\n');
 }
+async function prune(directory,keep,prefix=''){
+ for(const entry of await readdir(directory,{withFileTypes:true})){
+  const relative=prefix?prefix+'/'+entry.name:entry.name,pathHere=path.join(directory,entry.name);
+  if(entry.isDirectory()){
+   await prune(pathHere,keep,relative);
+   if((await readdir(pathHere)).length===0)await rmdir(pathHere);
+  }else if(!keep.has(relative))await rm(pathHere);
+ }
+}
 const rig=await asset(rigPath);
-if(rig.task!==task||rig.candidate!=='motion_v78')throw Error('Wrong task');
+if(rig.task!==task||rig.candidate!=='motion_v95'||rig.nonProduction!==true)throw Error('Wrong task or review candidate');
+let ancestor=rig;
+while(ancestor.extends){
+ const parent=await asset(ancestor.extends,ancestor.extendsSha256);
+ if(parent.task!==task)throw Error('Cross-task rig ancestry is not allowed');
+ ancestor=parent;
+}
 const assembly=await asset(rig.assembly,rig.assemblySha256);
 for(const entry of assembly.drawOrder)await asset(entry.asset||entry.file,entry.assetSha256);
 if(rig.eyeRig)await eyeRig(rig.eyeRig);
@@ -50,11 +65,13 @@ if(rig.expressionRig)await expressionRig(rig.expressionRig);
 await module('assembly-motion.mjs');
 let html=await readFile(path.join(root,'viewer/assembly-motion.html'),'utf8');
 html=html.replace('<title>Miffy 全身動態候選 · 非正式</title>','<title>Mimi · 互動階段展示</title>')
- .replace('Miffy 全身動態 · 非正式審查候選','Mimi · v78 階段展示')
+ .replace('Miffy 全身動態 · 非正式審查候選','Mimi · v95 階段展示')
  .replace('本機預覽，不改正式圖層與設定','原生 1280 · 身體、肩膀、裙襬與髮梢動態 · 眨眼／嘟嘴')
- .replace('頭部側傾可操作；微轉、視線、眨眼與表情需要先從高解析整頭拆出獨立五官。','眨眼與閉眼嘟嘴可操作；視線跟隨仍停用。')
- .replace('手臂、腿仍各自合併一層，沒有獨立關節；肩膀、腰際、髮際需檢查動作中間幀。未完成的呼吸、胸部、視線與表情不會假裝可用。','Mimi v78 階段展示；手臂與腿仍各自合併一層，沒有獨立關節。')
+ .replace('頭部側傾可操作；微轉、視線、眨眼與表情需要先從高解析整頭拆出獨立五官。','嘟嘴表情採先閉眼再嘟嘴的順序；視線跟隨仍停用。')
+ .replace('手臂、腿仍各自合併一層，沒有獨立關節；肩膀、腰際、髮際需檢查動作中間幀。未完成的呼吸、胸部、視線與表情不會假裝可用。','Mimi v95 階段展示；視線跟隨仍停用，表情轉場與頭髮修正待視覺驗收。')
  .replace(/<script type="module" src="\.\/assembly-motion\.mjs[^\"]*"><\/script>/,'<script type="module">const base=location.pathname.replace(/\\/index\\.html$/, "").replace(/\\/$/, "");await import(base+"/viewer-assets/assembly-motion.mjs?v=mimi78");</script>');
 await writeFile(path.join(output,'index.html'),html.trimEnd()+'\n');
-await writeFile(path.join(output,'release.json'),JSON.stringify({task,candidate:rig.candidate,stageCheckpoint:true,approval:'User requested Mimi-only Git and portfolio update on 2026-10-01',nativeTextureSize:1280,remaining:['minor hair edge detail deferred','gaze disabled','final visual acceptance of v78 pending','one final Canvas copy'],assets:Object.fromEntries(assets),modules:[...modules].sort()},null,2));
+await writeFile(path.join(output,'release.json'),JSON.stringify({task,candidate:rig.candidate,stageCheckpoint:true,approval:'User requested Mimi-only Git and portfolio update on 2026-10-05',nativeTextureSize:1280,remaining:['viewer-left hair-fix visual acceptance pending','eyes-first kiss timing visual acceptance pending','gaze disabled'],assets:Object.fromEntries(assets),modules:[...modules].sort()},null,2));
+await prune(path.join(output,'layers','seethrough_local',task),new Set(assets.keys()));
+await prune(path.join(output,'viewer-assets'),modules);
 console.log(JSON.stringify({output,assets:assets.size,modules:modules.size}));

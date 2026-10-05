@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "task": "Mimi_cloud_20260927",
+  "candidate": "motion_v81",
+  "characterName": "Mimi",
+  "name": "Mimi planted-foot bilateral leg sway",
+  "reviewStatus": "pending",
+  "nonProduction": true,
+  "extends": "_review/motion_v79/rig.json",
+  "extendsSha256": "33A94A02F386648E54E222DB76FB42F2838BE33F7A02D29B8161BCEE22A637F9",
+  "rollbackManifest": "_review/motion_v79/rig.json",
+  "legSway": {
+    "mode": "bilateral-body-driven-leg-mesh",
+    "driver": "body",
+    "maxPixels": 10,
+    "bands": [
+      [430, 0],
+      [560, 0],
+      [645, 0.25],
+      [720, 0.72],
+      [785, 1],
+      [835, 0.96],
+      [900, 0.72],
+      [950, 0.36],
+      [995, 0.08],
+      [1010, 0],
+      [1120, 0]
+    ]
+  },
+  "limits": [
+    "Body control drives both independent legwear meshes in the same screen direction. Knee-in remains a separate field and can be combined for review.",
+    "At body ±100 the thigh/knee field reaches at most 10 native pixels. The field tapers to zero by y1010; footwear is not deformed, and ankle/sole geometry remains fixed.",
+    "motion_v80 is rejected because it translated the feet; this candidate returns to the v79 base and corrects motion ownership. User visual acceptance pending."
+  ]
+}

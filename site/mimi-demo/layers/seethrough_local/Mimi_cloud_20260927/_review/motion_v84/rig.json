@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "task": "Mimi_cloud_20260927",
+  "candidate": "motion_v84",
+  "characterName": "Mimi",
+  "name": "Mimi curved idle sway with stronger hip travel",
+  "reviewStatus": "pending",
+  "nonProduction": true,
+  "extends": "_review/motion_v83/rig.json",
+  "extendsSha256": "D9F4D737B51BCD20296155090DE12BD86426830DA60F46C4310B3D8CEAE326A2",
+  "rollbackManifest": "_review/motion_v83/rig.json",
+  "idleSway": {
+    "mode": "curved-sine",
+    "cycleSeconds": 5.108
+  },
+  "grounding": {
+    "mode": "shared-stance-field",
+    "groundY": 1252,
+    "stripHeight": 4,
+    "bands": [
+      { "y": 0, "body": 12, "torso": 3, "head": 2 },
+      { "y": 200, "body": 12, "torso": 3, "head": 2 },
+      { "y": 310, "body": 13, "torso": 3, "head": 0 },
+      { "y": 470, "body": 16, "torso": 2, "head": 0 },
+      { "y": 590, "body": 22, "torso": 0, "head": 0 },
+      { "y": 820, "body": 10, "torso": 0, "head": 0 },
+      { "y": 1020, "body": 1, "torso": 0, "head": 0 },
+      { "y": 1047, "body": 0, "torso": 0, "head": 0 },
+      { "y": 1252, "body": 0, "torso": 0, "head": 0 }
+    ]
+  },
+  "limits": [
+    "Review-only candidate correcting v83's near-constant-speed sweep to a smooth curved cycle. From neutral it travels toward screen-right, eases at the extreme, then accelerates back through center toward screen-left and repeats.",
+    "Cycle is 5.108 seconds (1.5x the prior 0.82 rad/s rate). At strength 150 the normalized body driver remains bounded at ±1 to avoid clipped pose plateaus; the pelvis field itself expands from 16 to 22 native pixels at y590, with feet/ground anchors unchanged.",
+    "Rollback to motion_v83. This candidate is non-production and awaits visual user review."
+  ]
+}

@@ -81,8 +81,8 @@
     {
       "name": "backhair",
       "file": "backhair.png",
-      "asset": "_review/assembly_v54/backhair.png",
-      "assetSha256": "9195C2623567CDD174B5F9A2FFA42236AA671332462000D986CD34DF77757187",
+      "asset": "_review/assembly_v65/backhair_fix01.png",
+      "assetSha256": "D0B762DDA8D2016E24971BF4AD17B7C1E64976AE52CD0D308A395BFEA0A956DC",
       "label": "頭髮／遠深度片",
       "group": "character",
       "parent": "head"
@@ -178,8 +178,8 @@
     {
       "name": "fronthair",
       "file": "fronthair.png",
-      "asset": "_review/assembly_v60/fronthair.png",
-      "assetSha256": "02993A8347953933706A6050A8C8F4137B8025DBC4795F21E8B05BAEFBB6DA10",
+      "asset": "_review/assembly_v65/fronthair_fix01.png",
+      "assetSha256": "D81887926B3E9EB979C70917BB9F9E5332080673CD725C092FEBECEE6B93B272",
       "label": "頭髮／近深度片",
       "group": "character",
       "parent": "head"
@@ -303,7 +303,7 @@
       "reason": "the casting front hair conceals the fill edge"
     }
   ],
-  "rollback": "_review/assembly_v55/assembly.json",
+  "rollback": "_review/assembly_v62/assembly.json",
   "appearanceReferencesOnly": [
     "Character/003_Mimi/Mimi_hair.png",
     "Character/003_Mimi/Mimi_breast_bd.png"
@@ -431,7 +431,7 @@
     "noRepainting": true,
     "visualAcceptance": "pending"
   },
-  "candidate": "assembly_v60",
+  "candidate": "assembly_v65",
   "candidateDecision": {
     "restoredLayer": "front_hair_shadow",
     "reason": "v53/v54 removed the required separate layer due to an invalid RGBA comparison that failed to detect RGB-only FACE changes; direct all-channel compositing verifies the existing backing plus overlay restores source FACE exactly.",
@@ -535,5 +535,153 @@
     "method": "registered original RGB target solved source-over against v55 composite within the source-measured v45 wisp corridor; antialiased corridor edge",
     "owner": "frontHair",
     "visualAcceptance": "pending"
-  }
+  },
+  "hairEyeArtifactRepair": {
+    "owner": "fronthair",
+    "sourceAsset": "_review/assembly_v60/fronthair.png",
+    "referenceAsset": "_review/hair_reference_registration/Mimi_hair_registered.png",
+    "referenceSha256": "1EEB27D114B2167DECDFB388ED6E4AF9FCD67CB7E57582A3E76F526F88F90B39",
+    "registration": "_review/hair_reference_registration/registration.json",
+    "registrationSha256": "3A1A6C0ABBE47910F43CC47DEB62DE5775C37C46311A9D3F7CA210ABF7D2EDF9",
+    "polygon": [
+      [
+        448,
+        177
+      ],
+      [
+        452,
+        174
+      ],
+      [
+        457,
+        175
+      ],
+      [
+        462,
+        178
+      ],
+      [
+        462,
+        182
+      ],
+      [
+        459,
+        186
+      ],
+      [
+        457,
+        191
+      ],
+      [
+        453,
+        194
+      ],
+      [
+        449,
+        191
+      ],
+      [
+        447,
+        186
+      ]
+    ],
+    "maskFeatherPixels": 0.65,
+    "method": "replace only the local hair/eye overlap with registered hair-only pixels; do not use open- or closed-eye source pixels; full-canvas RGBA candidate retains normal draw order",
+    "removedSourceEyeBridge": [
+      [
+        455,
+        185
+      ],
+      [
+        456,
+        185
+      ]
+    ],
+    "visualAcceptance": "pending"
+  },
+  "localizedAlphaRepairs": [
+    {
+      "file": "fronthair.png",
+      "asset": "_review/assembly_v62/fronthair.png",
+      "sourceFile": "_review/assembly_v61/fronthair.png",
+      "removedDetail": "one short black hair-owned line above the screen-left closed eyelid",
+      "method": "clear alpha only on the dark centerline; all RGB and all out-of-mask pixels are byte-identical",
+      "linePath": [
+        [
+          462,
+          167
+        ],
+        [
+          460,
+          169
+        ],
+        [
+          458,
+          171
+        ],
+        [
+          456,
+          173
+        ]
+      ],
+      "strokeWidthPixels": 2.2,
+      "darkPixelMax": 125,
+      "bounds": [
+        456,
+        167,
+        463,
+        174
+      ],
+      "changedPixels": 18,
+      "visualAcceptance": "pending"
+    }
+  ],
+  "limits": [
+    "Only the circled black stroke in fronthair alpha is removed; RGB, front_hair_shadow.png, eyelash.png, and all other assets are unchanged.",
+    "motion_v90 / assembly_v61 remain exact rollback candidates.",
+    "Both user hair fixes are snapshotted under assembly_v65 with immutable, versioned URLs; the earlier mutable assembly_v62 paths are not used by this candidate.",
+    "The previous motion_v93 manifest pinned an earlier front-fix hash while its source path was later updated; motion_v94 points to the new snapshot and does not rely on browser cache refresh."
+  ],
+  "userProvidedLayerReplacements": [
+    {
+      "role": "fronthair",
+      "file": "fronthair.png",
+      "asset": "_review/assembly_v65/fronthair_fix01.png",
+      "assetSha256": "D81887926B3E9EB979C70917BB9F9E5332080673CD725C092FEBECEE6B93B272",
+      "sourceAtBuild": "_review/assembly_v62/fronthair_fix01.png",
+      "comparedWith": "_review/assembly_v62/fronthair.png",
+      "changedPixels": 43028,
+      "rgbChangedPixels": 41830,
+      "alphaChangedPixels": 17923,
+      "alphaIncreasedPixels": 6171,
+      "alphaDecreasedPixels": 11752,
+      "bounds": [
+        355,
+        11,
+        675,
+        356
+      ],
+      "visualAcceptance": "pending user review"
+    },
+    {
+      "role": "backhair",
+      "file": "backhair.png",
+      "asset": "_review/assembly_v65/backhair_fix01.png",
+      "assetSha256": "D0B762DDA8D2016E24971BF4AD17B7C1E64976AE52CD0D308A395BFEA0A956DC",
+      "sourceAtBuild": "_review/assembly_v62/backhair_fix01.png",
+      "comparedWith": "_review/assembly_v54/backhair.png",
+      "changedPixels": 11905,
+      "rgbChangedPixels": 11256,
+      "alphaChangedPixels": 8305,
+      "alphaIncreasedPixels": 4092,
+      "alphaDecreasedPixels": 4213,
+      "bounds": [
+        364,
+        113,
+        678,
+        359
+      ],
+      "visualAcceptance": "pending user review"
+    }
+  ]
 }

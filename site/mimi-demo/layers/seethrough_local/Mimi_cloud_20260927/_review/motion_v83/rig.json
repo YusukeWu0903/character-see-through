@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "task": "Mimi_cloud_20260927",
+  "candidate": "motion_v83",
+  "characterName": "Mimi",
+  "name": "Mimi continuous idle sway with quick smooth reversals",
+  "reviewStatus": "pending",
+  "nonProduction": true,
+  "extends": "_review/motion_v82/rig.json",
+  "extendsSha256": "2D81BE9063F6BC9FE9AFD0D2DBC85EDFE3316414A9893F4FD17B92FC602001C8",
+  "rollbackManifest": "_review/motion_v82/rig.json",
+  "idleSway": {
+    "mode": "quick-smooth-turn",
+    "turnFraction": 0.03,
+    "cycleSeconds": 7.662
+  },
+  "limits": [
+    "The body idle wave uses a near-constant-speed sweep with a 3% short smooth reversal at each extreme; it does not clip into a flat endpoint plateau.",
+    "At strength 150 the normalized body control is capped at exactly ±1 before the pose evaluator; source amplitude and fixed-foot stance geometry remain unchanged.",
+    "The 0.82 rad/s cycle starts at center moving toward screen-right, then returns through center toward screen-left. This candidate is review-only; rollback to motion_v82."
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "task": "Mimi_cloud_20260927",
+  "candidate": "motion_v82",
+  "characterName": "Mimi",
+  "name": "Mimi motion strength range +50% review",
+  "reviewStatus": "pending",
+  "nonProduction": true,
+  "extends": "_review/motion_v81/rig.json",
+  "extendsSha256": "2D3191961D7405B5B089957BA314BFC993756DCE03664F3E2F6CCB106DD57F0C",
+  "rollbackManifest": "_review/motion_v81/rig.json",
+  "motionStrength": {
+    "min": 0,
+    "previousMax": 100,
+    "max": 150,
+    "default": 120,
+    "unit": "percent"
+  },
+  "limits": [
+    "Review-only control range: dynamic strength 0–150; prior candidate maximum was 100. The existing shared strength multiplier uses value/100, so 150 means 1.5x the 100 setting.",
+    "Initial review/defaults value is 120 so the stronger sway is immediately visible; setting 100 remains available for direct comparison.",
+    "All v81 motion settings are inherited, including bilateral thigh/knee response with ankles and soles fixed. This does not alter any production default or other character."
+  ]
+}

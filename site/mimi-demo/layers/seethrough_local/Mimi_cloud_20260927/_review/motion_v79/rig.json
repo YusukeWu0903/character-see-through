@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "task": "Mimi_cloud_20260927",
+  "candidate": "motion_v79",
+  "characterName": "Mimi",
+  "name": "Mimi independent knee-in leg meshes",
+  "reviewStatus": "pending",
+  "nonProduction": true,
+  "extends": "_review/motion_v78/rig.json",
+  "extendsSha256": "FFD966F43CDCEEEDEF8BF54C1248D1F2AFBC2D712301D486C9012A25AF6B05BE",
+  "rollbackManifest": "_review/motion_v78/rig.json",
+  "legKnee": {
+    "mode": "bilateral-component-mesh",
+    "maxPixels": 15,
+    "cycleSeconds": 2.4,
+    "parts": {
+      "legwear_screen_left": {
+        "seed": [650, 500],
+        "direction": 1,
+        "bands": [
+          [430, 0],
+          [520, 0],
+          [650, 0.25],
+          [735, 0.72],
+          [785, 1],
+          [825, 1],
+          [875, 0.72],
+          [945, 0.22],
+          [1010, 0],
+          [1120, 0]
+        ]
+      },
+      "legwear_screen_right": {
+        "seed": [820, 500],
+        "direction": -1,
+        "bands": [
+          [430, 0],
+          [520, 0],
+          [650, 0.25],
+          [735, 0.72],
+          [785, 1],
+          [825, 1],
+          [875, 0.72],
+          [945, 0.22],
+          [1010, 0],
+          [1120, 0]
+        ]
+      }
+    }
+  },
+  "limits": [
+    "Two source-connected leg components are drawn through separate meshes; the original legwear.png and assembly draw order are unchanged.",
+    "At 100, each knee shifts 15 native pixels toward screen center; each top and ankle tapers to zero. Crossing and new hidden skin are out of scope.",
+    "Manual and candidate-only playback controls are default off. Visual acceptance pending."
+  ]
+}

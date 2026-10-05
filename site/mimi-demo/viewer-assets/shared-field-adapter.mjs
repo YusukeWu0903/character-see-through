@@ -8,6 +8,8 @@ import {neckFollowPoint} from './neck-follow-field.mjs';
 import {pitchFollowPoint} from './pitch-follow-field.mjs';
 import {bustWeight,bustHorizontalWeight} from './bust-field.mjs?review-runtime=mimi-chest-lobes-v78';
 import {shoulderPosePoint} from './expression-pose.mjs?review-runtime=v67-independent-shoulders';
+import {legKneeOffset} from './leg-knee-field.mjs';
+import {legSwayOffset} from './leg-sway-field.mjs';
 
 const smoothArmEdge=value=>{const t=Math.max(0,Math.min(1,value));return t*t*(3-2*t)};
 
@@ -52,9 +54,20 @@ export function createSharedFieldAdapter(direct=false){
       const mappingGroups=new Map();
       const skirtOwnerVisible=!rig.skirtSway||
         layers.find(layer=>layer.name===(rig.skirtSway.owner||'bottomwear'))?.visible!==false;
+      const renderLayers=[];
       for(const layer of layers){
         if(!layer.visible||layer.blank)continue;
-        const name=layer.name,matrix=matrices[name];
+        const override=layer.name==='face'?null:layerSource?.(layer);
+        if(override?.variants)
+          for(const variant of override.variants)
+            renderLayers.push({layer:{...layer,name:variant.name,image:variant.image,
+              sourceOwner:layer.name,componentBounds:variant.bounds},
+              override:{revision:'fixed-leg-component:'+variant.name}});
+        else renderLayers.push({layer,override});
+      }
+      for(const {layer,override} of renderLayers){
+        if(!layer.visible||layer.blank)continue;
+        const name=layer.name,matrix=matrices[layer.sourceOwner||name];
         if(!skirtOwnerVisible&&rig.skirtSway?.followers?.includes(name))continue;
         const hair=rig.hairFollow?.parts[name],neck=name==='neck'?rig.neckFollow:null;
         const pitch=rig.headPitch?.parts[name];
@@ -80,7 +93,9 @@ export function createSharedFieldAdapter(direct=false){
         }
         const skirt=rig.skirtSway&&
           (name===(rig.skirtSway.owner||'bottomwear')||rig.skirtSway.followers?.includes(name))?rig.skirtSway:null;
-        const sourceOverride=name==='face'?null:layerSource?.(layer);
+        const leg=layer.sourceOwner==='legwear'?rig.legKnee?.parts[name]:null;
+        const legSway=layer.sourceOwner==='legwear'?rig.legSway:null;
+        const sourceOverride=override;
         const source=name==='face'?face():(sourceOverride?.source||layer.image);
         const head=name==='face'&&rig.renderer.gpuHead?rig.headSurface:null;
         const headActive=head&&Math.abs(drivers.yaw)+Math.abs(controls.pitch||0)>1e-8;
@@ -106,6 +121,8 @@ export function createSharedFieldAdapter(direct=false){
           for(let x=left;x<=right;x+=8)extra.xs.push(x);
           for(let y=chest.centerY-chest.radiusY;y<=chest.centerY+(chest.lowerRadiusY??chest.radiusY);y+=8)extra.ys.push(y);
         }
+        if(leg)extra.ys.push(...leg.bands.map(b=>b[0]));
+        if(legSway)extra.ys.push(...legSway.bands.map(b=>b[0]));
         extra.ys.push(...rig.grounding.bands.map(b=>b.y),rig.grounding.groundY);
         if(rig.grounding.hipTilt)extra.ys.push(rig.grounding.hipTilt.topY,rig.grounding.hipTilt.bottomY);
         const map=(x,y)=>{
@@ -122,6 +139,8 @@ export function createSharedFieldAdapter(direct=false){
           if(neck)p=neckFollowPoint(...p,drivers.roll,drivers.yaw,neck);
           if(pitch)p=pitchFollowPoint(...p,controls.pitch||0,pitch);
           if(skirt)p[0]+=(drivers.skirtX||0)*skirtWeight(...p,skirt);
+          if(leg)p[0]+=legKneeOffset(y,controls.knee||0,leg,rig.legKnee.maxPixels);
+          if(legSway)p[0]+=legSwayOffset(y,controls.legSway||0,legSway);
           if(chest&&!compositeChest){const w=bustWeight(...p,chest);p[0]+=drivers.bustX*bustHorizontalWeight(...p,drivers.bustX,chest);p[1]+=drivers.bustY*w}
           let mx=matrix[0]*p[0]+matrix[2]*p[1]+matrix[4];
           let my=matrix[1]*p[0]+matrix[3]*p[1]+matrix[5];
@@ -131,14 +150,14 @@ export function createSharedFieldAdapter(direct=false){
           const dx=stanceOffset(yy,controls,rig.grounding);
           return [xx+dx,yy+hipTiltOffset(xx+dx,yy,controls,rig.grounding)];
         };
-        const options={...extra,clear:false,stepX:1280/24,stepY:16,
+        const options={...extra,clear:false,stepX:leg?16:1280/24,stepY:leg?8:16,
           revision:name==='face'?revision():sourceOverride?.revision,
           ...(head?{domain:sourceDomain(source)}:
-            (hair||neck||pitch)?{domain:alphaDomain(source)}:
+            (hair||neck||pitch||leg||legSway)?{domain:alphaDomain(source)}:
             (chestDomain||skirt||rig.expressionPose?.cropTransparentMesh)?{domain:chestDomain||alphaDomain(source)}:{})};
         if(rig.renderer.reuseSharedGeometry){
           const key=rig.staticLayers?.includes(name)?'static':
-            (hair||neck||pitch||arm||chest||skirt||headActive)?'part:'+name:'shared:'+matrix.join(',');
+            (hair||neck||pitch||arm||chest||skirt||leg||legSway||headActive)?'part:'+name:'shared:'+matrix.join(',');
           if(!mappingGroups.has(key))mappingGroups.set(key,{});
           options.mappingToken=mappingGroups.get(key);
           options.reuseGpuBuffers=rig.renderer.reuseGpuBuffers!==false;

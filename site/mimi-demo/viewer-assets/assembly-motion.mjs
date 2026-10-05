@@ -12,7 +12,8 @@ import {advanceSpring,blinkPulse,sharedGazeTarget,chestFollowTarget} from './exp
 import {loadMouthTransplant} from './mouth-transplant.mjs';
 import {loadExpressionTransplant} from './expression-transplant.mjs?review-runtime=v113-happy-mode';
 import {advanceExpressionBlend} from './expression-blend.mjs?review-runtime=v66-damped-library';
-import {createSharedFieldAdapter} from './shared-field-adapter.mjs?review-runtime=mimi-chest-lobes-v78';
+import {createExpressionSequenceState,advanceSequentialExpression} from './expression-sequence.mjs?review-runtime=mimi-kiss-eyes-first-v96';
+import {createSharedFieldAdapter} from './shared-field-adapter.mjs?review-runtime=mimi-kiss-morph-v85';
 import {validateExpressionPose,advanceExpressionPose,drawShoulderPoseGuide} from './expression-pose.mjs?review-runtime=v67-independent-shoulders';
 import {createRegisteredMorphRenderer} from './mesh-renderer.mjs?review-runtime=v114-library-4';
 import {validateHeadYawField,drawHeadYawField,drawHeadYawGuide} from './head-yaw-field.mjs';
@@ -24,11 +25,14 @@ import {validateNeckFollow,drawNeckFollow,drawNeckFollowGuide} from './neck-foll
 import {validateHairFollow,drawHairFollow,drawHairFollowGuide} from './hair-follow-field.mjs?review-runtime=mimi-hair-tips-v77';
 import {validateHairIdle,initialHairIdleState,advanceHairIdle} from './hair-idle-state.mjs';
 import {validatePitchFollow,drawPitchFollow,drawPitchFollowGuide} from './pitch-follow-field.mjs?review-runtime=v36-directional-hair';
+import {validateLegKnee,splitLegwear,legKneePlayback,drawLegKneeGuide} from './leg-knee-field.mjs';
+import {validateLegSway,drawLegSwayGuide} from './leg-sway-field.mjs';
+import {curvedSway,quickTurnSway} from './idle-sway-cycle.mjs?review-runtime=mimi-v84';
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const task = params.get('local') || 'Mimi_cloud_20260927';
-const rigFile = params.get('rig') || '_review/motion_v78/rig.json';
+const rigFile = params.get('rig') || '_review/motion_v95/rig.json';
 const safeTask = /^[A-Za-z0-9_-]+$/.test(task);
 const safeRig = /^_review\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+\.json$/.test(rigFile);
 const base = safeTask ? new URL('../layers/seethrough_local/' + encodeURIComponent(task) + '/', import.meta.url).pathname : '';
@@ -80,6 +84,29 @@ skirtInspect.innerHTML='<label><input id="skirt-inspect-enable" type="checkbox">
 skirtControl.after(skirtInspect);
 $('skirt-inspect-enable').onchange=()=>draw();
 $('skirt-inspect').oninput=()=>{$('skirt-inspect-value').textContent=$('skirt-inspect').value;draw()};
+const kneeControls=document.createElement('div');
+kneeControls.className='row';kneeControls.hidden=true;
+kneeControls.innerHTML='<label for="knee-together">雙膝向內併攏</label>'+
+  '<input id="knee-together" type="range" min="0" max="100" value="0">'+
+  '<output id="knee-together-value">0</output>';
+skirtInspect.after(kneeControls);
+const kneeChecks=document.createElement('div');
+kneeChecks.className='checks';kneeChecks.hidden=true;
+kneeChecks.innerHTML='<label><input id="knee-play" type="checkbox"> 試播併膝動作</label>'+
+  '<label><input id="show-knee-field" type="checkbox"> 顯示雙腿網格</label>';
+kneeControls.after(kneeChecks);
+const legSwayChecks=document.createElement('div');
+legSwayChecks.className='checks';legSwayChecks.hidden=true;
+legSwayChecks.innerHTML='<label><input id="leg-sway" type="checkbox"> 雙腿隨身體左右擺動</label>'+
+  '<label><input id="show-leg-sway-field" type="checkbox"> 顯示雙腿左右擺動範圍</label>';
+kneeChecks.after(legSwayChecks);
+$('knee-together').oninput=()=>{$('knee-together-value').textContent=$('knee-together').value;draw()};
+$('knee-play').onchange=()=>draw();
+$('show-knee-field').onchange=()=>draw();
+$('leg-sway').onchange=()=>draw();
+$('show-leg-sway-field').onchange=()=>draw();
+let legPieces=null;
+const legGuides=new Map();
 function skirtOffset(){
   return rigCurrent?.skirtSway&&$('skirt-inspect-enable').checked?
     Number($('skirt-inspect').value)/100*rigCurrent.skirtSway.maxPixels:skirtState.offset;
@@ -97,17 +124,24 @@ let eyeAssets=null,eyeBlink=0,eyeGazeX=0,eyeGazeY=0;
 const sharedSceneEyeLayers=new Map();
 const morphedMouthEmpty=document.createElement('canvas');
 morphedMouthEmpty.width=morphedMouthEmpty.height=1280;
+const sharedFaceEndpoint=document.createElement('canvas');
+sharedFaceEndpoint.width=sharedFaceEndpoint.height=1280;
+let sharedFaceEndpointKey=null;
 let mouthAssets=null,activeMouthMode='original';
 let expressionAssets=null,neutralEyeAssets=null,activeExpression='neutral',expressionSuppressed=false;
 let expressionLibrary={},expressionWeights=[1,0,0],expressionVelocities=[0,0,0];
+let expressionSequenceState=createExpressionSequenceState();
 const expressionPart=()=>expressionLibrary[activeExpression]||
   (activeExpression===expressionAssets?.manifest.mode?expressionAssets:null);
 const expressionNames=()=>rigCurrent?.faceMorph?.expressionNames||
   ['neutral',...(expressionAssets?[expressionAssets.manifest.mode]:['anxious'])];
+const expressionMorphActive=()=>Boolean(rigCurrent?.faceMorph&&
+  expressionWeights.some(weight=>weight>1e-5&&weight<1-1e-5));
 function resetExpressionBlend(name='neutral'){
   const names=expressionNames();
   expressionWeights=names.map(item=>item===name?1:0);
   expressionVelocities=names.map(()=>0);
+  expressionSequenceState=createExpressionSequenceState(Math.max(0,names.indexOf(name)));
   const anxious=names.indexOf('anxious');
   expressionPoseState={position:anxious<0?0:expressionWeights[anxious],velocity:0};
 }
@@ -118,14 +152,16 @@ let faceMorphRenderer=null,faceMorphRevision=null;
 let faceMorphGuide=null,faceMorphSources=null;
 function prepareMorphEndpoints(layer,key){
   if(faceMorphRevision===key)return;
-  const beforeExpression=activeExpression,beforeEyes=eyeAssets;
+  const beforeExpression=activeExpression,beforeEyes=eyeAssets,beforeBlink=eyeBlink;
   for(const [i,name] of expressionNames().entries()){
     activeExpression=name;eyeAssets=expressionPart()?.eyes||neutralEyeAssets;
     const g=faceMorphSources[i].getContext('2d');g.clearRect(0,0,1280,1280);
-    g.drawImage(faceImage(layer),0,0);drawMouth(g);drawEyes(g);
+    // Eye sprites stay in their native slots above the cheek effects. Only the
+    // face backing and mouth participate in this raster morph.
+    g.drawImage(faceImage(layer),0,0);drawMouth(g);
     if(expressionPart())for(const part of ['brow_left','brow_right'])g.drawImage(expressionPart().parts[part],0,0);
   }
-  activeExpression=beforeExpression;eyeAssets=beforeEyes;faceMorphRevision=key;
+  activeExpression=beforeExpression;eyeAssets=beforeEyes;eyeBlink=beforeBlink;faceMorphRevision=key;
 }
 let gpuPresented=false;
 function faceImage(layer){
@@ -134,7 +170,7 @@ function faceImage(layer){
     ? mouthAssets.backing : layer.image;
 }
 function drawMouth(g){
-  if(rigCurrent?.faceMorph&&!expressionSuppressed){
+  if(expressionMorphActive()&&!expressionSuppressed){
     const source=mouthAssets&&activeMouthMode!=='original'
       ? mouthAssets.images[activeMouthMode]
       : expressionPart()?.parts.mouth||layers.find(layer=>layer.name==='mouth'&&!layer.blank)?.image;
@@ -150,6 +186,25 @@ function drawExpressionDetails(g){
   if(!expressionSuppressed&&expressionPart())
     for(const key of ['brow_left','brow_right','blush_left','blush_right','sweat'])g.drawImage(expressionPart().parts[key],0,0);
 }
+function sharedExpressionEndpoint(layer){
+  const key=[activeExpression,expressionWeights.join(','),expressionSuppressed].join('|');
+  if(sharedFaceEndpointKey!==key){
+    const g=sharedFaceEndpoint.getContext('2d');
+    g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,1280,1280);
+    g.drawImage(faceImage(layer),0,0);
+    if(!expressionSuppressed){
+      for(const [index,name] of expressionNames().entries()){
+        const parts=expressionLibrary[name]?.parts;
+        if(!parts||expressionWeights[index]<=0)continue;
+        g.save();g.globalAlpha=expressionWeights[index];
+        for(const part of ['blush_left','blush_right','sweat'])g.drawImage(parts[part],0,0);
+        g.restore();
+      }
+    }
+    sharedFaceEndpointKey=key;
+  }
+  return sharedFaceEndpoint;
+}
 let eyePointerDesiredX=0,eyePointerDesiredY=0,eyePointerX=0,eyePointerY=0;
 const review = window.__miffyMotion = {loaded:false, neutralMatches:false, task};
 review.redraw=()=>draw(); // Synchronous diagnostics capture; no retained framebuffer needed in playback.
@@ -159,6 +214,8 @@ function manualPose() {
 }
 function controlsAt(time,legacyPointer=false) {
   const controls = manualPose();
+  controls.knee=rigCurrent?.legKnee?Math.max(Number($('knee-together').value)/100,
+    $('knee-play').checked?legKneePlayback(time,rigCurrent.legKnee.cycleSeconds):0):0;
   if(rigCurrent?.hairFollow?.idleAroundYaw)controls.hair=0;
   controls.headRoll=rigCurrent?.headRoll ? Number($('head-roll').value)/100 : 0;
   controls.expressionPose=rigCurrent?.expressionPose?expressionPoseState.position:0;
@@ -182,8 +239,16 @@ function controlsAt(time,legacyPointer=false) {
     // A narrow stance needs modest hip travel and a quieter, compensating
     // upper body. The shared field, not separate part rotations, does the pose.
     if ($('auto').checked) {
-      const phase=time*.82;
-      controls.body += .82*strength*Math.sin(phase);
+      const phase=time*(rigCurrent.idleSway?.cycleSeconds
+        ?Math.PI*2/rigCurrent.idleSway.cycleSeconds:.82);
+      if(rigCurrent.idleSway?.mode==='curved-sine'){
+        const amplitude=Math.min(.82*strength,1);
+        controls.body+=amplitude*curvedSway(phase);
+      }else if(rigCurrent.idleSway?.mode==='quick-smooth-turn'){
+        const amplitude=Math.min(.82*strength,1);
+        controls.body+=amplitude*quickTurnSway(phase+Math.PI/2,
+          rigCurrent.idleSway.turnFraction);
+      }else controls.body += .82*strength*Math.sin(phase);
       controls.torso -= .42*strength*Math.sin(phase-.24);
       controls.head -= .22*strength*Math.sin(phase-.52);
     }
@@ -213,6 +278,7 @@ function controlsAt(time,legacyPointer=false) {
       controls.left=limit(manual+idle*leftIdle-follow);
       controls.right=limit(manual+idle*rightIdle-follow);
     }
+  controls.legSway=rigCurrent?.legSway&&$('leg-sway').checked?controls.body:0;
     return controls;
   }
   if ($('auto').checked) {
@@ -305,8 +371,12 @@ function drawEyes(g){
   }
 }
 function sharedSceneEyeSource(layer){
-  if(layer.name==='mouth'&&rigCurrent?.faceMorph&&!expressionSuppressed)
+  if(layer.name==='mouth'&&expressionMorphActive()&&!expressionSuppressed)
     return {source:morphedMouthEmpty,revision:'owned-by-face-morph'};
+  // During a face morph, keep the source eye layers intact in their native
+  // slots above the blended face/effects. Crossfading open and closed ink here
+  // creates doubled eyelid contours at the same moment the face is deforming.
+  if(expressionMorphActive())return null;
   if(layer.name==='mouth'&&!expressionSuppressed&&expressionPart()){
     const source=activeMouthMode==='original'
       ? expressionPart().parts.mouth : mouthAssets?.images[activeMouthMode];
@@ -332,6 +402,10 @@ function sharedSceneEyeSource(layer){
   g.globalAlpha=1;
   return {source:cached,revision:closure};
 }
+function sharedSceneSource(layer){
+  if(layer.name==='legwear'&&legPieces)return {variants:Object.values(legPieces)};
+  return sharedSceneEyeSource(layer);
+}
 function paintPitchPart(g,source,stage,control,config,key){
   const show=$('show-head-pitch').checked;
   if(Math.abs(control)<1e-8&&!show){g.drawImage(source,0,0);return;}
@@ -355,9 +429,10 @@ function paintPitchPart(g,source,stage,control,config,key){
   }
 }
 function preparedHead(layer,controls){
-  const angle=(controls.yaw||0)*rigCurrent.headSurface.maxDegrees;
+  const headSurface=rigCurrent.headSurface;
+  const angle=headSurface?(controls.yaw||0)*headSurface.maxDegrees:0;
   const pitch=(controls.pitch||0)*(rigCurrent.headPitch?.maxDegrees||0);
-  const lighting=rigCurrent.faceLighting&&$('face-light').checked
+  const lighting=headSurface&&rigCurrent.faceLighting&&$('face-light').checked
     ? {config:rigCurrent.faceLighting,pitchConfig:rigCurrent.facePitchLighting||null,
        strength:Number($('face-light-strength').value)/100} : null;
   const gpu=rigCurrent.renderer?.gpuHead;
@@ -380,7 +455,8 @@ function preparedHead(layer,controls){
       g.drawImage(faceImage(layer),0,0);drawMouth(g);if(eyeAssets)drawEyes(g);drawExpressionDetails(g);
     }
     if(gpu){headSurfaceCacheKey=key;return headSurfaceSource;}
-    drawHeadSurface(headSurfaceCanvas,headSurfaceSource,angle,rigCurrent.headSurface,lighting,
+    if(!headSurface){headSurfaceCacheKey=key;return headSurfaceSource;}
+    drawHeadSurface(headSurfaceCanvas,headSurfaceSource,angle,headSurface,lighting,
       {inverseGridStep:3,pitchDegrees:pitch,pitchProfile:rigCurrent.headPitchProfile||null});
     if($('show-head-surface').checked||$('show-head-pitch').checked){
       const guide=headSurfaceGuideCanvas.getContext('2d');guide.setTransform(1,0,0,1,0,0);guide.clearRect(0,0,1280,1280);
@@ -403,6 +479,24 @@ function armFieldForLayer(name){
 function sharedGuide(layer,matrix){
   const name=layer.name;
   let image=null;
+  const kneeGuide=Boolean(rigCurrent.legKnee?.parts[name]&&$('show-knee-field').checked);
+  const swayGuide=Boolean(rigCurrent.legSway&&$('show-leg-sway-field').checked&&
+    layer.sourceOwner==='legwear');
+  if(kneeGuide||swayGuide){
+    const key=name+':'+Number(kneeGuide)+':'+Number(swayGuide);
+    if(!legGuides.has(key)){
+      const c=document.createElement('canvas');
+      if(swayGuide)drawLegSwayGuide(c,layer.image,rigCurrent.legSway);
+      if(kneeGuide){
+        const knee=document.createElement('canvas');
+        drawLegKneeGuide(knee,layer.image,legPieces[name],rigCurrent.legKnee.parts[name]);
+        if(swayGuide)c.getContext('2d').drawImage(knee,0,0);
+        else{c.width=knee.width;c.height=knee.height;c.getContext('2d').drawImage(knee,0,0)}
+      }
+      legGuides.set(key,c);
+    }
+    return legGuides.get(key);
+  }
   if(name===(rigCurrent.skirtSway?.owner||'bottomwear')&&rigCurrent.skirtSway&&$('show-skirt-field').checked){drawSkirtGuide(skirtGuide,layer.image,rigCurrent.skirtSway);return skirtGuide;}
   if(name==='face'&&rigCurrent.renderer?.gpuHead&&($('show-head-surface').checked||$('show-head-pitch').checked)){
     image=headSurfaceGuideCanvas;const g=image.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,1280,1280);
@@ -442,7 +536,10 @@ function sharedGuide(layer,matrix){
 }
 function paint(target, transforms, controls={}) {
   gpuPresented=false;
-  const active=['body','torso','head','left','right','yaw','pitch','headRoll','expressionPose','shoulderLeft','shoulderRight'].some(id=>Math.abs(controls[id]||0)>1e-8)||
+  const active=['body','torso','head','left','right','knee','yaw','pitch','headRoll','expressionPose','shoulderLeft','shoulderRight'].some(id=>Math.abs(controls[id]||0)>1e-8)||
+    Boolean(expressionMorphActive())||
+    Boolean(rigCurrent.legKnee&&$('show-knee-field').checked)||
+    Boolean(rigCurrent.legSway&&$('show-leg-sway-field').checked)||
     Boolean(rigCurrent.skirtSway&&($('show-skirt-field').checked||Math.abs(skirtOffset())>1e-8))||
     Boolean((rigCurrent.expressionPose||rigCurrent.shoulderCompensation)&&$('show-shoulder-field').checked)||
     Boolean(rigCurrent.faceMorph&&$('show-expression-field').checked)||
@@ -452,10 +549,17 @@ function paint(target, transforms, controls={}) {
       {hair:$('paused').checked?{fronthair:controls.yaw||0,backhair:controls.yaw||0}:hairFollowDrive,
        roll:(controls.headRoll||0)*(rigCurrent.headRoll?.maxDegrees||0),
        yaw:(controls.yaw||0)*(rigCurrent.headSurface?.maxDegrees||0),bustX:bustFollowPx,bustY:bustAmplitude,skirtX:skirtOffset()},
-      ()=>rigCurrent.headSurface?preparedHead(layers.find(l=>l.name==='face'),controls):faceImage(layers.find(l=>l.name==='face')),()=>headSurfaceCacheKey,sharedGuide,
+      ()=>rigCurrent.faceMorph
+        ?expressionMorphActive()
+          ?preparedHead(layers.find(l=>l.name==='face'),controls)
+          :sharedExpressionEndpoint(layers.find(l=>l.name==='face'))
+        :rigCurrent.headSurface
+          ?preparedHead(layers.find(l=>l.name==='face'),controls)
+          :faceImage(layers.find(l=>l.name==='face')),
+      ()=>rigCurrent.faceMorph&&!expressionMorphActive()?sharedFaceEndpointKey:headSurfaceCacheKey,sharedGuide,
       $('face-light').checked?{surface:rigCurrent.headSurface,config:rigCurrent.faceLighting,pitchConfig:rigCurrent.facePitchLighting,
         strength:Number($('face-light-strength').value)/100,yaw:(controls.yaw||0)*rigCurrent.headSurface.maxDegrees,
-        pitch:(controls.pitch||0)*rigCurrent.headPitch.maxDegrees}:null,sharedSceneEyeSource);
+        pitch:(controls.pitch||0)*rigCurrent.headPitch.maxDegrees}:null,sharedSceneSource);
     gpuPresented=rigCurrent.renderer.presentation==='direct-webgl';
     if(gpuPresented){ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,1280,1280);}
     return;
@@ -477,7 +581,7 @@ function paint(target, transforms, controls={}) {
       g.setTransform(...multiply(ground,matrix));
     }
     if(layer.name==='mouth'&&!expressionSuppressed&&expressionPart()){
-      if(rigCurrent.faceMorph)continue;
+      if(expressionMorphActive())continue;
       const replacement=activeMouthMode==='original'
         ? expressionPart().parts.mouth : mouthAssets?.images[activeMouthMode];
       if(replacement)g.drawImage(replacement,0,0);
@@ -624,7 +728,10 @@ function paint(target, transforms, controls={}) {
         drawSkirtGuide(skirtGuide,layer.image,rigCurrent.skirtSway);
         g.drawImage(skirtGuide,0,0);
       }
-    }else if(layer.name==='face'&&transforms&&rigCurrent.headSurface){
+    }else if(layer.name==='face'&&transforms&&(rigCurrent.headSurface||expressionMorphActive())){
+      if(expressionMorphActive()&&!rigCurrent.headSurface){
+        g.drawImage(preparedHead(layer,controls),0,0);
+      }else{
       const angle=(controls.yaw||0)*rigCurrent.headSurface.maxDegrees;
       const pitch=(controls.pitch||0)*(rigCurrent.headPitch?.maxDegrees||0);
       const lighting=rigCurrent.faceLighting&&$('face-light').checked
@@ -663,6 +770,7 @@ function paint(target, transforms, controls={}) {
         headSurfaceCacheKey=key;
       }
       g.drawImage(headSurfaceCanvas,0,0);
+      }
     }else {
       g.drawImage(faceImage(layer),0,0);
       if(layer.name==='face')drawMouth(g);
@@ -677,8 +785,8 @@ function paint(target, transforms, controls={}) {
       g.drawImage(bustGuideCanvas,0,0);
     }
     if(layer.name==='face'&&eyeAssets&&!eyeAssets.semanticLayers&&layer.visible&&
-       !(transforms&&rigCurrent.headSurface))drawEyes(g);
-    if(layer.name==='face'&&!(transforms&&rigCurrent.headSurface))drawExpressionDetails(g);
+       !(transforms&&(rigCurrent.headSurface||expressionMorphActive())))drawEyes(g);
+    if(layer.name==='face'&&!(transforms&&(rigCurrent.headSurface||expressionMorphActive())))drawExpressionDetails(g);
   }
   g.setTransform(1,0,0,1,0,0);
   if(stance){
@@ -787,7 +895,12 @@ function draw(time=elapsed) {
   if(rigCurrent?.faceMorph)activeExpression=expressionPoseState.position>0?'anxious':'neutral';
   if(rigCurrent?.faceMorph?.pointsByExpression)activeExpression=expressionNames()[expressionWeights.indexOf(Math.max(...expressionWeights))];
   if(expressionAssets)eyeAssets=expressionPart()?.eyes||neutralEyeAssets;
-  review.expression={active:activeExpression,blush:activeExpression==='anxious',sweat:activeExpression==='anxious',automaticHeadPose:Boolean(rigCurrent?.expressionPose)};
+  const kissWeight=rigCurrent?.faceMorph?.expressionNames?.includes('kiss')
+    ? expressionWeights[rigCurrent.faceMorph.expressionNames.indexOf('kiss')]
+    : activeExpression==='kiss'?1:0;
+  review.expression={active:activeExpression,blush:kissWeight>0,blushWeight:kissWeight,
+    transition:rigCurrent?.faceMorph?'registered-shared-topology':'discrete-source-art-switch',
+    automaticHeadPose:Boolean(rigCurrent?.expressionPose)};
   review.expressionPose={...expressionPoseState,target:activeExpression===rigCurrent?.expressionPose?.expression?1:0,
     guideVisible:$('show-shoulder-field').checked};
   if(rigCurrent?.faceMorph){review.expressionPose.target=$('expression-shape').value==='anxious'?1:0;
@@ -797,7 +910,8 @@ function draw(time=elapsed) {
   activeMouthMode=mouthAssets&&!$('reference').checked
     ? mouthAssets.mode($('mouth-shape').value,$('auto-talk').checked,time) : 'original';
   review.mouth={active:activeMouthMode,requested:$('mouth-shape').value,
-    auto:Boolean(mouthAssets&&$('auto-talk').checked),transition:'discrete-source-art-switch'};
+    auto:Boolean(mouthAssets&&$('auto-talk').checked),
+    transition:rigCurrent?.faceMorph?'registered-shared-topology':'discrete-source-art-switch'};
   review.drawCount=(review.drawCount||0)+1;
   review.renderer={mode:sharedFields?rigCurrent.renderer.mode:'legacy-canvas-fields',
     gpuDraws:sharedFields?.mesh.draws||0,head:rigCurrent.renderer?.gpuHead?'shared-gpu-curved-light':'existing-native-curved-pixel-light'};
@@ -805,6 +919,10 @@ function draw(time=elapsed) {
   review.shoulders={left:controls.shoulderLeft,right:controls.shoulderRight,maxPixels:rigCurrent.shoulderControls?.maxPixels||rigCurrent.shoulderCompensation?.maxPixels||0};
   review.shoulderCompensation={...shoulderCompensation,enabled:Boolean(rigCurrent.shoulderCompensation)};
   review.skirtSway={...skirtState,offset:skirtOffset(),enabled:Boolean(rigCurrent.skirtSway)};
+  review.legKnee={control:controls.knee,maxPixels:rigCurrent.legKnee?.maxPixels||0,
+    guideVisible:$('show-knee-field').checked,playback:$('knee-play').checked};
+  review.legSway={control:controls.legSway||0,maxPixels:rigCurrent.legSway?.maxPixels||0,
+    enabled:$('leg-sway').checked,guideVisible:$('show-leg-sway-field').checked};
   review.pointer={desired:pointerDesired,eased:pointerEased,mix:followMix};
   review.coordinatedFollow={...coordinatedFollow,enabled:Boolean(rigCurrent.pointerFollow?.coordination),
     controls:{body:controls.body,torso:controls.torso,head:controls.head}};
@@ -851,8 +969,13 @@ function draw(time=elapsed) {
     }
     const pulse=blinkPulse(time,$('auto-blink').checked,
       rigCurrent.eyeRig.autoBlinkIntervalSeconds);
-    const expressionEyesClosed=expressionPart()?.manifest.eyeState==='closed';
-    eyeBlink=expressionEyesClosed?1:Math.max(Number($('blink').value)/100,pulse);
+    const morphExpressionClosure=rigCurrent.faceMorph?.expressionNames?.reduce((sum,name,index)=>
+      sum+(expressionLibrary[name]?.manifest.eyeState==='closed'?expressionWeights[index]:0),0)||0;
+    const sequenceEyeClosure=rigCurrent.faceMorph?.expressionSequence?expressionSequenceState.eyeClosure:0;
+    const expressionClosure=Math.max(morphExpressionClosure,sequenceEyeClosure);
+    const discreteClosure=!rigCurrent.faceMorph&&expressionPart()?.manifest.eyeState==='closed'?1:0;
+    eyeBlink=Math.max(expressionClosure,discreteClosure,Number($('blink').value)/100,pulse);
+    const expressionEyesClosed=Math.max(expressionClosure,discreteClosure)>=.995;
     review.eye={blink:eyeBlink,expressionEyesClosed,gazeX:eyeGazeX,gazeY:eyeGazeY,expressionGazeSuppressed,effectiveGazeFollow};
   }
   if ($('reference').checked){
@@ -1060,6 +1183,12 @@ async function loadEyeRig(config){
 }
 function applyRig(candidate) {
   const next=structuredClone(candidate);
+  const motionStrength=next.motionStrength;
+  if(motionStrength && (next.nonProduction!==true ||
+      !Number.isInteger(motionStrength.max) || motionStrength.max<100 ||
+      motionStrength.max>150 || !Number.isInteger(motionStrength.default) ||
+      motionStrength.default<0 || motionStrength.default>motionStrength.max))
+    throw Error('動態強度審查範圍無效');
   createRig(next);
   if (rigPreset) {
     if(JSON.stringify(next.grounding)!==JSON.stringify(rigPreset.grounding))
@@ -1081,6 +1210,7 @@ function applyRig(candidate) {
     }
   }
   rigCurrent=next;
+  $('energy').max=String(motionStrength?.max??100);
   resetExpressionBlend();
   evaluate=createRig(next);
   $('head-limit').value=String(next.nodes.find(node=>node.id==='head').maxDegrees);
@@ -1110,6 +1240,7 @@ function collectSettings() {
     pivots:Object.fromEntries(rigCurrent.nodes.map(node=>[node.id,node.pivot])),
     headLimit:rigCurrent.nodes.find(node=>node.id==='head').maxDegrees,
     controls:Object.fromEntries([...ids,'energy','zoom',
+      ...(rigCurrent.legKnee?['knee-together']:[]),
       ...(rigCurrent.armSway?['arm-sway']:[]),
       ...(rigCurrent.shoulderControls?['shoulder-left','shoulder-right']:[]),
       ...(rigCurrent.headRoll?['head-roll']:[]),
@@ -1119,6 +1250,8 @@ function collectSettings() {
       ...(rigCurrent.faceLighting?['face-light-strength']:[]),
       ...(rigCurrent.eyeRig?['gaze-x','gaze-y','blink']:[])].map(id=>[id,Number($(id).value)])),
     toggles:Object.fromEntries(['auto','follow','paused','reference','show-guides',
+      ...(rigCurrent.legKnee?['knee-play','show-knee-field']:[]),
+      ...(rigCurrent.legSway?['leg-sway','show-leg-sway-field']:[]),
       ...(rigCurrent.armSway?['show-arm-field']:[]),
       ...(rigCurrent.headYaw?['show-head-yaw-field']:[]),
       ...(rigCurrent.headGeometry?['show-head-geometry']:[]),
@@ -1151,6 +1284,7 @@ function applySettings(data) {
   }
   applyRig(candidate);
   for (const id of [...ids,'energy','zoom',
+    ...(rigCurrent.legKnee?['knee-together']:[]),
     ...(rigCurrent.armSway?['arm-sway']:[]),
     ...(rigCurrent.shoulderControls?['shoulder-left','shoulder-right']:[]),
     ...(rigCurrent.headRoll?['head-roll']:[]),
@@ -1169,6 +1303,8 @@ function applySettings(data) {
     const out=$(id+'-value');if(out)out.textContent=id==='zoom'?value+'%':String(value);
   }
   for (const id of ['auto','follow','paused','reference','show-guides',
+    ...(rigCurrent.legKnee?['knee-play','show-knee-field']:[]),
+    ...(rigCurrent.legSway?['leg-sway','show-leg-sway-field']:[]),
     ...(rigCurrent.armSway?['show-arm-field']:[]),
     ...(rigCurrent.headYaw?['show-head-yaw-field']:[]),
     ...(rigCurrent.headGeometry?['show-head-geometry']:[]),
@@ -1201,6 +1337,7 @@ function applySettings(data) {
     const velocities=data.expressionVelocities||weights.map(()=>0);
     if(!Array.isArray(velocities)||velocities.length!==weights.length||velocities.some(v=>!Number.isFinite(v)||Math.abs(v)>100)||Math.abs(velocities.reduce((a,b)=>a+b,0))>1e-6)throw Error('表情過渡速度無效');
     expressionWeights=[...weights];expressionVelocities=[...velocities];expressionPoseState={position:weights[expressionNames().indexOf('anxious')],velocity:velocities[expressionNames().indexOf('anxious')]};
+    expressionSequenceState=createExpressionSequenceState(expressionNames().indexOf(expression));
   }
   setZoom();
   draw();
@@ -1250,6 +1387,15 @@ async function start() {
       rig.schemaVersion !== 1 || !rig.assembly || !rig.assemblySha256 ||
       !Array.isArray(rig.canvas) || rig.canvas.length !== 2)
     throw Error('Rig 任務、版本或審查狀態不符');
+  if(rig.idleSway && (rig.nonProduction!==true ||
+      (rig.idleSway.mode==='quick-smooth-turn'&&
+       (!Number.isFinite(rig.idleSway.turnFraction)||
+        rig.idleSway.turnFraction<.02||rig.idleSway.turnFraction>.12)) ||
+      (rig.idleSway.mode==='curved-sine'&&
+       (!Number.isFinite(rig.idleSway.cycleSeconds)||
+        rig.idleSway.cycleSeconds<2||rig.idleSway.cycleSeconds>20)) ||
+      !['quick-smooth-turn','curved-sine'].includes(rig.idleSway.mode)))
+    throw Error('待機擺動週期設定無效');
   if(rig.grounding?.mode==='shared-stance-field')
     validateStanceField(rig.grounding,rig.canvas[1]);
   else if(rig.grounding && (rig.grounding.mode!=='shared-ground-shear' ||
@@ -1276,6 +1422,19 @@ async function start() {
       throw Error('頭部補償不得放大原本跟隨幅度');
   }
   if(rig.skirtSway){validateSkirt(rig.skirtSway);skirtControl.hidden=false;}
+  if(rig.legKnee){
+    validateLegKnee(rig.legKnee);
+    if(!['shared-webgl-scene-stage1','shared-webgl-scene-stage2'].includes(rig.renderer?.mode))
+      throw Error('雙膝網格需要共用場景渲染');
+    kneeControls.hidden=false;kneeChecks.hidden=false;
+  }
+  if(rig.legSway){
+    validateLegSway(rig.legSway);
+    if(!rig.legKnee||!['shared-webgl-scene-stage1','shared-webgl-scene-stage2'].includes(rig.renderer?.mode))
+      throw Error('雙腳左右跟隨需要獨立雙腿網格與共用場景渲染');
+    legSwayChecks.hidden=false;
+    $('leg-sway').checked=true;
+  }
   if(rig.bodySink&&(!Number.isFinite(rig.bodySink.maxPixels)||
       rig.bodySink.maxPixels<0||rig.bodySink.maxPixels>5||
       !Number.isFinite(rig.bodySink.triggerStart)||
@@ -1405,6 +1564,10 @@ async function start() {
     return {name,label:entry.label||name,visible:true,blank:/\/blank\.png$/.test(asset),
       image:await getImage(base + asset)};
   }));
+  if(rig.legKnee){
+    legPieces=splitLegwear(layers.find(layer=>layer.name==='legwear').image,rig.legKnee);
+    legGuides.clear();
+  }
   canvas.width = rig.canvas[0]; canvas.height = rig.canvas[1];
   composite.width=canvas.width;composite.height=canvas.height;
   bustCanvas.width=canvas.width;bustCanvas.height=canvas.height;
@@ -1526,6 +1689,10 @@ async function start() {
     $('settings-status').textContent='保存設定無法載入：'+error.message;
     applyRig(rigPreset);
   }
+  if(!settingsRestored && rig.motionStrength){
+    $('energy').value=String(rig.motionStrength.default);
+    $('energy-value').textContent=String(rig.motionStrength.default);
+  }
   review.candidate=rig.candidate;
   if(rig.headRoll){
     $('head-roll').disabled=false;
@@ -1644,6 +1811,10 @@ async function start() {
     $('show-arm-field').checked=false;
     $('limits-note').textContent+=' 雙手是同圖層的分側向量畫素擺動；肩根固定、位移沿手臂增加，並非獨立手肘骨架。右側藏於衣服後的延伸段同步跟隨。';
   }
+  if(rig.legKnee)
+    $('limits-note').textContent+=' 雙膝併攏為獨立雙腿網格審查候選：裙下固定、膝部內移、腳踝保持原位；超過併攏上限的交叉動作尚未製作。';
+  if(rig.legSway)
+    $('limits-note').textContent+=' 雙腿左右擺動與併膝分開控制：膝蓋與大腿順身體左右偏移，腳踝與腳掌保持原位。';
   const hasLocalBustField=['topwear-local-bilateral',
     'topwear-local-bilateral-pixel','topwear-local-bilateral-pixel-xy']
     .includes(rig.bustField?.mode);
@@ -1717,11 +1888,11 @@ async function start() {
     $('head-limit').disabled=true;
     $('head-limit').title='v4 不以頭部旋轉處理站姿；此項校正暫停使用';
   }
-  $('status').textContent='已載入 '+layers.length+' 層 · v78 階段展示';
+  $('status').textContent='已載入 '+layers.length+' 層 · v95 階段展示';
   document.querySelector('#panel-layers h2').textContent='圖層 '+layers.length+' 層';
   if(rig.characterName){
     document.title=rig.characterName+' 全身動態候選';
-    $('candidate-title').textContent=rig.characterName+' · v78 階段展示';
+    $('candidate-title').textContent=rig.characterName+' · v95 階段展示';
     canvas.setAttribute('aria-label',rig.characterName+' 動態預覽');
     $('limits-note').textContent=rig.limits.join(' ');
     $('face-note').textContent='眨眼停用：尚未提供閉眼替換素材。';
@@ -1872,6 +2043,7 @@ $('neutral').onclick = () => {
   $('expression-shape').value='neutral';
   $('mouth-shape').value='original';$('auto-talk').checked=false;
   for (const id of [...ids,'energy','bust',
+    ...(rigCurrent?.legKnee?['knee-together']:[]),
     ...(rigCurrent?.armSway?['arm-sway']:[]),
     ...(rigCurrent?.shoulderControls?['shoulder-left','shoulder-right']:[]),
     ...(rigCurrent?.headRoll?['head-roll']:[]),
@@ -1888,6 +2060,8 @@ $('neutral').onclick = () => {
   $('reference').checked = false;
   $('show-bust-field').checked=false;$('bust-field-note').hidden=true;
   $('show-arm-field').checked=false;
+  $('knee-play').checked=false;$('show-knee-field').checked=false;
+  $('leg-sway').checked=false;$('show-leg-sway-field').checked=false;
   $('show-head-yaw-field').checked=false;
   $('show-head-geometry').checked=false;$('head-geometry-note').hidden=true;
   $('show-head-surface').checked=false;
@@ -1918,7 +2092,9 @@ $('defaults').onclick=()=>{
   $('show-expression-field').checked=false;
   $('expression-shape').value='neutral';
   $('mouth-shape').value='original';$('auto-talk').checked=false;
-  const defaults={body:0,torso:0,head:0,hair:55,energy:80,
+  const defaults={body:0,torso:0,head:0,hair:55,
+    energy:rigCurrent?.motionStrength?.default??80,
+    ...(rigCurrent?.legKnee?{'knee-together':0}:{}),
     ...(rigCurrent?.armSway?{'arm-sway':0}:{}),
     ...(rigCurrent?.shoulderControls?{'shoulder-left':0,'shoulder-right':0}:{}),
     ...(rigCurrent?.headRoll?{'head-roll':0}:{}),
@@ -1935,6 +2111,8 @@ $('defaults').onclick=()=>{
   $('paused').checked=false;$('reference').checked=false;
   $('show-guides').checked=false;
   $('show-arm-field').checked=false;
+  $('knee-play').checked=false;$('show-knee-field').checked=false;
+  $('leg-sway').checked=Boolean(rigCurrent?.legSway);$('show-leg-sway-field').checked=false;
   $('show-head-yaw-field').checked=false;
   $('show-head-geometry').checked=false;$('head-geometry-note').hidden=true;
   $('show-head-surface').checked=false;
@@ -2052,10 +2230,20 @@ function frame(now) {
   const beforeBust=[bustAmplitude,bustFollowPx];
   const beforePose=expressionPoseState.position;
   const beforeExpression=expressionWeights.join(',');
-  if(loaded&&rigCurrent?.faceMorph?.pointsByExpression&&!$('paused').checked){
+  if(loaded&&rigCurrent?.faceMorph?.pointsByExpression){
     const target=expressionNames().indexOf($('expression-shape').value);
-    const next=advanceExpressionBlend({weights:expressionWeights,velocities:expressionVelocities},target,delta,rigCurrent.faceMorph.transitionRate);
-    expressionWeights=next.weights;expressionVelocities=next.velocities;
+    const blend={weights:expressionWeights,velocities:expressionVelocities};
+    const sequence=rigCurrent.faceMorph.expressionSequence;
+    if(sequence){
+      const next=advanceSequentialExpression(expressionSequenceState,blend,target,delta,
+        rigCurrent.faceMorph.transitionRate,sequence,expressionNames());
+      expressionWeights=next.blend.weights;expressionVelocities=next.blend.velocities;
+      expressionSequenceState=next.state;
+    }else{
+      const next=advanceExpressionBlend(blend,target,delta,rigCurrent.faceMorph.transitionRate);
+      expressionWeights=next.weights;expressionVelocities=next.velocities;
+      expressionSequenceState=createExpressionSequenceState(target);
+    }
     expressionPoseState={position:expressionWeights[expressionNames().indexOf('anxious')],velocity:expressionVelocities[expressionNames().indexOf('anxious')]};
   }else if(loaded&&rigCurrent?.expressionPose&&!$('paused').checked)
     expressionPoseState=advanceExpressionPose(expressionPoseState,
@@ -2144,8 +2332,12 @@ function frame(now) {
     ['fronthair','backhair'].some(name=>
       Math.abs(hairFollowDrive[name]-beforeHair[name])>.0002||
       Math.abs(hairIdleTargets[name]-hairFollowDrive[name])>.0002));
+  const expressionSequencing=Boolean(rigCurrent?.faceMorph?.expressionSequence&&
+    expressionSequenceState.phase!=='idle');
   if (loaded && !$('paused').checked &&
       ($('auto').checked ||
+        expressionSequencing ||
+        (rigCurrent?.legKnee&&$('knee-play').checked) ||
         (mouthAssets&&$('auto-talk').checked) ||
         (!rigCurrent?.hairFollow?.idleAroundYaw&&Number($('hair').value)) ||
         bustChanging ||
