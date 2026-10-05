@@ -28,5 +28,9 @@ checkpoint, not final visual approval of the newly edited hair or expression.
 
 ## Delivery record
 
-Fill in the final pipeline/portfolio commit IDs and live URL after pushes and
-production-browser verification.
+- Pipeline commit: `964c209` (`codex/eye-gaze-rig`, pushed to origin).
+- Portfolio commit: `d177ee4` (pushed to `main`; Vercel production is READY).
+- Live showcase: <https://my-portfolio-omega-beryl-98.vercel.app/mimi-demo/>.
+- Production-browser check: page title/version shows v95; 19 layers load; the
+  portfolio home card has the updated Mimi copy and links to the showcase.
+- This is still a review checkpoint; detailed visual acceptance remains pending.
